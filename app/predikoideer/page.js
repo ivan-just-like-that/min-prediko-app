@@ -1017,7 +1017,7 @@ export default function Home() {
                     Historiska kommentarer →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    En djupdykning i historien.
+                    Djupdykning i historien.
                   </p>
                 </div>
               </div>

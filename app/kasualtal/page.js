@@ -1058,7 +1058,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     disabled={laddarAi}
                     className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                   >
-                    Inledning & ev personlig koppling
+                    Gudstjänstens inledning
                   </button>
                 </div>
 
@@ -1164,7 +1164,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     Historiska kommentarer →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    Vetenskapliga kommentarer.
+                    Djupdykning i historien.
                   </p>
                 </div>
               </div>

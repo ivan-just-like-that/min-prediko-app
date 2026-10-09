@@ -88,7 +88,6 @@ export default function StartSida() {
               </p>
               <ul className="space-y-2 text-sm text-[#575c58] list-disc list-inside bg-[#f4f0eb]/50 p-4 rounded-xl border border-[#e8e4df]">
                 <li>Saknas någon funktion, isåfall vilken?</li>
-                <li>Finns det intresse att ha med en funktion som ger idéer till kasualtal utifrån ett textställe?</li>
                 <li>Känns svaren och förslagen du får från AI-modellen relevanta, eller känns de generellt för konstlade?</li>
                 <li>Hur korrekt upplever du att denna AI-modell är, går det att lita på svaren?</li>
                 <li>Hur fungerar sidan att navigera på, förstår man intuitivt vilka knappar man ska trycka på etc.</li>

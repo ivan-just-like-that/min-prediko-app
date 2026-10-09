@@ -124,7 +124,7 @@ Strukturera svaret så här:
           
           <p className="text-sm text-[#575c58] leading-relaxed mb-6">
             Skriv in vilket bibelställe som helst ur Nya testamentet för att få den grekiska grundtexten, uttalsguide, ord-för-ord-översättning och teologisk ordanalys.
-            Märk att uttalsguiden är en förenklad translitterering och inte en exakt fonetisk representation, den följer också det erasmiska uttalet vilket är omdiskuterat bland forskare.
+            Märk att uttalsguiden är en förenklad translitterering och inte en exakt fonetisk representation; den följer också det erasmiska uttalet, vilket är omdiskuterat bland forskare.
           </p>
 
           <form onSubmit={hanteraAnalys} className="flex flex-col sm:flex-row gap-3">

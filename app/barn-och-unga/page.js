@@ -178,7 +178,7 @@ För varje lek ska du tydligt ange:
           </div>
           
           <p className="text-sm text-[#575c58] leading-relaxed mb-6">
-            Skapa anpassade andakter, budskap och roliga lekar för söndagsskola, konfirmation och ungdomssamlingar.
+            Skapa anpassade andakter, budskap och roliga lekar för barn, konfirmation och ungdomssamlingar.
           </p>
 
           <form onSubmit={hanteraGenerering} className="space-y-6">
