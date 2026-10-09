@@ -621,11 +621,21 @@ export const HELGDAGAR = [
   },
 ];
 
-export default function Home() {
+export default function Kasualtal() {
+  // Tillstånd för kasualtyp, textkälla och val
+  const [kasualTyp, setKasualTyp] = useState('dop'); // 'dop', 'vigsel', 'begravning'
+  const [textKalla, setTextKalla] = useState('evangelieboken'); // 'evangelieboken' eller 'egen'
+  
+  // Evangeliebok-val
   const [valdHelgdagNamn, setValdHelgdagNamn] = useState(HELGDAGAR[0]?.namn || '');
   const [valdArgang, setValdArgang] = useState('argang1');
   const [valdTextTyp, setValdTextTyp] = useState('evangelium');
 
+  // Egen text & personlig bakgrund
+  const [egenText, setEgenText] = useState('');
+  const [personligBakgrund, setPersonligBakgrund] = useState('');
+
+  // Anteckningar & AI
   const [anteckningar, setAnteckningar] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
@@ -634,7 +644,7 @@ export default function Home() {
   // Läs in sparad AI-historik från localStorage
   useEffect(() => {
     try {
-      const sparadHistorik = localStorage.getItem('prediko_ai_historik');
+      const sparadHistorik = localStorage.getItem('kasualtal_ai_historik');
       if (sparadHistorik) {
         setAiHistorik(JSON.parse(sparadHistorik));
       }
@@ -643,13 +653,12 @@ export default function Home() {
     }
   }, []);
 
-  // Läs in sparade anteckningar för vald helgdag
+  // Läs in sparade anteckningar baserat på tillfälle
   useEffect(() => {
-    if (valdHelgdagNamn) {
-      const sparadText = localStorage.getItem(`anteckningar_${valdHelgdagNamn}`);
-      setAnteckningar(sparadText || '');
-    }
-  }, [valdHelgdagNamn]);
+    const nyckel = `kasual_anteckningar_${kasualTyp}`;
+    const sparadText = localStorage.getItem(nyckel);
+    setAnteckningar(sparadText || '');
+  }, [kasualTyp]);
 
   const valdHelgdag = HELGDAGAR.find((h) => h.namn === valdHelgdagNamn);
   const valdaTexter = valdHelgdag ? valdHelgdag[valdArgang] : null;
@@ -661,6 +670,17 @@ export default function Home() {
     evangelium: 'Evangelium'
   }[valdTextTyp];
 
+  const kasualTypNamn = {
+    dop: 'Doptal',
+    vigsel: 'Vigseltal',
+    begravning: 'Griftetal'
+  }[kasualTyp];
+
+  // Sammanställ aktiv textbeskrivning för AI:n
+  const aktivTextBeskrivning = textKalla === 'evangelieboken'
+    ? `${textTypNamn}: ${valdPredikotext} (${valdHelgdag?.namn})`
+    : (egenText.trim() ? egenText : 'Ingen särskild bibeltext angiven');
+
   const hanteraAiAnrop = async (instruktion, etikett) => {
     const textAttSkicka = instruktion || aiPrompt;
     const rubrik = etikett || aiPrompt || 'Egen fråga';
@@ -669,38 +689,49 @@ export default function Home() {
 
     setLaddarAi(true);
 
+    const fullPrompt = `
+Du är en erfaren präst i Svenska kyrkan som hjälper till att förbereda ett ${kasualTypNamn.toLowerCase()}.
+
+TILLFÄLLE: ${kasualTypNamn}
+VALD TEXT/TEMA: ${aktivTextBeskrivning}
+PERSONLIG BAKGRUND OCH KONTEXT:
+"${personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven ännu.'}"
+
+INSTRUKTION:
+${textAttSkicka}
+
+Svara med ett varmt, själavårdande, teologiskt genomtänkt och personligt anpassat tonläge. 
+För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och förväntan. För vigseltal, inkludera kärlek och gemenskap. Skriv i en stil som är lätt att tala inför en församling, med tydliga övergångar och naturliga pauser.
+`;
+
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: textAttSkicka,
-          helgdag: valdHelgdag?.namn,
-          tema: valdHelgdag?.tema,
-          texter: valdaTexter,
-          valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
+          prompt: fullPrompt,
+          helgdag: `${kasualTypNamn} (${textKalla === 'evangelieboken' ? valdHelgdag?.namn : 'Egen text'})`,
+          tema: egenText || valdHelgdag?.tema,
         }),
       });
 
       const data = await res.json();
       const nyttSvar = data.text || data.result || 'Inga förslag kunde genereras.';
 
-      // Skapa nytt historikobjekt
       const nyPost = {
         id: Date.now(),
-        titel: rubrik,
+        titel: `${rubrik} – ${kasualTypNamn}`,
         svar: nyttSvar,
-        helgdag: valdHelgdag?.namn || 'Allmänt',
+        helgdag: textKalla === 'evangelieboken' ? valdHelgdag?.namn : 'Egen text',
         tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
       };
 
-      // Uppdatera state och localStorage
       const uppdateradHistorik = [nyPost, ...aiHistorik];
       setAiHistorik(uppdateradHistorik);
-      localStorage.setItem('prediko_ai_historik', JSON.stringify(uppdateradHistorik));
+      localStorage.setItem('kasualtal_ai_historik', JSON.stringify(uppdateradHistorik));
 
       if (!instruktion) {
-        setAiPrompt(''); // Rensa rutan vid manuell fråga
+        setAiPrompt('');
       }
     } catch (err) {
       alert('Det uppstod ett fel vid anropet till AI-assistenten.');
@@ -710,18 +741,16 @@ export default function Home() {
   };
 
   const rensaHistorik = () => {
-    if (confirm('Är du säker på att du vill rensa hela AI-historiken?')) {
+    if (confirm('Är du säker på att du vill rensa hela AI-historiken för kasualtal?')) {
       setAiHistorik([]);
-      localStorage.removeItem('prediko_ai_historik');
+      localStorage.removeItem('kasualtal_ai_historik');
     }
   };
 
   const hanteraAnteckningsÄndring = (e) => {
     const nyText = e.target.value;
     setAnteckningar(nyText);
-    if (valdHelgdagNamn) {
-      localStorage.setItem(`anteckningar_${valdHelgdagNamn}`, nyText);
-    }
+    localStorage.setItem(`kasual_anteckningar_${kasualTyp}`, nyText);
   };
 
   const sparaAnteckningarSomFil = () => {
@@ -730,7 +759,7 @@ export default function Home() {
       return;
     }
 
-    const filnamn = `Predikoanteckningar_${valdHelgdag?.namn || 'Ospecificerad'}.txt`;
+    const filnamn = `Anteckningar_${kasualTypNamn}.txt`;
     const blob = new Blob([anteckningar], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -757,7 +786,7 @@ export default function Home() {
             </Link>
             <span className="text-[#e8e4df]">|</span>
             <h1 className="text-xl font-bold tracking-tight text-[#1a1d1b]">
-              Predikoidéer
+              Kasualtal
             </h1>
           </div>
 
@@ -775,104 +804,208 @@ export default function Home() {
       {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1100px] mx-auto px-6 pt-8 pb-16">
 
+      {/* INTRO-RUTA FÖR KASUALTAL */}
+        <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">🕊️</span>
+            <h2 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+              Verktyg för dop, vigsel & begravning
+            </h2>
+          </div>
+          
+          <p className="text-sm text-[#575c58] leading-relaxed">
+            Skapa teologiskt genomtänkta och personligt anpassade kasualtal. Kombinera kyrkoårets texter eller valfria bibelställen med anonymiserad bakgrundsinformation för att få förslag på dispositioner, inledningar och psalmer.
+          </p>
+        </div>
+
         {/* 2-SPALTSLAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
-          {/* VÄNSTER SPALT: Kyrkoår & Bibeltexter */}
-          <section className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-            <h2 className="text-lg font-bold text-[#1a1d1b] mb-5 tracking-tight border-b border-[#e8e4df] pb-3">
-              1. Välj helgdag, årgång & predikotext
-            </h2>
+          {/* VÄNSTER SPALT: Val av tillfälle, text & bakgrund */}
+          <section className="space-y-6">
             
-            {/* VÄLJ HELGDAG */}
-            <div className="mb-5">
-              <label htmlFor="helgdag-select" className="block text-sm font-semibold text-[#1a1d1b] mb-2">
-                Helgdag:
-              </label>
-              <select
-                id="helgdag-select"
-                value={valdHelgdagNamn}
-                onChange={(e) => setValdHelgdagNamn(e.target.value)}
-                className="w-full p-3 text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732]"
-              >
-                {HELGDAGAR.map((h) => (
-                  <option key={h.namn} value={h.namn}>
-                    {h.namn}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* 1. VÄLJ KASUALTILLFÄLLE */}
+            <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <h2 className="text-lg font-bold text-[#1a1d1b] mb-4 tracking-tight border-b border-[#e8e4df] pb-3">
+                1. Välj tillfälle
+              </h2>
 
-            {/* VÄLJ ÅRGÅNG */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#1a1d1b] mb-2">Årgång:</label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { id: 'argang1', label: 'Årgång 1' },
-                  { id: 'argang2', label: 'Årgång 2' },
-                  { id: 'argang3', label: 'Årgång 3' },
-                ].map((arg) => (
+                  { id: 'dop', label: '👶 Dop' },
+                  { id: 'vigsel', label: '💍 Vigsel' },
+                  { id: 'begravning', label: '✝️ Begravning' },
+                ].map((item) => (
                   <button
-                    key={arg.id}
-                    onClick={() => setValdArgang(arg.id)}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
-                      valdArgang === arg.id
+                    key={item.id}
+                    onClick={() => setKasualTyp(item.id)}
+                    className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                      kasualTyp === item.id
                         ? 'bg-[#2d3732] text-white shadow-sm'
                         : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    {arg.label}
+                    {item.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* TEXTVALS-RUTA */}
-            {valdHelgdag && valdaTexter && (
-              <div className="bg-[#faf8f5] p-5 rounded-xl border border-[#e8e4df]">
-                <h3 className="text-lg font-bold text-[#1a1d1b] mb-1">{valdHelgdag.namn}</h3>
-                <p className="text-sm text-[#575c58] mb-4">
-                  <strong className="text-[#1a1d1b]">Tema:</strong> {valdHelgdag.tema}
-                </p>
-                <hr className="border-t border-[#e8e4df] my-3" />
-                
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#575c58] mb-3">
-                  Klicka på den text du vill utgå från i din predikan:
-                </p>
+            {/* 2. VÄLJ ELLER SKRIV IN TEXT */}
+            <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <h2 className="text-lg font-bold text-[#1a1d1b] mb-4 tracking-tight border-b border-[#e8e4df] pb-3">
+                2. Bibeltext eller tema
+              </h2>
 
-                <div className="space-y-3">
-                  {[
-                    { key: 'gt', label: 'Gammaltestamentlig text', text: valdaTexter.gt },
-                    { key: 'epistel', label: 'Epistel', text: valdaTexter.epistel },
-                    { key: 'evangelium', label: 'Evangelium', text: valdaTexter.evangelium },
-                  ].map((t) => (
-                    <div
-                      key={t.key}
-                      onClick={() => setValdTextTyp(t.key)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        valdTextTyp === t.key
-                          ? 'border-[#2d3732] bg-white shadow-sm ring-1 ring-[#2d3732]'
-                          : 'border-[#e8e4df] bg-white hover:border-[#d6d0c7]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-bold uppercase text-[#575c58] tracking-wider">
-                          {t.label}
-                        </span>
-                        {valdTextTyp === t.key && (
-                          <span className="text-[11px] font-semibold bg-[#2d3732] text-white px-2 py-0.5 rounded-md">
-                            Vald predikotext
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-base font-semibold text-[#1a1d1b]">
-                        {t.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {/* VÄLJ KÄLLTYP */}
+              <div className="flex gap-2 mb-5">
+                <button
+                  onClick={() => setTextKalla('evangelieboken')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                    textKalla === 'evangelieboken'
+                      ? 'bg-[#212529] text-white'
+                      : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                  }`}
+                >
+                  Kyrkoårets texter
+                </button>
+                <button
+                  onClick={() => setTextKalla('egen')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                    textKalla === 'egen'
+                      ? 'bg-[#212529] text-white'
+                      : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                  }`}
+                >
+                  Egen text eller tema
+                </button>
               </div>
-            )}
+
+              {textKalla === 'evangelieboken' ? (
+                <div>
+                  {/* HELGDAGS-SELECT */}
+                  <div className="mb-4">
+                    <label htmlFor="helgdag-select" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
+                      Helgdag:
+                    </label>
+                    <select
+                      id="helgdag-select"
+                      value={valdHelgdagNamn}
+                      onChange={(e) => setValdHelgdagNamn(e.target.value)}
+                      className="w-full p-3 text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732]"
+                    >
+                      {HELGDAGAR.map((h) => (
+                        <option key={h.namn} value={h.namn}>
+                          {h.namn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* ÅRGÅNGAR */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">Årgång:</label>
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'argang1', label: 'Årgång 1' },
+                        { id: 'argang2', label: 'Årgång 2' },
+                        { id: 'argang3', label: 'Årgång 3' },
+                      ].map((arg) => (
+                        <button
+                          key={arg.id}
+                          onClick={() => setValdArgang(arg.id)}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                            valdArgang === arg.id
+                              ? 'bg-[#2d3732] text-white shadow-sm'
+                              : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                          }`}
+                        >
+                          {arg.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* TEXTVAL */}
+                  {valdHelgdag && valdaTexter && (
+                    <div className="space-y-2 mt-4 pt-3 border-t border-[#e8e4df]">
+                      {[
+                        { key: 'gt', label: 'Gammaltestamentlig text', text: valdaTexter.gt },
+                        { key: 'epistel', label: 'Epistel', text: valdaTexter.epistel },
+                        { key: 'evangelium', label: 'Evangelium', text: valdaTexter.evangelium },
+                      ].map((t) => (
+                        <div
+                          key={t.key}
+                          onClick={() => setValdTextTyp(t.key)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center ${
+                            valdTextTyp === t.key
+                              ? 'border-[#2d3732] bg-[#faf8f5] ring-1 ring-[#2d3732]'
+                              : 'border-[#e8e4df] bg-white hover:border-[#d6d0c7]'
+                          }`}
+                        >
+                          <div>
+                            <span className="text-[11px] font-bold uppercase text-[#575c58] block">
+                              {t.label}
+                            </span>
+                            <span className="text-sm font-semibold text-[#1a1d1b]">
+                              {t.text}
+                            </span>
+                          </div>
+                          {valdTextTyp === t.key && (
+                            <span className="text-[10px] font-bold bg-[#2d3732] text-white px-2 py-0.5 rounded">
+                              Vald
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* EGEN TEXT / TEMA INMATNING */
+                <div>
+                  <label htmlFor="egen-text-input" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
+                    Bibelställe eller valt tema:
+                  </label>
+                  <input
+                    id="egen-text-input"
+                    type="text"
+                    value={egenText}
+                    onChange={(e) => setEgenText(e.target.value)}
+                    placeholder="T.ex. 1 Kor 13, Ps 23, 'Guds kärlek' eller 'Ett dukat bord'..."
+                    className="w-full p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-sm text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732]"
+                  />
+                  <p className="text-xs text-[#575c58] mt-2">
+                    Skriv in det bibelställe eller det övergripande tema som du planerar att utgå ifrån i talet.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 3. PERSONLIG BAKGRUND */}
+            <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <h2 className="text-lg font-bold text-[#1a1d1b] mb-2 tracking-tight border-b border-[#e8e4df] pb-3">
+                3. Personlig bakgrund & kontext
+              </h2>
+              <p className="text-xs text-[#575c58] mb-3 leading-relaxed">
+                Beskriv kontexten anonymt för att hjälpa AI:n att ge anpassade förslag. 
+                <strong className="block text-[#1a1d1b] mt-0.5">Av sekretess- och integritetsskäl: undvik riktiga namn, efternamn och känsliga personuppgifter.</strong>
+              </p>
+              <textarea
+                value={personligBakgrund}
+                onChange={(e) => setPersonligBakgrund(e.target.value)}
+                placeholder={
+                  kasualTyp === 'dop'
+                    ? "T.ex. Föräldrarnas tankar, syskon, önskat tonläge, stämning eller särskilda teman (undvik namn)..."
+                    : kasualTyp === 'vigsel'
+                    ? "T.ex. Hur paret träffades, intressen, gemensamma värderingar, stämning (använd gärna 'paret' eller förnamn utan efternamn)..."
+                    : "T.ex. Äldre man/kvinna, yrkesliv, intressen, vad som kännetecknade personen och livsresan (undvik hela namn och ort)..."
+                }
+                rows={5}
+                className="w-full p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-sm text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732] leading-relaxed"
+              />
+            </div>
+
           </section>
 
           {/* HÖGER SPALT: Anteckningar & AI-assistent */}
@@ -881,13 +1014,13 @@ export default function Home() {
             {/* MINA ANTECKNINGAR */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h2 className="text-lg font-bold text-[#1a1d1b] mb-4 tracking-tight">
-                2. Mina predikoanteckningar
+                4. Mina anteckningar ({kasualTypNamn.toLowerCase()})
               </h2>
               <textarea
                 value={anteckningar}
                 onChange={hanteraAnteckningsÄndring}
-                placeholder="Skriv dina egna tankar, idéer och utkast här..."
-                rows={8}
+                placeholder="Skriv dina egna tankar, dispositioner och utkast till talet här..."
+                rows={7}
                 className="w-full p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-sm text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732] leading-relaxed"
               />
 
@@ -903,38 +1036,38 @@ export default function Home() {
             {/* AI-ASSISTENT */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h2 className="text-lg font-bold text-[#1a1d1b] mb-2 tracking-tight">
-                3. AI-assistent
+                5. AI-assistent för {kasualTypNamn.toLowerCase()}
               </h2>
               
-              <p className="text-xs text-[#575c58] mb-4 bg-[#faf8f5] p-2.5 rounded-lg border border-[#e8e4df]">
-                Aktiv predikotext: <strong className="text-[#1a1d1b]">{textTypNamn} ({valdPredikotext})</strong>
-              </p>
+              <div className="text-xs text-[#575c58] mb-4 bg-[#faf8f5] p-2.5 rounded-lg border border-[#e8e4df]">
+                Aktiv kontext: <strong className="text-[#1a1d1b]">{kasualTypNamn}</strong> | <strong className="text-[#1a1d1b]">{aktivTextBeskrivning}</strong>
+              </div>
 
               <div className="space-y-3 mb-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
-                    onClick={() => hanteraAiAnrop(`Ge mig 3-4 olika förslag på disposition/upplägg för en predikan utifrån den valda texten (${textTypNamn}: ${valdPredikotext}) för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}".`, 'Disposition')}
+                    onClick={() => hanteraAiAnrop(`Ge mig 2-3 olika förslag på disposition och upplägg för ett ${kasualTypNamn.toLowerCase()} utifrån texten/temat "${aktivTextBeskrivning}". Väv in den personliga bakgrunden på ett naturligt och respektfullt sätt.`, 'Disposition')}
                     disabled={laddarAi}
                     className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                   >
-                    Generera disposition
+                    Disposition för talet
                   </button>
                   
                   <button
-                    onClick={() => hanteraAiAnrop(`Ge mig några olika förslag på bilder, illustrationer, metaforer eller liknelser som passar för en predikan utifrån den valda texten (${textTypNamn}: ${valdPredikotext}) för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}".`, 'Predikobilder & liknelser')}
+                    onClick={() => hanteraAiAnrop(`Ge mig förslag på en varm och värdig inledning till ett ${kasualTypNamn.toLowerCase()} som knyter ihop den personliga kontexten med texten/temat "${aktivTextBeskrivning}".`, 'Inledning & ev personlig koppling')}
                     disabled={laddarAi}
                     className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                   >
-                    Predikobilder & liknelser
+                    Inledning & ev personlig koppling
                   </button>
                 </div>
 
                 <button
-                  onClick={() => hanteraAiAnrop(`Ge mig 5 passande psalmförslag ur Den svenska psalmboken för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}" och den valda texten (${textTypNamn}: ${valdPredikotext}). Motivera kort varför varje psalm passar.`, 'Psalmförslag')}
+                  onClick={() => hanteraAiAnrop(`Ge mig 4-5 passande psalmförslag ur Den svenska psalmboken/psalmbokstillägget som lämpar sig för detta ${kasualTypNamn.toLowerCase()} med temat "${aktivTextBeskrivning}". Motivera kort varför varje psalm passar.`, 'Psalmförslag')}
                   disabled={laddarAi}
                   className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                 >
-                  Ge psalmförslag för dagen
+                  Psalmförslag för tillfället
                 </button>
               </div>
 
@@ -943,7 +1076,7 @@ export default function Home() {
                   type="text"
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Eller skriv en egen fråga till AI-assistenten..."
+                  placeholder="Eller skriv en egen fråga om talet till AI-assistenten..."
                   className="w-full p-3 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732] mb-2"
                 />
                 <button
@@ -1003,12 +1136,26 @@ export default function Home() {
           )}
         </section>
 
-{/* NAVIGERA TILL ANDRA VERKTYG */}
+        {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link href="/predikoideer" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">💡</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Predikoidéer →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Dispositioner och metaforer.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
             <Link href="/historik" className="group block">
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📜</span>
@@ -1017,7 +1164,7 @@ export default function Home() {
                     Historiska kommentarer →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    En djupdykning i historien.
+                    Vetenskapliga kommentarer.
                   </p>
                 </div>
               </div>
@@ -1050,26 +1197,11 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-
-            <Link href="/kasualtal" className="group block">
-              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
-                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🕊️</span>
-                <div>
-                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
-                    Kasualtal →
-                  </h4>
-                  <p className="text-xs text-[#575c58]">
-                    Dop, vigsel och begravning.
-                  </p>
-                </div>
-              </div>
-            </Link>
           </div>
         </section>
 
         {/* FOOTER */}
         <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">
-          Kyrkoårets bibeltexter är hämtade från Svenska kyrkans evangeliebok (2002). <br />
           © 2026 Patric Ivan. Innehåll genererat av användare mha AI.
         </footer>
 

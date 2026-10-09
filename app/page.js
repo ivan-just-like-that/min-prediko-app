@@ -102,90 +102,91 @@ export default function StartSida() {
           </p>
         </section>
 
-        {/* VERKTYGSKORT (4 SPALTER PÅ STÖRRE SKÄRMAR) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* KORT 1: PREDIKOIDÉER */}
-          <Link href="/predikoideer" className="group block h-full">
-            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
-                  💡
-                </div>
-                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
-                  Predikoidéer
-                </h3>
-                <p className="text-xs text-[#575c58] leading-relaxed">
-                  Praktiska verktyg som förslag på disposition till din predikan samt psalmförslag.
-                </p>
-              </div>
-              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                Öppna verktyget →
-              </span>
-            </div>
-          </Link>
+      {/* VERKTYGSKORT / HUVUDMENY */}
+        <section className="mb-12">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
+            Våra verktyg
+          </h2>
 
-          {/* KORT 2: HISTORISKA KOMMENTARER */}
-          <Link href="/historik" className="group block h-full">
-            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
-                  📜
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            
+            {/* 1. PREDIKOIDÉER */}
+            <Link href="/predikoideer" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">💡</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Predikoidéer →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Dispositioner, metaforer och psalmförslag kopplade till kyrkoårets alla helgdagar.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
-                  Historiska kommentarer
-                </h3>
-                <p className="text-xs text-[#575c58] leading-relaxed">
-                  Fördjupning i den historiska, kulturella och vetenskapliga kontexten.
-                </p>
               </div>
-              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                Öppna verktyget →
-              </span>
-            </div>
-          </Link>
+            </Link>
 
-          {/* KORT 3: RENA GREKISKAN */}
-          <Link href="/grekiska" className="group block h-full">
-            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
-                  🇬🇷
+            {/* 2. HISTORISKA KOMMENTARER */}
+            <Link href="/historik" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">📜</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Historiska kommentarer →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Vetenskapliga teologiska kommentarer och historisk kontext för söndagens texter.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
-                  Rena grekiskan
-                </h3>
-                <p className="text-xs text-[#575c58] leading-relaxed">
-                  Damma av dina kunskaper i grekiska och kom nära grundtextens betydelse.
-                </p>
               </div>
-              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                Öppna verktyget →
-              </span>
-            </div>
-          </Link>
+            </Link>
 
-          {/* KORT 4: BARN & UNGA */}
-          <Link href="/barn-och-unga" className="group block h-full">
-            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
-                  🎈
+            {/* 3. RENA GREKISKAN */}
+            <Link href="/grekiska" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">🇬🇷</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Rena grekiskan →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Djupgående grundtextanalys och ordförklaringar direkt från nya testamentets grekiska.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
-                  Barn & unga
-                </h3>
-                <p className="text-xs text-[#575c58] leading-relaxed">
-                  Skapa anpassade andakter, budskap och roliga lekar för söndagsskola, konfa och ungdomssamlingar.
-                </p>
               </div>
-              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                Öppna verktyget →
-              </span>
-            </div>
-          </Link>
+            </Link>
 
-        </div>
+            {/* 4. BARN & UNGA */}
+            <Link href="/barn-och-unga" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">🎈</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Barn & unga →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Anpassade andakter, budskap och samarbetslekar för söndagsskola, juniorer och konfa.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            {/* 5. KASUALTAL */}
+            <Link href="/kasualtal" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">🕊️</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Kasualtal →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Verktyg för dop, vigsel och begravning. Skapa personliga tal utifrån anonym kontext.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+          </div>
+        </section>
 
         {/* FEEDBACKSEKTION / FORMULÄR FÖR BETATESTARE */}
         <section className="mt-12 p-6 sm:p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
