@@ -69,7 +69,7 @@ export default function StartSida() {
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att uppdateras med nya funktioner och förbättringar under denna tid. T ex är sidan inte helt mobilanpassad än, inte heller är sidorna för &quot;pris&quot; och &quot;login&quot; aktiverade ännu.<br /><br />
+              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att uppdateras med nya funktioner och förbättringar under denna tid. Obs att sidan inte är helt mobilanpassad än, inte heller är sidorna för &quot;pris&quot; och &quot;login&quot; aktiverade.<br /><br />
               Jag är tacksam om du inte sprider denna sida ännu, jag vill att vi testar den ordentligt först.<br /><br />
               Bästa hälsningar, Patric.
             
@@ -98,28 +98,28 @@ export default function StartSida() {
           </div>
 
           <p className="text-center text-[#1a1d1b] font-medium text-lg">
-            Välj ett av verktygen nedan för att påbörja din predikoförberedelse, utforska den historiska kontexten eller fördjupa dig i grundtexten.
+            Välj ett av verktygen nedan för att påbörja din predikoförberedelse, utforska den historiska kontexten, damma av grundtexten eller skapa material för barn och unga.
           </p>
         </section>
 
-        {/* VERKTYGSKORT (3 SPALTER) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* VERKTYGSKORT (4 SPALTER PÅ STÖRRE SKÄRMAR) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* KORT 1: PREDIKOIDÉER */}
           <Link href="/predikoideer" className="group block h-full">
-            <div className="h-full p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
+            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
               <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-5">
+                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
                   💡
                 </div>
-                <h3 className="text-xl font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
+                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
                   Predikoidéer
                 </h3>
-                <p className="text-sm text-[#575c58] leading-relaxed">
-                  Praktiska verktyg som förslag på disposition till din predikan. Här kan du också få psalmförslag till helgdagen.
+                <p className="text-xs text-[#575c58] leading-relaxed">
+                  Praktiska verktyg som förslag på disposition till din predikan samt psalmförslag.
                 </p>
               </div>
-              <span className="mt-7 text-sm font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                 Öppna verktyget →
               </span>
             </div>
@@ -127,19 +127,19 @@ export default function StartSida() {
 
           {/* KORT 2: HISTORISKA KOMMENTARER */}
           <Link href="/historik" className="group block h-full">
-            <div className="h-full p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
+            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
               <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-5">
+                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
                   📜
                 </div>
-                <h3 className="text-xl font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
+                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
                   Historiska kommentarer
                 </h3>
-                <p className="text-sm text-[#575c58] leading-relaxed">
-                  Fördjupning i den historiska kontexten.
+                <p className="text-xs text-[#575c58] leading-relaxed">
+                  Fördjupning i den historiska, kulturella och vetenskapliga kontexten.
                 </p>
               </div>
-              <span className="mt-7 text-sm font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                 Öppna verktyget →
               </span>
             </div>
@@ -147,19 +147,39 @@ export default function StartSida() {
 
           {/* KORT 3: RENA GREKISKAN */}
           <Link href="/grekiska" className="group block h-full">
-            <div className="h-full p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
+            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
               <div>
-                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-5">
+                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
                   🇬🇷
                 </div>
-                <h3 className="text-xl font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
+                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
                   Rena grekiskan
                 </h3>
-                <p className="text-sm text-[#575c58] leading-relaxed">
-                  Varför inte damma av dina kunskaper i grekiska? Bästa sättet att komma nära textens betydelse.
+                <p className="text-xs text-[#575c58] leading-relaxed">
+                  Damma av dina kunskaper i grekiska och kom nära grundtextens betydelse.
                 </p>
               </div>
-              <span className="mt-7 text-sm font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                Öppna verktyget →
+              </span>
+            </div>
+          </Link>
+
+          {/* KORT 4: BARN & UNGA */}
+          <Link href="/barn-och-unga" className="group block h-full">
+            <div className="h-full p-6 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] hover:border-[#d6d0c7] transition-all flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-[#f4f0eb] flex items-center justify-center text-2xl mb-4">
+                  🎈
+                </div>
+                <h3 className="text-lg font-semibold text-[#1a1d1b] mb-2 group-hover:text-[#2d3732] transition-colors">
+                  Barn & unga
+                </h3>
+                <p className="text-xs text-[#575c58] leading-relaxed">
+                  Skapa anpassade andakter, budskap och roliga lekar för söndagsskola, konfa och ungdomssamlingar.
+                </p>
+              </div>
+              <span className="mt-6 text-xs font-semibold text-[#2d3732] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                 Öppna verktyget →
               </span>
             </div>
@@ -167,8 +187,8 @@ export default function StartSida() {
 
         </div>
 
-{/* FEEDBACKSEKTION / FORMULÄR FÖR BETATESTARE */}
-        <section className="mt-8 p-6 sm:p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        {/* FEEDBACKSEKTION / FORMULÄR FÖR BETATESTARE */}
+        <section className="mt-12 p-6 sm:p-8 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="max-w-xl mx-auto text-center mb-6">
             <span className="text-3xl mb-2 block">💬</span>
             <h3 className="text-xl font-bold text-[#1a1d1b] tracking-tight mb-1">
