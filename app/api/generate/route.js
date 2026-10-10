@@ -3,7 +3,6 @@ import { GoogleGenAI } from '@google/genai';
 
 export const dynamic = 'force-dynamic';
 
-// Hjälpfunktion för att vänta ett antal millisekunder
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req) {
@@ -14,6 +13,9 @@ export async function POST(req) {
     const helgdag = body.helgdag || 'Ej angiven helgdag';
     const tema = body.tema || 'Ej angivet tema';
     const valdPredikotext = body.valdPredikotext || 'Ej angiven text';
+    
+    // Ny flagga: sätts till true som standard, men kan stängas av per anrop
+    const inkluderaFraga = body.inkluderaFraga ?? true;
 
     if (!promptText.trim()) {
       return NextResponse.json(
@@ -32,26 +34,27 @@ export async function POST(req) {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Dynamisk instruktion beroende på om vi vill ha frågan i slutet eller inte
+    const fragaInstruktion = inkluderaFraga
+      ? "Avsluta alltid ditt svar med rubriken 'En reflekterande fråga för din förberedelse:' följt av en kort men fördjupande, existentiell eller praktisk fråga som kan hjälpa prästen vidare i sin egen tankeprocess."
+      : "Avsluta INTE med någon reflekterande fråga.";
+
     const systemInstruction = `
 Du är en teologisk assistent och samtals- och predikopartner för präster i Svenska kyrkan.
 Aktuell helgdag: ${helgdag}
 Tema: ${tema}
 Aktiv predikotext för tillfället: ${valdPredikotext}
 
-Svara hjälpsamt, teologiskt genomtänkt och direkt på prästens önskemål utan att be dem upprepa texten eller helgdagen.
+Svara hjälpsamt, teologiskt genomtänkt, koncist och direkt på prästens önskemål utan att be dem upprepa texten eller helgdagen.
 
 Ge teologiskt fördjupade men nutidsrelevanta perspektiv. Balansera exegetisk noggrannhet med själavårdande och praktisk tillämpning för församlingens vardag.
 
-VIKTIGT: Använd INGA HTML-taggar (som <h3>, <p>, <b> osv.) i dina svar. Använd ren text och vanliga blankrader eller stjärnor/bindestreck för rubriker och listor.
-
-Formatera texten med ren Markdown (t.ex. # eller **fetstil** för rubriker och markerat innehåll) men helt utan HTML-kod.
-
-Avsluta alltid ditt svar med rubriken 'En reflekterande fråga för din förberedelse:' följt av en kort men fördjupande, existentiell eller praktisk fråga som kan hjälpa prästen vidare i sin egen tankeprocess och knyter an till församlingens vardag.
-
-
+VIKTIGT:
+- Håll svaret kärnfullt och välstrukturerat med tydliga rubriker och punkter. Undvik onödigt fyllnadsspråk.
+- Använd INGA HTML-taggar (som <h3>, <p>, <b> osv.). Använd ren Markdown (# eller **fetstil** för rubriker).
+- ${fragaInstruktion}
     `.trim();
 
-    // Försök anropa AI:n upp till 3 gånger om den är överbelastad
     let response;
     let maxRetries = 3;
     
@@ -65,11 +68,11 @@ Avsluta alltid ditt svar med rubriken 'En reflekterande fråga för din förbere
             temperature: 0.7,
           },
         });
-        break; // Om anropet lyckades, bryt loopen!
+        break;
       } catch (err) {
         console.warn(`Försök ${attempt} misslyckades:`, err.message);
-        if (attempt === maxRetries) throw err; // Kasta felet vidare om sista försöket misslyckades
-        await delay(1500 * attempt); // Vänta 1.5s, sedan 3s inför nästa försök
+        if (attempt === maxRetries) throw err;
+        await delay(1500 * attempt);
       }
     }
 

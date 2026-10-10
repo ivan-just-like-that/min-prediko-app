@@ -201,28 +201,82 @@ Strukturera svaret så här:
           )}
         </section>
 
+{/* EN KOMMENTAR OM VERKTYGET */}
+        <section className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] my-8">
+          <h2 className="text-xl font-bold text-[#1a1d1b] tracking-tight mb-4 flex items-center gap-2">
+            <span>ℹ️</span> En kommentar om verktyget
+          </h2>
+          
+          <div className="text-sm text-[#2d312e] leading-relaxed space-y-4">
+            <p>
+              Som samtals- och predikopartner för exegetiskt arbete i Svenska kyrkan utgår denna AI-modell i första hand från de vedertagna vetenskapliga standardutgåvorna för Nya testamentets koinégrekiska:
+            </p>
+
+            <ul className="list-disc pl-5 space-y-2 text-[#575c58]">
+              <li>
+                <strong className="text-[#1a1d1b]">Primär grundtext:</strong> Nestle-Aland (NA28 / NA27) samt United Bible Societies (UBS5 / UBS4). Detta är den ekumeniskt och akademiskt etablerade kritiska texten (<em>editio critica</em>), vilken även utgör grunden för Bibel 2000.
+              </li>
+              <li>
+                <strong className="text-[#1a1d1b]">Sekundära texttraditioner:</strong> Vid behov och på begäran kan AI:n även analysera och jämföra läsarter från:
+                <ul className="list-circle pl-5 mt-1 space-y-1">
+                  <li>Textus Receptus (TR) (den texttradition som låg till grund för reformationsbiblarna och Karl XII:s bibel, samt delvis 1917 års kyrkobibel).</li>
+                  <li>Den bysantinska majoritetstexten (Robinson-Pierpont).</li>
+                </ul>
+              </li>
+              <li>
+                <strong className="text-[#1a1d1b]">Lexikografisk och grammatisk referens:</strong> Morfologiska analyser och semantiska nyanser följer standardverken inom bibelgrekisk exegetik, främst BDAG (Bauer-Danker-Arndt-Gingrich: <em>A Greek-English Lexicon of the New Testament and Other Early Christian Literature</em>).
+              </li>
+            </ul>
+
+            <div className="pt-2">
+              <h3 className="font-bold text-[#1a1d1b] text-base mb-2">
+                Hur textkritiska skillnader hanteras i predikoförberedelsen
+              </h3>
+              <p className="mb-3 text-[#575c58]">
+                När en predikotext uppvisar betydande textkritiska varianter (där t.ex. NA28 skiljer sig från Textus Receptus eller äldre svenska bibelöversättningar):
+              </p>
+
+              <ol className="list-decimal pl-5 space-y-1.5 text-[#575c58]">
+                <li>
+                  <strong className="text-[#1a1d1b]">Textkritisk notering:</strong> Belysning av vilka handskrifter som stöder respektive läsart (t.ex. Codex Sinaiticus, Codex Vaticanus kontra yngre minuskler).
+                </li>
+                <li>
+                  <strong className="text-[#1a1d1b]">Teologisk relevans:</strong> Analys av om en specifik läsart förändrar perikopens teologiska tyngdpunkt eller församlingens förståelse.
+                </li>
+                <li>
+                  <strong className="text-[#1a1d1b]">Översättningsjämförelse:</strong> Relatering av den grekiska texten till skillnaderna mellan Bibel 2000, 1917 års kyrkobibel och Svenska Folkbibeln.
+                </li>
+              </ol>
+            </div>
+
+            <p className="pt-2 italic text-[#575c58] border-t border-[#e8e4df]">
+              När du anger ett specifikt bibelställe (bok, kapitel och vers) i din förberedelse inför söndagen, så görs alltså en fullständig analys utifrån NA28 med relevanta textkritiska anmärkningar.
+            </p>
+          </div>
+        </section>
+
 {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <Link href="/predikoideer" className="group block">
-              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">💡</span>
                 <div>
                   <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
                     Predikoidéer →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    Dispositioner och metaforer.
+                    Dispositioner & vinklar.
                   </p>
                 </div>
               </div>
             </Link>
 
             <Link href="/historik" className="group block">
-              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📜</span>
                 <div>
                   <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
@@ -236,7 +290,7 @@ Strukturera svaret så här:
             </Link>
 
             <Link href="/barn-och-unga" className="group block">
-              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🎈</span>
                 <div>
                   <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
@@ -250,7 +304,7 @@ Strukturera svaret så här:
             </Link>
 
             <Link href="/kasualtal" className="group block">
-              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🕊️</span>
                 <div>
                   <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
@@ -258,6 +312,20 @@ Strukturera svaret så här:
                   </h4>
                   <p className="text-xs text-[#575c58]">
                     Dop, vigsel och begravning.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/predikantpepp" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🌱</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Predikantpepp →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Pepp, haikuer & humor.
                   </p>
                 </div>
               </div>

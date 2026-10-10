@@ -107,7 +107,7 @@ export default function StartSida() {
             Våra verktyg
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             {/* 1. PREDIKOIDÉER */}
             <Link href="/predikoideer" className="group block">
@@ -179,6 +179,20 @@ export default function StartSida() {
                   </h3>
                   <p className="text-xs text-[#575c58] leading-relaxed">
                     Verktyg för dop, vigsel och begravning. Skapa personliga tal utifrån anonym kontext.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/predikantpepp" className="group block">
+              <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
+                <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">🌱</span>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                    Predikantpepp →
+                  </h3>
+                  <p className="text-xs text-[#575c58] leading-relaxed">
+                    Pepp, haikun o annat smått och gott.
                   </p>
                 </div>
               </div>
