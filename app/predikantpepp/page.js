@@ -16,20 +16,20 @@ export default function PredikantpeppPage() {
   const [historiaSvar, setHistoriaSvar] = useState('');
   const [loadingHistoria, setLoadingHistoria] = useState(false);
 
-  // 1. Generera själavårdande pepp till prästen (hög variation & varierad ton)
+// 1. Generera själavårdande pepp till prästen (konkret, varm & avskalad)
   const genereraPepp = async () => {
     setLoadingPepp(true);
     setPeppSvar('');
 
-    // Lista på olika vinklar för att tvinga fram variation vid varje klick
+    // Mer jordnära och concreta situationer istället för abstrakta teologiska begrepp
     const vinklar = [
-      'Guds nåd och vila',
-      'gemenskap och kollegialt stöd',
-      'glädje och lekfullhet i tjänsten',
-      'trygghet i att inte behöva vara perfekt',
-      'tacksamhet för de små ögonblicken',
-      'tröst och återhämtning',
-      'vardagsmysterium och förundran'
+      'att det är helt okej att känna sig trött idag',
+      'att det är helt okej att hålla predikan på en enkel nivå ibland',
+      'en påminnelse om att bara ta en paus och göra något helt annat en stund',
+      'detta ordnar sig',
+      'allt som sker är inte ditt ansvar',
+      'glädjen i det enkla mötet med en människa i veckan',
+      'tryggheten i att uppdraget inte hänger enbart på din egen styrka'
     ];
     const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
     const slumpId = Math.random().toString(36).substring(7);
@@ -39,13 +39,17 @@ export default function PredikantpeppPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `Ge en kort, varm, genuint vardaglig och stöttande påminnelse till en präst.
-            Fokusera på temat: "${slumpVinkel}". Unikt ID för denna generering: ${slumpId}.
+          prompt: `Du är en klok, varm och väldigt jordnära prästkollega som skickar ett kort SMS till en vän som kämpar eller förbereder sig i tjänsten.
 
-            Tone of voice: Avslappnad, kamratlig, varm och helt utan klyschor, kyrkspråk eller upprepningar.
-            Skriv 1–2 korta meningar som känns som ett helt nytt, fräscht och omtänksamt ord från en god vän. Skriv enbart själva påminnelsen och inget annat.`,
+Fokusera helt kort på: ${slumpVinkel}. (Unikt id: ${slumpId})
+
+Regler för svaret:
+- Skriv 1–2 korta, helt avskalade meningar.
+- Tala direkt till personen i en lugn, stöttande ton.
+- Använd ett enkelt, vardagligt språk utan teologiska floskler eller högtravande poesi.
+- Skriv enbart själva påminnelsen, utan citationstecken.`,
           inkluderaFraga: false,
-          temperature: 0.95, // Högre temperatur ger mer varierade svar
+          temperature: 0.7, // Lagom balans för naturligt och varierat språk
         }),
       });
 

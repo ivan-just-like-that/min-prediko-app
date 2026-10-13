@@ -209,7 +209,7 @@ Strukturera svaret så här:
           
           <div className="text-sm text-[#2d312e] leading-relaxed space-y-4">
             <p>
-              Som samtals- och predikopartner för exegetiskt arbete i Svenska kyrkan utgår denna AI-modell i första hand från de vedertagna vetenskapliga standardutgåvorna för Nya testamentets koinégrekiska:
+              Till det exegetiska arbetet använder denna AI-modell i första hand de vedertagna vetenskapliga standardutgåvorna för Nya testamentets koinégrekiska:
             </p>
 
             <ul className="list-disc pl-5 space-y-2 text-[#575c58]">

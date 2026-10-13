@@ -91,7 +91,7 @@ export default function StartSida() {
                 <li>Känns svaren och förslagen du får från AI-modellen relevanta, eller känns de generellt för konstlade?</li>
                 <li>Hur korrekt upplever du att denna AI-modell är, går det att lita på svaren?</li>
                 <li>Hur fungerar sidan att navigera på, förstår man intuitivt vilka knappar man ska trycka på etc.</li>
-                <li>Vad skulle du vara villig att betala per månad för en färdigutvecklad tjänst? 49:-, 79:- eller 99:-/mån? mer? mindre? (Jag är tvungen att ta ut någon avgift framåt för att betala för serverplats, få en AI-tjänst som är pålitlig mm...)</li>
+                <li>Vad skulle du vara villig att betala per månad för en färdigutvecklad tjänst? 49:- för 30 anrop, 69:- för 60, 99:- för 100, 139:-/mån för 150 anrop? mer? mindre? (Jag är tvungen att ta ut någon avgift framåt för att betala för serverplats, få den bästa AI-tjänst som är pålitlig o snabb, min egen tid mm...)</li>
               </ul>
             </div>
           </div>
