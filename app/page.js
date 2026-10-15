@@ -7,36 +7,40 @@ export default function StartSida() {
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
       {/* TOPPMENY / HEADER */}
-      <header className="bg-white border-b border-[#e8e4df] py-5">
-        <div className="max-w-[1000px] mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[#1a1d1b]">
+      <header className="bg-white border-b border-[#e8e4df] py-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
+          
+          {/* VÄNSTER: Titel & Beta-tagg */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-[#1a1d1b]">
               Predikoassistenten
             </h1>
-            <span className="bg-[#f4f0eb] text-[#2d3732] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#e8e4df]">
+            <span className="bg-[#f4f0eb] text-[#2d3732] text-[10px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-[#e8e4df]">
               beta
             </span>
           </div>
 
-          <nav className="flex items-center gap-5">
+          {/* HÖGER: Navigation */}
+          <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
             <Link 
               href="/pris" 
-              className="text-[#575c58] hover:text-[#1a1d1b] text-sm font-medium transition-colors"
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
             >
               Pris
             </Link>
             <Link 
               href="/login" 
-              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
             >
               Logga in
             </Link>
           </nav>
+
         </div>
       </header>
 
       {/* HUVUDINNEHÅLL */}
-      <div className="max-w-[1000px] mx-auto px-6 pt-10 pb-16">
+      <div className="max-w-[1100px] mx-auto px-6 pt-10 pb-16">
         
       {/* ILLUSTRATION */}
         <div className="mb-8 overflow-hidden rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">

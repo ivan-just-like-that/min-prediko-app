@@ -128,29 +128,43 @@ Strukturera svaret så här:
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
       {/* HEADER / TOPPMENY */}
-      <header className="bg-white border-b border-[#e8e4df] py-5">
-        <div className="max-w-[1000px] mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+      <header className="bg-white border-b border-[#e8e4df] py-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
+          
+          {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link 
               href="/" 
-              className="text-[#575c58] hover:text-[#1a1d1b] text-sm font-medium transition-colors flex items-center gap-1"
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
             >
-              ← Tillbaka till start
+              <span>←</span>
+              <span className="hidden sm:inline">Tillbaka till start</span>
+              <span className="sm:hidden">Start</span>
             </Link>
+            
             <span className="text-[#e8e4df]">|</span>
-            <h1 className="text-xl font-bold tracking-tight text-[#1a1d1b]">
+            
+            <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
               Rena grekiskan
             </h1>
           </div>
 
-          <nav className="flex items-center gap-5">
-            <Link href="/pris" className="text-[#575c58] hover:text-[#1a1d1b] text-sm font-medium transition-colors">
+          {/* HÖGER: Navigation (Pris & Logga in) */}
+          <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
+            <Link 
+              href="/pris" 
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
+            >
               Pris
             </Link>
-            <Link href="/login" className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <Link 
+              href="/login" 
+              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+            >
               Logga in
             </Link>
           </nav>
+
         </div>
       </header>
 
