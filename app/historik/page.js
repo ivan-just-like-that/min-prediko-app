@@ -2,6 +2,50 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// Hjälp-komponent för kopiera-knapp
+function KopieraKnapp({ text }) {
+  const [kopierad, setKopierad] = useState(false);
+
+  const hanteraKopiera = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setKopierad(true);
+      setTimeout(() => setKopierad(false), 2000);
+    } catch (err) {
+      console.error('Kunde inte kopiera text:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={hanteraKopiera}
+      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
+        kopierad
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : 'bg-white hover:bg-[#f4f0eb] text-[#575c58] hover:text-[#1a1d1b] border-[#e8e4df]'
+      }`}
+      title="Kopiera text"
+    >
+      {kopierad ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Kopierat!</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Kopiera</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function HistoriskKontext() {
   const [bibelstalle, setBibelstalle] = useState('');
   const [kommentarSvar, setKommentarSvar] = useState('');
@@ -155,9 +199,12 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
         {/* SENASTE RESULTATET */}
         {kommentarSvar && (
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
-            <h2 className="text-lg font-bold text-[#1a1d1b] pb-3 border-b border-[#e8e4df] mb-4">
-              Historisk analys för <span className="text-[#2563eb]">{bibelstalle}</span>:
-            </h2>
+            <div className="flex justify-between items-center pb-3 border-b border-[#e8e4df] mb-4">
+              <h2 className="text-lg font-bold text-[#1a1d1b]">
+                Historisk analys för <span className="text-[#2563eb]">{bibelstalle}</span>:
+              </h2>
+              <KopieraKnapp text={kommentarSvar} />
+            </div>
             <div className="text-sm leading-relaxed text-[#2d312e] whitespace-pre-wrap font-sans">
               {kommentarSvar}
             </div>
@@ -195,9 +242,12 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
                     <span className="text-base font-bold text-[#2563eb]">
                       {item.bibelstalle}
                     </span>
-                    <span className="text-xs text-[#8c918d] font-semibold">
-                      Kl. {item.tid}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#8c918d] font-semibold">
+                        Kl. {item.tid}
+                      </span>
+                      <KopieraKnapp text={item.svar} />
+                    </div>
                   </div>
                   <div className="text-sm leading-relaxed text-[#2d312e] whitespace-pre-wrap font-sans">
                     {item.svar}
@@ -208,7 +258,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
           )}
         </section>
 
-{/* NAVIGERA TILL ANDRA VERKTYG */}
+        {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg

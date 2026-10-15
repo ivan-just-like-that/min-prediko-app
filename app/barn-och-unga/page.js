@@ -2,6 +2,50 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// Hjälp-komponent för kopiera-knapp
+function KopieraKnapp({ text }) {
+  const [kopierad, setKopierad] = useState(false);
+
+  const hanteraKopiera = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setKopierad(true);
+      setTimeout(() => setKopierad(false), 2000);
+    } catch (err) {
+      console.error('Kunde inte kopiera text:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={hanteraKopiera}
+      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
+        kopierad
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : 'bg-white hover:bg-[#f4f0eb] text-[#575c58] hover:text-[#1a1d1b] border-[#e8e4df]'
+      }`}
+      title="Kopiera text"
+    >
+      {kopierad ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Kopierat!</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Kopiera</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function BarnOchUnga() {
   // Tillstånd för huvudläge, val och formulär
   const [huvudLage, setHuvudLage] = useState('andakt'); // 'andakt' eller 'lekar'
@@ -323,17 +367,20 @@ För varje lek ska du tydligt ange:
         {/* RESULTATET */}
         {svar && (
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
-            <h2 className="text-lg font-bold text-[#1a1d1b] pb-3 border-b border-[#e8e4df] mb-4 flex items-center justify-between">
-              <span>
-                {huvudLage === 'andakt' ? 'Förslag på andakt' : 'Förslag på lekar'} för{' '}
-                <span className="text-[#2563eb]">
-                  {alder === '14+' ? '14+ / Konfa' : `${alder} år`}
+            <div className="pb-3 border-b border-[#e8e4df] mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[#1a1d1b] flex items-center gap-2">
+                <span>
+                  {huvudLage === 'andakt' ? 'Förslag på andakt' : 'Förslag på lekar'} för{' '}
+                  <span className="text-[#2563eb]">
+                    {alder === '14+' ? '14+ / Konfa' : `${alder} år`}
+                  </span>
                 </span>
-              </span>
-              <span className="text-xs bg-[#faf8f5] border border-[#e8e4df] px-3 py-1 rounded-full text-[#575c58] font-normal">
-                {amneEllerText.trim() || 'Allmänna lekar'}
-              </span>
-            </h2>
+                <span className="text-xs bg-[#faf8f5] border border-[#e8e4df] px-3 py-1 rounded-full text-[#575c58] font-normal">
+                  {amneEllerText.trim() || 'Allmänna lekar'}
+                </span>
+              </h2>
+              <KopieraKnapp text={svar} />
+            </div>
             <div className="text-sm leading-relaxed text-[#2d312e] whitespace-pre-wrap font-sans">
               {svar}
             </div>
@@ -376,12 +423,15 @@ För varje lek ska du tydligt ange:
                         {item.alder}
                       </span>
                       <span className="text-xs text-[#575c58]">
-                        • {item.rubrik}
+                        - {item.rubrik}
                       </span>
                     </div>
-                    <span className="text-xs text-[#8c918d] font-semibold">
-                      Kl. {item.tid}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#8c918d] font-semibold">
+                        Kl. {item.tid}
+                      </span>
+                      <KopieraKnapp text={item.svar} />
+                    </div>
                   </div>
                   <div className="text-sm leading-relaxed text-[#2d312e] whitespace-pre-wrap font-sans">
                     {item.svar}
@@ -392,7 +442,7 @@ För varje lek ska du tydligt ange:
           )}
         </section>
 
-{/* NAVIGERA TILL ANDRA VERKTYG */}
+        {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg

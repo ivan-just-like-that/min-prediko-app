@@ -2,6 +2,50 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// Hjälp-komponent för kopiera-knapp
+function KopieraKnapp({ text }) {
+  const [kopierad, setKopierad] = useState(false);
+
+  const hanteraKopiera = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setKopierad(true);
+      setTimeout(() => setKopierad(false), 2000);
+    } catch (err) {
+      console.error('Kunde inte kopiera text:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={hanteraKopiera}
+      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
+        kopierad
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : 'bg-white hover:bg-[#f4f0eb] text-[#575c58] hover:text-[#1a1d1b] border-[#e8e4df]'
+      }`}
+      title="Kopiera text"
+    >
+      {kopierad ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Kopierat!</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Kopiera</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 export const HELGDAGAR = [
   {
     namn: '1:a söndagen i advent',
@@ -753,24 +797,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
     localStorage.setItem(`kasual_anteckningar_${kasualTyp}`, nyText);
   };
 
-  const sparaAnteckningarSomFil = () => {
-    if (!anteckningar.trim()) {
-      alert('Det finns inga anteckningar att spara än!');
-      return;
-    }
-
-    const filnamn = `Anteckningar_${kasualTypNamn}.txt`;
-    const blob = new Blob([anteckningar], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filnamn;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
@@ -1013,9 +1039,13 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
             
             {/* MINA ANTECKNINGAR */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <h2 className="text-lg font-bold text-[#1a1d1b] mb-4 tracking-tight">
-                4. Mina anteckningar ({kasualTypNamn.toLowerCase()})
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-[#1a1d1b] tracking-tight">
+                  4. Mina anteckningar ({kasualTypNamn.toLowerCase()})
+                </h2>
+                <KopieraKnapp text={anteckningar} />
+              </div>
+
               <textarea
                 value={anteckningar}
                 onChange={hanteraAnteckningsÄndring}
@@ -1023,14 +1053,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                 rows={7}
                 className="w-full p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-sm text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732] leading-relaxed"
               />
-
-              <button
-                type="button"
-                onClick={sparaAnteckningarSomFil}
-                className="mt-3 w-full sm:w-auto px-4 py-2.5 bg-[#f4f0eb] hover:bg-[#e8e4df] text-[#2d3732] border border-[#e8e4df] rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2"
-              >
-                💾 Spara anteckningar till datorn
-              </button>
             </div>
 
             {/* AI-ASSISTENT */}
@@ -1123,9 +1145,12 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     <span className="text-sm font-bold text-[#2563eb]">
                       {item.titel} ({item.helgdag})
                     </span>
-                    <span className="text-xs text-[#8c918d] font-semibold">
-                      Kl. {item.tid}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#8c918d] font-semibold">
+                        Kl. {item.tid}
+                      </span>
+                      <KopieraKnapp text={item.svar} />
+                    </div>
                   </div>
                   <div className="text-sm leading-relaxed text-[#2d312e] whitespace-pre-wrap font-sans">
                     {item.svar}
@@ -1136,7 +1161,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
           )}
         </section>
 
-{/* NAVIGERA TILL ANDRA VERKTYG */}
+        {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg

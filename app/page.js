@@ -60,7 +60,7 @@ export default function StartSida() {
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Så roligt att du vill vara med och testa Predikoassistenten! Det är en AI-driven tjänst vars idé är att
               ge dig som predikant idéer och uppslag till ditt viktiga arbete med Ordet. Tanken är alltså inte att den ska användas för
-              att skriva fullständiga predikningar från början till slut, utan att ge dig förslag och inspiration. Ja, du kan iofs be denna AI:n att skriva en hel predikan, men som sagt,
+              att skriva fullständiga predikningar från början till slut, utan att ge dig förslag och inspiration. Ja, du kan såklart be denna AI:n att skriva en hel predikan, men som sagt,
               meningen är att du själv ska ha kontrollen och sätta samman slutprodukten med din personliga stil, de nyanser och det tonläge som är ditt.
             </p>
 

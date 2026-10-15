@@ -3,6 +3,50 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+// Hjälp-komponent för kopiera-knapp
+function KopieraKnapp({ text }) {
+  const [kopierad, setKopierad] = useState(false);
+
+  const hanteraKopiera = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setKopierad(true);
+      setTimeout(() => setKopierad(false), 2000);
+    } catch (err) {
+      console.error('Kunde inte kopiera text:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={hanteraKopiera}
+      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
+        kopierad
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : 'bg-white hover:bg-[#f4f0eb] text-[#575c58] hover:text-[#1a1d1b] border-[#e8e4df]'
+      }`}
+      title="Kopiera text"
+    >
+      {kopierad ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Kopierat!</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Kopiera</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function PredikantpeppPage() {
   // Tillstånd för de tre modulerna
   const [peppSvar, setPeppSvar] = useState('');
@@ -16,20 +60,19 @@ export default function PredikantpeppPage() {
   const [historiaSvar, setHistoriaSvar] = useState('');
   const [loadingHistoria, setLoadingHistoria] = useState(false);
 
-// 1. Generera själavårdande pepp till prästen (konkret, varm & avskalad)
+  // 1. Generera själavårdande pepp till prästen (värme, nåd och villkorslös acceptans)
   const genereraPepp = async () => {
     setLoadingPepp(true);
     setPeppSvar('');
 
-    // Mer jordnära och concreta situationer istället för abstrakta teologiska begrepp
+    // Vinklar som handlar om värde, kärlek och att duga precis som man är
     const vinklar = [
-      'att det är helt okej att känna sig trött idag',
-      'att det är helt okej att hålla predikan på en enkel nivå ibland',
-      'en påminnelse om att bara ta en paus och göra något helt annat en stund',
-      'detta ordnar sig',
-      'allt som sker är inte ditt ansvar',
-      'glädjen i det enkla mötet med en människa i veckan',
-      'tryggheten i att uppdraget inte hänger enbart på din egen styrka'
+      'påminnelse om att du är älskad precis som du är',
+      'att ditt värde inte sitter i hur bra din predikan blir',
+      'någon som viskar att du duger precis med dina brister',
+      'att du är buren, när du känner dig otillräcklig',
+      'en varm påminnelse om att du är värdefull i dig själv',
+      'att nåden gäller dig lika mycket som alla andra'
     ];
     const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
     const slumpId = Math.random().toString(36).substring(7);
@@ -39,17 +82,17 @@ export default function PredikantpeppPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `Du är en klok, varm och väldigt jordnära prästkollega som skickar ett kort SMS till en vän som kämpar eller förbereder sig i tjänsten.
+          prompt: `Du är en genuint varm, kärleksfull och trygg vän som skickar ett uppmuntrande meddelande.
 
-Fokusera helt kort på: ${slumpVinkel}. (Unikt id: ${slumpId})
+Fokusera på detta tema: ${slumpVinkel}. (Unikt id: ${slumpId})
 
 Regler för svaret:
-- Skriv 1–2 korta, helt avskalade meningar.
-- Tala direkt till personen i en lugn, stöttande ton.
-- Använd ett enkelt, vardagligt språk utan teologiska floskler eller högtravande poesi.
+- Skriv 1–2 korta meningar som förmedlar djup värme, uppskattning och villkorslös acceptans.
+- Förbjudna ord och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "klyschor".
+- Låt det kännas äkta, personligt och innerligt, som en varm kram i textform.
 - Skriv enbart själva påminnelsen, utan citationstecken.`,
           inkluderaFraga: false,
-          temperature: 0.7, // Lagom balans för naturligt och varierat språk
+          temperature: 0.7,
         }),
       });
 
@@ -63,7 +106,7 @@ Regler för svaret:
     }
   };
 
-  // 2. Generera Haiku (utan extra fråga i slutet)
+  // 2. Generera Haiku
   const genereraHaiku = async (e) => {
     e.preventDefault();
     if (!haikuTema.trim()) return;
@@ -91,7 +134,7 @@ Regler för svaret:
     }
   };
 
-  // 3. Generera rolig historia (utan extra fråga i slutet)
+  // 3. Generera rolig historia
   const genereraHistoria = async (e) => {
     e.preventDefault();
     if (!historiaTema.trim()) return;
@@ -104,7 +147,7 @@ Regler för svaret:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `Skriv en kort, varm, rumsren och mild humorfylld historia, anekdot eller uppvärmning som en präst kan inleda sin predikan med för att väcka församlingens leende. Den ska koppla an till temat eller bibelstället: "${historiaTema}". Den ska vara smakfull, avsedd för en kyrklig kontext och lätt να återge muntligt.`,
+          prompt: `Skriv en kort, varm, rumsren och mild humorfylld historia, anekdot eller uppvärmning som en präst kan inleda sin predikan med för att väcka församlingens leende. Den ska koppla an till temat eller bibelstället: "${historiaTema}". Den ska vara smakfull, avsedd för en kyrklig kontext och lätt att återge muntligt.`,
           inkluderaFraga: false,
         }),
       });
@@ -153,27 +196,27 @@ Regler för svaret:
         {/* HUVUDINNEHÅLL */}
         <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-8">
           
-        {/* INTRO-RUTA (SAMMA STIL SOM KASUALTAL M.FL.) */}
-        <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">🌱</span>
-            <h2 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-              Predikantpepp
-            </h2>
+          {/* INTRO-RUTA */}
+          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">🌱</span>
+              <h2 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+                Uppmuntran, poesi och kanske ett leende
+              </h2>
+            </div>
+            
+            <p className="text-sm text-[#575c58] leading-relaxed">
+  
+            </p>
           </div>
-          
-          <p className="text-sm text-[#575c58] leading-relaxed">
-            Ett ord på vägen, poetiska reflektioner och kanske ett leende.
-          </p>
-        </div>
 
-          {/* MOP 1: Själavårdande pepp till prästen */}
+          {/* MODUL 1: Själavårdande pepp till prästen */}
           <section className="bg-white rounded-2xl shadow-sm border border-[#e8e4df] p-6 md:p-8 text-center space-y-4">
             <div className="inline-block bg-[#f4f0eb] p-3 rounded-full text-2xl mb-1">
               🌱
             </div>
             <h2 className="text-xl font-serif font-semibold text-[#1a1d1b]">
-              Ett ord till dig som predikar
+              Pepp-o-mat
             </h2>
             <p className="text-sm text-[#575c58] max-w-lg mx-auto">
               Du är viktig, älskad och duger just som den du är.
@@ -188,14 +231,15 @@ Regler för svaret:
               </button>
             </div>
 
-            {peppSvar && (
-              <div className="mt-6 p-6 bg-[#f4f0eb] border border-[#e8e4df] rounded-xl text-[#1a1d1b] text-base md:text-lg italic font-serif leading-relaxed max-w-2xl mx-auto">
-                ”{peppSvar}”
-              </div>
-            )}
+          {/* Svarsrutan utan KopieraKnapp */}
+          {peppSvar && (
+            <div className="mt-6 p-6 bg-[#f4f0eb] border border-[#e8e4df] rounded-xl text-[#1a1d1b] text-base md:text-lg italic font-serif leading-relaxed max-w-2xl mx-auto">
+              ”{peppSvar}”
+            </div>
+  )}
           </section>
 
-          {/* MOP 2: Haikugenerator */}
+          {/* MODUL 2: Haikugenerator */}
           <section className="bg-white rounded-2xl shadow-sm border border-[#e8e4df] p-6 md:p-8 space-y-4">
             <div className="flex items-center space-x-3">
               <span className="text-2xl p-2 bg-[#f4f0eb] rounded-lg">✒️</span>
@@ -224,13 +268,21 @@ Regler för svaret:
             </form>
 
             {haikuSvar && (
-              <div className="mt-4 p-5 bg-[#faf8f5] border border-[#e8e4df] rounded-xl whitespace-pre-wrap text-[#1a1d1b] font-serif leading-relaxed">
-                {haikuSvar}
+              <div className="mt-4 p-5 bg-[#faf8f5] border border-[#e8e4df] rounded-xl text-[#1a1d1b]">
+                <div className="flex justify-between items-start gap-4 mb-2 border-b border-[#e8e4df] pb-2">
+                  <span className="text-xs font-bold text-[#575c58] uppercase tracking-wider">
+                    Genererad Haiku ({haikuTema})
+                  </span>
+                  <KopieraKnapp text={haikuSvar} />
+                </div>
+                <div className="whitespace-pre-wrap font-serif leading-relaxed">
+                  {haikuSvar}
+                </div>
               </div>
             )}
           </section>
 
-          {/* MOP 3: Rolig historia / Predikointro */}
+          {/* MODUL 3: Rolig historia / Predikointro */}
           <section className="bg-white rounded-2xl shadow-sm border border-[#e8e4df] p-6 md:p-8 space-y-4">
             <div className="flex items-center space-x-3">
               <span className="text-2xl p-2 bg-[#f4f0eb] rounded-lg">😊</span>
@@ -239,7 +291,7 @@ Regler för svaret:
               </h2>
             </div>
             <p className="text-sm text-[#575c58]">
-              Varning för denna alltså, AI:n har ingen jättebra känsla för humor... Men ibland så!
+              AI:ns känsla för humor varierar... Men ibland blir det riktigt bra och då kan man ha lustigheten som inledning till t ex en predikan.
             </p>
             <form onSubmit={genereraHistoria} className="flex flex-col sm:flex-row gap-3">
               <input
@@ -259,8 +311,16 @@ Regler för svaret:
             </form>
 
             {historiaSvar && (
-              <div className="mt-4 p-5 bg-[#faf8f5] border border-[#e8e4df] rounded-xl whitespace-pre-wrap text-[#1a1d1b] leading-relaxed">
-                {historiaSvar}
+              <div className="mt-4 p-5 bg-[#faf8f5] border border-[#e8e4df] rounded-xl text-[#1a1d1b]">
+                <div className="flex justify-between items-start gap-4 mb-2 border-b border-[#e8e4df] pb-2">
+                  <span className="text-xs font-bold text-[#575c58] uppercase tracking-wider">
+                    Historia / Anekdot ({historiaTema})
+                  </span>
+                  <KopieraKnapp text={historiaSvar} />
+                </div>
+                <div className="whitespace-pre-wrap leading-relaxed">
+                  {historiaSvar}
+                </div>
               </div>
             )}
           </section>
