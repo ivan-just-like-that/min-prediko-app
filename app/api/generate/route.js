@@ -14,6 +14,13 @@ export async function POST(req) {
     const tema = body.tema || 'Ej angivet tema';
     const valdPredikotext = body.valdPredikotext || 'Ej angiven text';
     
+    // Identifiera vilken sida anropet kommer ifrån
+    const sida = body.sida || 'standard';
+    
+    // Sätt lägre temperatur för faktatunga/språkliga sidor (0.3) och 0.7 för övriga
+    const arFaktasida = sida === 'grekiska' || sida === 'historik';
+    const valdTemp = arFaktasida ? 0.3 : 0.7;
+
     // Ny flagga: sätts till true som standard, men kan stängas av per anrop
     const inkluderaFraga = body.inkluderaFraga ?? true;
 
@@ -45,9 +52,16 @@ Aktuell helgdag: ${helgdag}
 Tema: ${tema}
 Aktiv predikotext för tillfället: ${valdPredikotext}
 
+VIKTIGT OM INLEDNINGEN:
+Inled ALLTID ditt svar med följande rad längst upp (bestäm den teologiskt korrekta liturgiska färgen enligt Svenska kyrkans kyrkoår baserat på helgdagen):
+**Tema:** ${tema} | **Liturgisk färg:** [FÄRG]
+
 Svara hjälpsamt, teologiskt genomtänkt, koncist och direkt på prästens önskemål utan att be dem upprepa texten eller helgdagen.
 
 Ge teologiskt fördjupade men nutidsrelevanta perspektiv. Balansera exegetisk noggrannhet med själavårdande och praktisk tillämpning för församlingens vardag.
+
+SÄRSKILT OM DISPOSITIONER OCH PREDIKOIDÉER:
+När du ger förslag på dispositioner eller predikoingångar, se till att ALLTID inkludera minst ett förslag som är utpräglat själavårdande och vardagsnära. Det förslaget ska ta sin utgångspunkt i en konkret bild eller situation från en människas liv idag (t.ex. relationer, stress, ensamhet, förlåtelse eller hopp i vardagen) och koppla den mjukt till predikotextens budskap.
 
 VIKTIGT:
 - Håll svaret kärnfullt och välstrukturerat med tydliga rubriker och punkter. Undvik onödigt fyllnadsspråk.
@@ -65,7 +79,7 @@ VIKTIGT:
           contents: promptText,
           config: {
             systemInstruction: systemInstruction,
-            temperature: 0.7,
+            temperature: valdTemp,
           },
         });
         break;
@@ -76,11 +90,29 @@ VIKTIGT:
       }
     }
 
-    const aiSvar = response?.text || 'Inget svar genererades.';
+    const aiSvar = 
+      response?.text || 
+      response?.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || 
+      'Inget svar genererades.';
 
     return NextResponse.json({ text: aiSvar });
   } catch (error) {
-    console.error('Fel i API-route:', error);
+    console.error('DETALJERAT FEL I API-ROUTE:', error?.message || error);
+
+    if (error?.message?.includes('not found') || error?.message?.includes('404')) {
+      return NextResponse.json(
+        { text: 'Fel: AI-modellen kunde inte hittas.' },
+        { status: 404 }
+      );
+    }
+
+    if (error?.message?.includes('API key') || error?.message?.includes('403')) {
+      return NextResponse.json(
+        { text: 'Fel: Ogiltig API-nyckel eller saknad behörighet.' },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { text: 'AI-tjänsten är för tillfället hårt belastad. Prova att trycka på knappen igen om några sekunder!' },
       { status: 500 }

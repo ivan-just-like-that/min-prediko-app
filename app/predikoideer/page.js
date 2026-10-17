@@ -705,7 +705,7 @@ export default function Home() {
     evangelium: 'Evangelium'
   }[valdTextTyp];
 
-  const hanteraAiAnrop = async (instruktion, etikett) => {
+const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = {}) => {
     const textAttSkicka = instruktion || aiPrompt;
     const rubrik = etikett || aiPrompt || 'Egen fråga';
 
@@ -723,6 +723,7 @@ export default function Home() {
           tema: valdHelgdag?.tema,
           texter: valdaTexter,
           valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
+          inkluderaFraga: inkluderaFraga, // Skickar med flaggan till route.js!
         }),
       });
 
@@ -738,7 +739,6 @@ export default function Home() {
         tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
       };
 
-      // Uppdatera state och localStorage
       const uppdateradHistorik = [nyPost, ...aiHistorik];
       setAiHistorik(uppdateradHistorik);
       localStorage.setItem('prediko_ai_historik', JSON.stringify(uppdateradHistorik));
@@ -1016,7 +1016,7 @@ export default function Home() {
                   className="w-full p-3 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs text-[#1a1d1b] focus:outline-none focus:ring-2 focus:ring-[#2d3732] mb-2"
                 />
                 <button
-                  onClick={() => hanteraAiAnrop(null, null)}
+                  onClick={() => hanteraAiAnrop(null, null, { inkluderaFraga: false })}
                   disabled={laddarAi}
                   className="w-full p-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                 >

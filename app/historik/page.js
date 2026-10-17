@@ -97,6 +97,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: promptText,
+          sida: 'historik',
           helgdag: 'Historisk kommentar',
           tema: bibelstalle
         }),

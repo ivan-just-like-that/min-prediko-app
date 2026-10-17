@@ -89,6 +89,7 @@ Strukturera svaret så här:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: promptText,
+          sida: 'grekiska',
           helgdag: 'Grekisk analys',
           tema: bibelstalle
         }),
