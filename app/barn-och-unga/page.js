@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 // Hjälp-komponent för kopiera-knapp
 function KopieraKnapp({ text }) {
@@ -46,7 +47,11 @@ function KopieraKnapp({ text }) {
   );
 }
 
-export default function BarnOchUnga() {
+function BarnOchUngaInnehall() {
+  const searchParams = useSearchParams();
+  const urlHelgdag = searchParams.get('helgdag');
+  const urlArgang = searchParams.get('argang');
+
   // Tillstånd för huvudläge, val och formulär
   const [huvudLage, setHuvudLage] = useState('andakt'); // 'andakt' eller 'lekar'
   const [alder, setAlder] = useState('14+'); // '6-9', '10-13', '14+'
@@ -72,7 +77,6 @@ export default function BarnOchUnga() {
   const hanteraGenerering = async (e) => {
     e?.preventDefault();
 
-    // Om det är andakt krävs ämne/text, men för lekar är det valfritt
     if (huvudLage === 'andakt' && !amneEllerText.trim()) {
       alert('Vänligen fyll i ett bibelställe eller tema för andakten.');
       return;
@@ -82,7 +86,6 @@ export default function BarnOchUnga() {
 
     let promptText = '';
 
-    // Beskrivning av åldersgrupp för AI:n
     let aldersBeskrivning = '';
     if (alder === '6-9') {
       aldersBeskrivning = 'barn i åldern 6–9 år (använd enkelt språk, konkret pedagogik och korta meningar)';
@@ -113,7 +116,6 @@ Strukturera svaret tydligt enligt följande punkter:
    En enkel och samlande bön som knyter ihop andakten.
 `;
     } else {
-      // LEKAR & ÖVNINGAR
       let lekTypNamn = '';
       if (lekTyp === 'lara-kanna') lekTypNamn = 'Lära känna / Ice-breakers (namnlekar, avväpnande övningar)';
       else if (lekTyp === 'samarbete') lekTypNamn = 'Samarbete & Teambuilding (lösa problem i grupp, bygga laganda)';
@@ -135,6 +137,8 @@ För varje lek ska du tydligt ange:
     }
 
     try {
+      const verktygNamn = huvudLage === 'andakt' ? 'Andakt & budskap' : 'Lekar & övningar';
+      const aldersKategoriText = alder === '14+' ? '14+ / Konfa' : `${alder} år`;
       const valttTemaHeader = amneEllerText.trim() ? amneEllerText : 'Allmänna lekar';
 
       const res = await fetch('/api/generate', {
@@ -142,8 +146,11 @@ För varje lek ska du tydligt ange:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: promptText,
-          helgdag: huvudLage === 'andakt' ? 'Barn & Unga - Andakt' : 'Barn & Unga - Lekar',
-          tema: `${alder} år | ${valttTemaHeader}`
+          sida: 'barn-unga',
+          verktyg: verktygNamn,
+          helgdag: aldersKategoriText,
+          tema: valttTemaHeader,
+          argang: urlArgang || 'argang1'
         }),
       });
 
@@ -155,8 +162,8 @@ För varje lek ska du tydligt ange:
       const nyPost = {
         id: Date.now(),
         typ: huvudLage === 'andakt' ? '🙏 Andakt' : '🪢 Lekar',
-        alder: alder === '14+' ? '14+ / Konfa' : `${alder} år`,
-        rubrik: amneEllerText.trim() ? amneEllerText : 'Allmänna lekar',
+        alder: aldersKategoriText,
+        rubrik: valttTemaHeader,
         svar: nyttSvar,
         tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
       };
@@ -183,10 +190,9 @@ För varje lek ska du tydligt ange:
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
       {/* HEADER / TOPPMENY */}
-            <header className="bg-white border-b border-[#e8e4df] py-4">
+      <header className="bg-white border-b border-[#e8e4df] py-4">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
           
-          {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link 
               href="/" 
@@ -204,7 +210,6 @@ För varje lek ska du tydligt ange:
             </h1>
           </div>
 
-          {/* HÖGER: Navigation (Pris & Logga in) */}
           <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
             <Link 
               href="/pris" 
@@ -241,7 +246,6 @@ För varje lek ska du tydligt ange:
 
           <form onSubmit={hanteraGenerering} className="space-y-6">
             
-            {/* 1. VÄLJ HUVUDLÄGE (ANDAKT ELLER LEKAR) */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#575c58] mb-2">
                 1. Vad vill du skapa?
@@ -272,7 +276,6 @@ För varje lek ska du tydligt ange:
               </div>
             </div>
 
-            {/* 2. VÄLJ ÅLDERSGRUPP */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#575c58] mb-2">
                 2. Välj åldersgrupp
@@ -314,7 +317,6 @@ För varje lek ska du tydligt ange:
               </div>
             </div>
 
-            {/* 3. VÄLJ LEKTYP (VISAS BARA OM LEKAR ÄR VALT) */}
             {huvudLage === 'lekar' && (
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#575c58] mb-2">
@@ -344,7 +346,6 @@ För varje lek ska du tydligt ange:
               </div>
             )}
 
-            {/* 4. TEMA OCH KNAPP */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#575c58] mb-2">
                 {huvudLage === 'andakt' ? '3. Bibelställe eller Tema' : '4. Tema eller Nyckelord (Valfritt)'}
@@ -462,7 +463,10 @@ För varje lek ska du tydligt ange:
             Utforska fler verktyg
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/predikoideer" className="group block">
+            <Link 
+              href={`/predikoideer${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">💡</span>
                 <div>
@@ -476,7 +480,10 @@ För varje lek ska du tydligt ange:
               </div>
             </Link>
 
-            <Link href="/historik" className="group block">
+            <Link 
+              href={`/historik${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📜</span>
                 <div>
@@ -490,7 +497,10 @@ För varje lek ska du tydligt ange:
               </div>
             </Link>
 
-            <Link href="/grekiska" className="group block">
+            <Link 
+              href={`/grekiska${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🇬🇷</span>
                 <div>
@@ -504,7 +514,10 @@ För varje lek ska du tydligt ange:
               </div>
             </Link>
 
-            <Link href="/kasualtal" className="group block">
+            <Link 
+              href={`/kasualtal${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🕊️</span>
                 <div>
@@ -518,7 +531,10 @@ För varje lek ska du tydligt ange:
               </div>
             </Link>
 
-            <Link href="/predikantpepp" className="group block">
+            <Link 
+              href={`/predikantpepp${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🌱</span>
                 <div>
@@ -531,6 +547,21 @@ För varje lek ska du tydligt ange:
                 </div>
               </div>
             </Link>
+
+            <Link href="/populart" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Populärt bland kollegorna →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Se vad andra utforskar.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
           </div>
         </section>
 
@@ -541,5 +572,13 @@ För varje lek ska du tydligt ange:
 
       </div>
     </main>
+  );
+}
+
+export default function BarnOchUnga() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-500">Laddar Barn & unga...</div>}>
+      <BarnOchUngaInnehall />
+    </Suspense>
   );
 }

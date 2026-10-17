@@ -60,12 +60,11 @@ export default function PredikantpeppPage() {
   const [historiaSvar, setHistoriaSvar] = useState('');
   const [loadingHistoria, setLoadingHistoria] = useState(false);
 
-  // 1. Generera själavårdande pepp till prästen (värme, nåd och villkorslös acceptans)
+  // 1. Generera själavårdande pepp till prästen
   const genereraPepp = async () => {
     setLoadingPepp(true);
     setPeppSvar('');
 
-    // Vinklar som handlar om värde, kärlek och att duga precis som man är
     const vinklar = [
       'påminnelse om att du är älskad precis som du är',
       'att ditt värde inte sitter i hur bra din predikan blir',
@@ -91,6 +90,7 @@ Regler för svaret:
 - Förbjudna ord och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "klyschor".
 - Låt det kännas äkta, personligt och innerligt, som en varm kram i textform.
 - Skriv enbart själva påminnelsen, utan citationstecken.`,
+          sida: 'predikantpepp',
           inkluderaFraga: false,
           temperature: 0.7,
         }),
@@ -120,6 +120,7 @@ Regler för svaret:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: `Skriv en teologiskt fördjupad, poetisk och stämningsfull haiku (5-7-5 stavelser) baserat på följande tema eller bibelställe: "${haikuTema}". Svara enbart med själva haikudikten samt en kort rad om dess teologiska klangbotten.`,
+          sida: 'predikantpepp',
           inkluderaFraga: false,
         }),
       });
@@ -148,6 +149,7 @@ Regler för svaret:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: `Skriv en kort, varm, rumsren och mild humorfylld historia, anekdot eller uppvärmning som en präst kan inleda sin predikan med för att väcka församlingens leende. Den ska koppla an till temat eller bibelstället: "${historiaTema}". Den ska vara smakfull, avsedd för en kyrklig kontext och lätt att återge muntligt.`,
+          sida: 'predikantpepp',
           inkluderaFraga: false,
         }),
       });
@@ -170,7 +172,6 @@ Regler för svaret:
         <header className="bg-white border-b border-[#e8e4df] py-4">
           <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
             
-            {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               <Link 
                 href="/" 
@@ -188,7 +189,6 @@ Regler för svaret:
               </h1>
             </div>
 
-            {/* HÖGER: Navigation (Pris & Logga in) */}
             <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
               <Link 
                 href="/pris" 
@@ -245,12 +245,11 @@ Regler för svaret:
               </button>
             </div>
 
-          {/* Svarsrutan utan KopieraKnapp */}
-          {peppSvar && (
-            <div className="mt-6 p-6 bg-[#f4f0eb] border border-[#e8e4df] rounded-xl text-[#1a1d1b] text-base md:text-lg italic font-serif leading-relaxed max-w-2xl mx-auto">
-              ”{peppSvar}”
-            </div>
-  )}
+            {peppSvar && (
+              <div className="mt-6 p-6 bg-[#f4f0eb] border border-[#e8e4df] rounded-xl text-[#1a1d1b] text-base md:text-lg italic font-serif leading-relaxed max-w-2xl mx-auto">
+                ”{peppSvar}”
+              </div>
+            )}
           </section>
 
           {/* MODUL 2: Haikugenerator */}
@@ -414,6 +413,21 @@ Regler för svaret:
                   </div>
                 </div>
               </Link>
+
+              <Link href="/populart" className="group block">
+                <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                  <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                      Populärt bland kollegorna →
+                    </h4>
+                    <p className="text-xs text-[#575c58]">
+                      Se vad andra utforskar.
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
             </div>
           </section>
 

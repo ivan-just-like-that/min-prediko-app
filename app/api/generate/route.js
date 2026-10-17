@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,15 +14,37 @@ export async function POST(req) {
     const helgdag = body.helgdag || 'Ej angiven helgdag';
     const tema = body.tema || 'Ej angivet tema';
     const valdPredikotext = body.valdPredikotext || 'Ej angiven text';
-    
-    // Identifiera vilken sida anropet kommer ifrån
     const sida = body.sida || 'standard';
+    const argang = body.argang || 'argang1';
     
-    // Sätt lägre temperatur för faktatunga/språkliga sidor (0.3) och 0.7 för övriga
+    // Hämta verktygstyp från request body
+    const verktyg = body.verktyg || body.promptLabel || body.kategori || 'Sökning';
+
+    // 1. Spara anonyma sökdata till Supabase (Exkludera både 'predikopepp' och 'predikantpepp')
+    const arPeppSida = sida === 'predikopepp' || sida === 'predikantpepp';
+    if (
+      !arPeppSida && 
+      (helgdag !== 'Ej angiven helgdag' || valdPredikotext !== 'Ej angiven text')
+    ) {
+      supabase
+        .from('popular_searches')
+        .insert([
+          {
+            sida: sida,
+            helgdag: helgdag,
+            tema: tema,
+            argang: argang,
+            predikotext: valdPredikotext,
+            verktyg: verktyg,
+          },
+        ])
+        .then(({ error }) => {
+          if (error) console.error('Fel vid sparning till Supabase:', error);
+        });
+    }
+
     const arFaktasida = sida === 'grekiska' || sida === 'historik';
     const valdTemp = arFaktasida ? 0.3 : 0.7;
-
-    // Ny flagga: sätts till true som standard, men kan stängas av per anrop
     const inkluderaFraga = body.inkluderaFraga ?? true;
 
     if (!promptText.trim()) {
@@ -41,10 +64,15 @@ export async function POST(req) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Dynamisk instruktion beroende på om vi vill ha frågan i slutet eller inte
     const fragaInstruktion = inkluderaFraga
       ? "Avsluta alltid ditt svar med rubriken 'En reflekterande fråga för din förberedelse:' följt av en kort men fördjupande, existentiell eller praktisk fråga som kan hjälpa prästen vidare i sin egen tankeprocess."
       : "Avsluta INTE med någon reflekterande fråga.";
+
+    // Skriv BARA ut instruktionen om liturgisk färg om anropet kommer från predikoidéer
+    const arPredikoideer = sida === 'predikoideer';
+    const inledningsInstruktion = arPredikoideer
+      ? `Inled ALLTID ditt svar med följande rad längst upp (bestäm den teologiskt korrekta liturgiska färgen enligt Svenska kyrkans kyrkoår baserat på helgdagen):\n**Tema:** ${tema} | **Liturgisk färg:** [FÄRG]`
+      : `Gå direkt på svaret utan några inledande rader. Du får ABSOLUT INTE skriva ut 'Tema:' eller 'Liturgisk färg:'.`;
 
     const systemInstruction = `
 Du är en teologisk assistent och samtals- och predikopartner för präster i Svenska kyrkan.
@@ -53,10 +81,9 @@ Tema: ${tema}
 Aktiv predikotext för tillfället: ${valdPredikotext}
 
 VIKTIGT OM INLEDNINGEN:
-Inled ALLTID ditt svar med följande rad längst upp (bestäm den teologiskt korrekta liturgiska färgen enligt Svenska kyrkans kyrkoår baserat på helgdagen):
-**Tema:** ${tema} | **Liturgisk färg:** [FÄRG]
+${inledningsInstruktion}
 
-Svara hjälpsamt, teologiskt genomtänkt, koncist och direkt på prästens önskemål utan att be dem upprepa texten eller helgdagen.
+Svara därefter hjälpsamt, teologiskt genomtänkt, koncist och direkt på prästens önskemål utan att be dem upprepa texten eller helgdagen.
 
 Ge teologiskt fördjupade men nutidsrelevanta perspektiv. Balansera exegetisk noggrannhet med själavårdande och praktisk tillämpning för församlingens vardag.
 
@@ -65,13 +92,13 @@ När du ger förslag på dispositioner eller predikoingångar, se till att ALLTI
 
 VIKTIGT:
 - Håll svaret kärnfullt och välstrukturerat med tydliga rubriker och punkter. Undvik onödigt fyllnadsspråk.
-- Använd INGA HTML-taggar (som <h3>, <p>, <b> osv.). Använd ren Markdown (# eller **fetstil** för rubriker).
-- ${fragaInstruktion}
+- Använd INGA HTML-taggar. Använd ren Markdown (# eller **fetstil** för rubriker).
+${fragaInstruktion}
     `.trim();
 
     let response;
     let maxRetries = 3;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         response = await ai.models.generateContent({
@@ -90,10 +117,17 @@ VIKTIGT:
       }
     }
 
-    const aiSvar = 
-      response?.text || 
-      response?.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || 
+    let aiSvar =
+      response?.text ||
+      response?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text ||
       'Inget svar genererades.';
+
+    // SÄKERHETSFILTER: Om det INTE är predikoidéer, rensa bort eventuella inledande rader som handlar om Tema/Liturgisk färg
+    if (!arPredikoideer) {
+      aiSvar = aiSvar
+        .replace(/^(\*\*|\*)?Tema:?.*?(Liturgisk färg:?.*?\n|\n)/gi, '')
+        .trim();
+    }
 
     return NextResponse.json({ text: aiSvar });
   } catch (error) {

@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Hjälp-komponent för kopiera-knapp
@@ -665,7 +666,9 @@ export const HELGDAGAR = [
   },
 ];
 
-export default function Kasualtal() {
+function KasualtalInnehall() {
+  const searchParams = useSearchParams();
+
   // Tillstånd för kasualtyp, textkälla och val
   const [kasualTyp, setKasualTyp] = useState('dop'); // 'dop', 'vigsel', 'begravning'
   const [textKalla, setTextKalla] = useState('evangelieboken'); // 'evangelieboken' eller 'egen'
@@ -684,6 +687,57 @@ export default function Kasualtal() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
+
+  // Läs av URL-parametrar om man kommer från /populart
+useEffect(() => {
+    const urlHelgdag = searchParams.get('helgdag');
+    const urlKasualTyp = searchParams.get('kasualTyp');
+    const urlTextKalla = searchParams.get('textKalla');
+    const urlTextTyp = searchParams.get('textTyp');
+    const urlArgang = searchParams.get('argang');
+    const urlText = searchParams.get('text');
+
+    // 1. Sätt rätt kasualtyp (dop, vigsel, begravning)
+    if (urlKasualTyp) {
+      setKasualTyp(urlKasualTyp);
+    } else if (urlHelgdag) {
+      // Reservkontroll om kasualTyp saknas i URL
+      const lavereHelgdag = urlHelgdag.toLowerCase();
+      if (lavereHelgdag.includes('vigsel')) {
+        setKasualTyp('vigsel');
+      } else if (lavereHelgdag.includes('begravning') || lavereHelgdag.includes('grifte')) {
+        setKasualTyp('begravning');
+      } else if (lavereHelgdag.includes('dop')) {
+        setKasualTyp('dop');
+      }
+    }
+
+    // 2. Sätt årgång
+    if (urlArgang) {
+      setValdArgang(urlArgang);
+    }
+
+    // 3. Sätt helgdag och textkälla
+    if (urlHelgdag) {
+      const rentHelgdagNamn = urlHelgdag.replace(/\s*\(.*\)/, '').trim();
+      const hittad = HELGDAGAR.find((h) => h.namn.toLowerCase() === rentHelgdagNamn.toLowerCase());
+      
+      if (hittad) {
+        setValdHelgdagNamn(hittad.namn);
+
+        if (urlTextKalla === 'evangelieboken' && urlTextTyp) {
+          setTextKalla('evangelieboken');
+          setValdTextTyp(urlTextTyp); // 'gt', 'epistel' eller 'evangelium'
+        } else if (urlText) {
+          setTextKalla('egen');
+          setEgenText(urlText);
+        }
+      } else if (urlText) {
+        setTextKalla('egen');
+        setEgenText(urlText);
+      }
+    }
+  }, [searchParams]);
 
   // Läs in sparad AI-historik från localStorage
   useEffect(() => {
@@ -733,13 +787,18 @@ export default function Kasualtal() {
 
     setLaddarAi(true);
 
-    const fullPrompt = `
-Du är en erfaren präst i Svenska kyrkan som hjälper till att förbereda ett ${kasualTypNamn.toLowerCase()}.
+    const typNamn = kasualTypNamn || (
+      kasualTyp === 'dop' ? 'Doptal' :
+      kasualTyp === 'vigsel' ? 'Vigseltal' : 'Griftetal'
+    );
 
-TILLFÄLLE: ${kasualTypNamn}
-VALD TEXT/TEMA: ${aktivTextBeskrivning}
+    const fullPrompt = `
+Du är en erfaren präst i Svenska kyrkan som hjälper till att förbereda ett ${typNamn.toLowerCase()}.
+
+TILLFÄLLE: ${typNamn}
+VALD TEXT/TEMA: ${aktivTextBeskrivning || 'Ingen text angiven'}
 PERSONLIG BAKGRUND OCH KONTEXT:
-"${personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven ännu.'}"
+"${personligBakgrund && personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven ännu.'}"
 
 INSTRUKTION:
 ${textAttSkicka}
@@ -748,26 +807,40 @@ Svara med ett varmt, själavårdande, teologiskt genomtänkt och personligt anpa
 För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och förväntan. För vigseltal, inkludera kärlek och gemenskap. Skriv i en stil som är lätt att tala inför en församling, med tydliga övergångar och naturliga pauser.
 `;
 
-    try {
+    const helgdagVarde = textKalla === 'evangelieboken' && valdHelgdag?.namn 
+      ? valdHelgdag.namn 
+      : (egenText.trim() || 'Egen text');
+
+   try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: fullPrompt,
-          helgdag: `${kasualTypNamn} (${textKalla === 'evangelieboken' ? valdHelgdag?.namn : 'Egen text'})`,
-          tema: egenText || valdHelgdag?.tema,
-          inkluderaFraga: inkluderaFraga, // Skickar med flaggan till din route.js
+          sida: 'kasualtal',
+          verktyg: typNamn,
+          helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
+          tema: egenText || valdHelgdag?.tema || 'Ej angivet tema',
+          argang: valdArgang,
+          valdPredikotext: textKalla === 'evangelieboken' ? `${textTypNamn}: ${valdPredikotext}` : egenText,
+          inkluderaFraga: inkluderaFraga,
         }),
       });
+
+      // Om servern svarar med felstatus (t.ex. 500 eller 400), hämta feltexten
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Serverfel (HTTP ${res.status})`);
+      }
 
       const data = await res.json();
       const nyttSvar = data.text || data.result || 'Inga förslag kunde genereras.';
 
       const nyPost = {
         id: Date.now(),
-        titel: `${rubrik} – ${kasualTypNamn}`,
+        titel: `${rubrik} – ${typNamn}`,
         svar: nyttSvar,
-        helgdag: textKalla === 'evangelieboken' ? valdHelgdag?.namn : 'Egen text',
+        helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
         tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -779,7 +852,8 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
         setAiPrompt('');
       }
     } catch (err) {
-      alert('Det uppstod ett fel vid anropet till AI-assistenten.');
+      console.error('Fel vid anrop till AI-assistenten:', err);
+      alert(`Det uppstod ett fel vid anropet till AI-assistenten: ${err.message || 'Okänt fel'}`);
     } finally {
       setLaddarAi(false);
     }
@@ -802,50 +876,48 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
       {/* HEADER / TOPPMENY */}
-          <header className="bg-white border-b border-[#e8e4df] py-4">
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
-        
-        {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <Link 
-            href="/" 
-            className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
-          >
-            <span>←</span>
-            <span className="hidden sm:inline">Tillbaka till start</span>
-            <span className="sm:hidden">Start</span>
-          </Link>
+      <header className="bg-white border-b border-[#e8e4df] py-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
           
-          <span className="text-[#e8e4df]">|</span>
-          
-          <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
-            Kasualtal
-          </h1>
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <Link 
+              href="/" 
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Tillbaka till start</span>
+              <span className="sm:hidden">Start</span>
+            </Link>
+            
+            <span className="text-[#e8e4df]">|</span>
+            
+            <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
+              Kasualtal
+            </h1>
+          </div>
+
+          <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
+            <Link 
+              href="/pris" 
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
+            >
+              Pris
+            </Link>
+            <Link 
+              href="/login" 
+              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+            >
+              Logga in
+            </Link>
+          </nav>
+
         </div>
-
-        {/* HÖGER: Navigation (Pris & Logga in) */}
-        <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
-          <Link 
-            href="/pris" 
-            className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
-          >
-            Pris
-          </Link>
-          <Link 
-            href="/login" 
-            className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-          >
-            Logga in
-          </Link>
-        </nav>
-
-      </div>
-    </header>
+      </header>
 
       {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1100px] mx-auto px-6 pt-8 pb-16">
 
-      {/* INTRO-RUTA FÖR KASUALTAL */}
+        {/* INTRO-RUTA FÖR KASUALTAL */}
         <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">🕊️</span>
@@ -898,7 +970,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                 2. Bibeltext eller tema
               </h2>
 
-              {/* VÄLJ KÄLLTYP */}
               <div className="flex gap-2 mb-5">
                 <button
                   onClick={() => setTextKalla('evangelieboken')}
@@ -924,7 +995,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
 
               {textKalla === 'evangelieboken' ? (
                 <div>
-                  {/* HELGDAGS-SELECT */}
                   <div className="mb-4">
                     <label htmlFor="helgdag-select" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
                       Helgdag:
@@ -943,7 +1013,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     </select>
                   </div>
 
-                  {/* ÅRGÅNGAR */}
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">Årgång:</label>
                     <div className="flex gap-2">
@@ -967,7 +1036,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     </div>
                   </div>
 
-                  {/* TEXTVAL */}
                   {valdHelgdag && valdaTexter && (
                     <div className="space-y-2 mt-4 pt-3 border-t border-[#e8e4df]">
                       {[
@@ -1003,7 +1071,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                   )}
                 </div>
               ) : (
-                /* EGEN TEXT / TEMA INMATNING */
                 <div>
                   <label htmlFor="egen-text-input" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
                     Bibelställe eller valt tema:
@@ -1052,7 +1119,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
           {/* HÖGER SPALT: Anteckningar & AI-assistent */}
           <section className="space-y-6">
             
-            {/* MINA ANTECKNINGAR */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-[#1a1d1b] tracking-tight">
@@ -1070,7 +1136,6 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
               />
             </div>
 
-            {/* AI-ASSISTENT */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h2 className="text-lg font-bold text-[#1a1d1b] mb-2 tracking-tight">
                 5. AI-assistent för {kasualTypNamn.toLowerCase()}
@@ -1176,13 +1241,16 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
           )}
         </section>
 
-        {/* NAVIGERA TILL ANDRA VERKTYG */}
+      {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/predikoideer" className="group block">
+            <Link 
+              href={`/predikoideer${valdHelgdag?.namn ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(valdArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">💡</span>
                 <div>
@@ -1196,7 +1264,10 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
               </div>
             </Link>
 
-            <Link href="/historik" className="group block">
+            <Link 
+              href={`/historik${valdHelgdag?.namn ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(valdArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📜</span>
                 <div>
@@ -1232,13 +1303,16 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     Barn & unga →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    Andakter och lekar.
+                    Pedagogiska upplägg.
                   </p>
                 </div>
               </div>
             </Link>
 
-            <Link href="/predikantpepp" className="group block">
+            <Link 
+              href={`/predikantpepp${valdHelgdag?.namn ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(valdArgang || 'argang1')}` : ''}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🌱</span>
                 <div>
@@ -1251,6 +1325,21 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                 </div>
               </div>
             </Link>
+
+            <Link href="/populart" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Populärt bland kollegorna →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Se vad andra utforskar.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
           </div>
         </section>
 
@@ -1261,5 +1350,14 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
 
       </div>
     </main>
+  );
+}
+
+// Huvudexport med Suspense för att hantera useSearchParams i Next.js
+export default function Kasualtal() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-sm text-[#575c58]">Laddar...</div>}>
+      <KasualtalInnehall />
+    </Suspense>
   );
 }

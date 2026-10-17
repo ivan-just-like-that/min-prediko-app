@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// Hjälp-komponent för kopiera-knapp
 function KopieraKnapp({ text }) {
   const [kopierad, setKopierad] = useState(false);
 
@@ -664,8 +664,9 @@ export const HELGDAGAR = [
     argang3: { gt: 'Jos 1:10-11', epistel: 'Heb 11:13-16', evangelium: 'Luk 20:37-38' }
   },
 ];
+function PredikoideerInnehall() {
+  const searchParams = useSearchParams();
 
-export default function Home() {
   const [valdHelgdagNamn, setValdHelgdagNamn] = useState(HELGDAGAR[0]?.namn || '');
   const [valdArgang, setValdArgang] = useState('argang1');
   const [valdTextTyp, setValdTextTyp] = useState('evangelium');
@@ -675,7 +676,66 @@ export default function Home() {
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
 
-  // Läs in sparad AI-historik från localStorage
+  // Läs av URL-parametrar om man kommer från /populart
+  useEffect(() => {
+    const urlHelgdag = searchParams.get('helgdag');
+    const urlText = searchParams.get('text');
+    const urlTextTyp = searchParams.get('textTyp'); // Läs av textTyp ('gt', 'epistel', 'evangelium')
+    const urlArgang = searchParams.get('argang');
+
+    // Sätt valda årgång om den finns i URL:en
+    if (urlArgang) {
+      setValdArgang(urlArgang);
+    }
+
+    // 1. Sätt textTyp direkt om parametern finns i URL:en
+    if (urlTextTyp) {
+      if (['gt', 'epistel', 'evangelium'].includes(urlTextTyp.toLowerCase())) {
+        setValdTextTyp(urlTextTyp.toLowerCase());
+      }
+    }
+
+    if (urlHelgdag) {
+      const hittad = HELGDAGAR.find((h) => h.namn.toLowerCase() === urlHelgdag.toLowerCase());
+      
+      if (hittad) {
+        setValdHelgdagNamn(hittad.namn);
+
+        // Fallback: Om 'textTyp' saknas i URL:en kollar vi i 'text'
+        if (!urlTextTyp && urlText) {
+          if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
+            setValdTextTyp('gt');
+          } else if (urlText.toLowerCase().includes('epistel')) {
+            setValdTextTyp('epistel');
+          } else if (urlText.toLowerCase().includes('evangelium')) {
+            setValdTextTyp('evangelium');
+          }
+        }
+      } else {
+        const renRaktText = urlText ? urlText.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '') : '-';
+        
+        HELGDAGAR.push({
+          namn: urlHelgdag,
+          tema: searchParams.get('tema') || 'Valt tema',
+          argang1: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText },
+          argang2: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText },
+          argang3: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText }
+        });
+        setValdHelgdagNamn(urlHelgdag);
+
+        if (!urlTextTyp && urlText) {
+          if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
+            setValdTextTyp('gt');
+          } else if (urlText.toLowerCase().includes('epistel')) {
+            setValdTextTyp('epistel');
+          } else if (urlText.toLowerCase().includes('evangelium')) {
+            setValdTextTyp('evangelium');
+          }
+        }
+      }
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     try {
       const sparadHistorik = localStorage.getItem('prediko_ai_historik');
@@ -687,7 +747,6 @@ export default function Home() {
     }
   }, []);
 
-  // Läs in sparade anteckningar för vald helgdag
   useEffect(() => {
     if (valdHelgdagNamn) {
       const sparadText = localStorage.getItem(`anteckningar_${valdHelgdagNamn}`);
@@ -705,7 +764,7 @@ export default function Home() {
     evangelium: 'Evangelium'
   }[valdTextTyp];
 
-const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = {}) => {
+  const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = {}) => {
     const textAttSkicka = instruktion || aiPrompt;
     const rubrik = etikett || aiPrompt || 'Egen fråga';
 
@@ -721,16 +780,18 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
           prompt: textAttSkicka,
           helgdag: valdHelgdag?.namn,
           tema: valdHelgdag?.tema,
+          argang: valdArgang, // Skickar med vald årgång (argang1, argang2, argang3)
           texter: valdaTexter,
           valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
-          inkluderaFraga: inkluderaFraga, // Skickar med flaggan till route.js!
+          inkluderaFraga: inkluderaFraga,
+          sida: 'predikoideer',
+          verktyg: rubrik,
         }),
       });
 
       const data = await res.json();
       const nyttSvar = data.text || data.result || 'Inga förslag kunde genereras.';
 
-      // Skapa nytt historikobjekt
       const nyPost = {
         id: Date.now(),
         titel: rubrik,
@@ -744,7 +805,7 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
       localStorage.setItem('prediko_ai_historik', JSON.stringify(uppdateradHistorik));
 
       if (!instruktion) {
-        setAiPrompt(''); // Rensa rutan vid manuell fråga
+        setAiPrompt('');
       }
     } catch (err) {
       alert('Det uppstod ett fel vid anropet till AI-assistenten.');
@@ -768,72 +829,43 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
     }
   };
 
-  const sparaAnteckningarSomFil = () => {
-    if (!anteckningar.trim()) {
-      alert('Det finns inga anteckningar att spara än!');
-      return;
-    }
-
-    const filnamn = `Predikoanteckningar_${valdHelgdag?.namn || 'Ospecificerad'}.txt`;
-    const blob = new Blob([anteckningar], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filnamn;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
-      
-      {/* HEADER / TOPPMENY */}
       <header className="bg-white border-b border-[#e8e4df] py-4">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
-    
-      {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        <Link 
-        href="/" 
-        className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
-      >
-        <span>←</span>
-        <span className="hidden sm:inline">Tillbaka till start</span>
-        <span className="sm:hidden">Start</span>
-      </Link>
-      
-      <span className="text-[#e8e4df]">|</span>
-      
-      <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
-        Predikoidéer
-      </h1>
-    </div>
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <Link 
+              href="/" 
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Tillbaka till start</span>
+              <span className="sm:hidden">Start</span>
+            </Link>
+            <span className="text-[#e8e4df]">|</span>
+            <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
+              Predikoidéer
+            </h1>
+          </div>
 
-    {/* HÖGER: Navigation (Pris & Logga in) */}
-    <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
-      <Link 
-        href="/pris" 
-        className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
-      >
-        Pris
-      </Link>
-      <Link 
-        href="/login" 
-        className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-      >
-        Logga in
-      </Link>
-    </nav>
+          <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
+            <Link 
+              href="/pris" 
+              className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors"
+            >
+              Pris
+            </Link>
+            <Link 
+              href="/login" 
+              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+            >
+              Logga in
+            </Link>
+          </nav>
+        </div>
+      </header>
 
-  </div>
-</header>
-
-      {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1100px] mx-auto px-6 pt-8 pb-16">
-
-        {/* INTRO-RUTA FÖR PREDIKOIDÉER */}
         <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">💡</span>
@@ -841,22 +873,17 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               Inspiration & uppslag till din predikan
             </h2>
           </div>
-          
           <p className="text-sm text-[#575c58] leading-relaxed">
             Få teologiska vinklar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
           </p>
         </div>
 
-        {/* 2-SPALTSLAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
-          {/* VÄNSTER SPALT: Kyrkoår & Bibeltexter */}
           <section className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
             <h2 className="text-lg font-bold text-[#1a1d1b] mb-5 tracking-tight border-b border-[#e8e4df] pb-3">
               1. Välj helgdag, årgång & predikotext
             </h2>
             
-            {/* VÄLJ HELGDAG */}
             <div className="mb-5">
               <label htmlFor="helgdag-select" className="block text-sm font-semibold text-[#1a1d1b] mb-2">
                 Helgdag:
@@ -875,7 +902,6 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               </select>
             </div>
 
-            {/* VÄLJ ÅRGÅNG */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-[#1a1d1b] mb-2">Årgång:</label>
               <div className="flex gap-2">
@@ -899,7 +925,6 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               </div>
             </div>
 
-            {/* TEXTVALS-RUTA */}
             {valdHelgdag && valdaTexter && (
               <div className="bg-[#faf8f5] p-5 rounded-xl border border-[#e8e4df]">
                 <h3 className="text-lg font-bold text-[#1a1d1b] mb-1">{valdHelgdag.namn}</h3>
@@ -947,16 +972,12 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
             )}
           </section>
 
-          {/* HÖGER SPALT: Anteckningar & AI-assistent */}
           <section className="space-y-6">
-            
-         {/* MINA ANTECKNINGAR */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-[#1a1d1b] tracking-tight">
                   2. Mina predikoanteckningar
                 </h2>
-                {/* HÄR LÄGGER VI IN KOPIERAKNAPPEN UPPE TILL HÖGER */}
                 <KopieraKnapp text={anteckningar} />
               </div>
 
@@ -969,7 +990,6 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               />
             </div>
 
-            {/* AI-ASSISTENT */}
             <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h2 className="text-lg font-bold text-[#1a1d1b] mb-2 tracking-tight">
                 3. AI-assistent
@@ -1024,11 +1044,9 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
                 </button>
               </div>
             </div>
-
           </section>
         </div>
 
-        {/* AI-HISTORIK LÄNGST NER */}
         <section className="mt-8 bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
             <h2 className="text-lg font-bold text-[#1a1d1b] tracking-tight">
@@ -1063,7 +1081,6 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
                       <span className="text-xs text-[#8c918d] font-semibold">
                         Kl. {item.tid}
                       </span>
-                      {/* KOPPIERAKNAPPEN LÄGGS IN HÄR */}
                       <KopieraKnapp text={item.svar} />
                     </div>
                   </div>
@@ -1076,13 +1093,16 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
           )}
         </section>
 
-{/* NAVIGERA TILL ANDRA VERKTYG */}
+      {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/historik" className="group block">
+            <Link 
+              href={`/historik?helgdag=${encodeURIComponent(valdHelgdag?.namn || '')}&argang=${encodeURIComponent(valdArgang || 'argang1')}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📜</span>
                 <div>
@@ -1096,7 +1116,10 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               </div>
             </Link>
 
-            <Link href="/grekiska" className="group block">
+            <Link 
+              href={`/grekiska?helgdag=${encodeURIComponent(valdHelgdag?.namn || '')}&argang=${encodeURIComponent(valdArgang || 'argang1')}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🇬🇷</span>
                 <div>
@@ -1118,13 +1141,16 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
                     Barn & unga →
                   </h4>
                   <p className="text-xs text-[#575c58]">
-                    Andakter och lekar.
+                    Pedagogiska upplägg.
                   </p>
                 </div>
               </div>
             </Link>
 
-            <Link href="/kasualtal" className="group block">
+            <Link 
+              href={`/kasualtal?helgdag=${encodeURIComponent(valdHelgdag?.namn || '')}&argang=${encodeURIComponent(valdArgang || 'argang1')}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🕊️</span>
                 <div>
@@ -1138,7 +1164,10 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
               </div>
             </Link>
 
-            <Link href="/predikantpepp" className="group block">
+            <Link 
+              href={`/predikantpepp?helgdag=${encodeURIComponent(valdHelgdag?.namn || '')}&argang=${encodeURIComponent(valdArgang || 'argang1')}`} 
+              className="group block"
+            >
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🌱</span>
                 <div>
@@ -1151,17 +1180,39 @@ const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = 
                 </div>
               </div>
             </Link>
+
+            <Link href="/populart" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Populärt bland kollegorna →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Se vad andra utforskar.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
           </div>
         </section>
 
-        {/* FOOTER */}
+
         <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">
           Kyrkoårets bibeltexter är hämtade från Den svenska evangelieboken (2002) <br />
           och psalmförslagen från Den svenska psalmboken (2002).<br />
           © 2026 Patric Ivan. Innehåll genererat av användare mha AI.
         </footer>
-
       </div>
     </main>
+  );
+}
+
+export default function PredikoideerPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-sm text-[#575c58]">Laddar...</div>}>
+      <PredikoideerInnehall />
+    </Suspense>
   );
 }
