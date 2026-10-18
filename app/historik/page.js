@@ -155,7 +155,8 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
             <span className="text-[#e8e4df]">|</span>
             
             <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
-              Historiska kommentarer
+                <span className="sm:hidden">Historia</span>
+                <span className="hidden sm:inline">Hisoriska kommentarer</span>
             </h1>
           </div>
 

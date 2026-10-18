@@ -6,8 +6,39 @@ export const dynamic = 'force-dynamic';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// --- RATE LIMITING (Max 10 anrop per minut per IP) ---
+const rateLimitMap = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minut
+  const maxRequests = 10;      // Max 10 anrop per minut per IP
+
+  const userRequests = rateLimitMap.get(ip) || [];
+  // Rensa anrop som är äldre än 1 minut
+  const recentRequests = userRequests.filter((time) => now - time < windowMs);
+
+  if (recentRequests.length >= maxRequests) {
+    return true; // För många anrop!
+  }
+
+  recentRequests.push(now);
+  rateLimitMap.set(ip, recentRequests);
+  return false;
+}
+
 export async function POST(req) {
   try {
+    // 1. Kontrollera Rate Limit via användarens IP-adress
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { text: 'Du har gjort för många anrop just nu. Vänta en minut och försök igen.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     const promptText = body.prompt || body.message || body.question || '';
@@ -20,7 +51,7 @@ export async function POST(req) {
     // Hämta verktygstyp från request body
     const verktyg = body.verktyg || body.promptLabel || body.kategori || 'Sökning';
 
-    // 1. Spara anonyma sökdata till Supabase (Exkludera både 'predikopepp' och 'predikantpepp')
+    // 2. Spara anonyma sökdata till Supabase (Exkludera både 'predikopepp' och 'predikantpepp')
     const arPeppSida = sida === 'predikopepp' || sida === 'predikantpepp';
     if (
       !arPeppSida && 
@@ -43,8 +74,19 @@ export async function POST(req) {
         });
     }
 
-    const arFaktasida = sida === 'grekiska' || sida === 'historik';
-    const valdTemp = arFaktasida ? 0.3 : 0.7;
+    // Identifiera om det är grekiska eller historik/historiska kommentarer
+    const arGrekiskaEllerHistorik = 
+      sida === 'grekiska' || 
+      sida === 'historik' || 
+      sida === 'historisk-kommentar' ||
+      verktyg?.toLowerCase().includes('grekisk') ||
+      verktyg?.toLowerCase().includes('historik');
+
+    const valdTemp = arGrekiskaEllerHistorik ? 0.3 : 0.7;
+    
+    // Sätt thinkingLevel: 'medium' för grekiska och historik, 'low' för allt annat
+    const valdThinkingLevel = arGrekiskaEllerHistorik ? 'medium' : 'low';
+
     const inkluderaFraga = body.inkluderaFraga ?? true;
 
     if (!promptText.trim()) {
@@ -107,6 +149,9 @@ ${fragaInstruktion}
           config: {
             systemInstruction: systemInstruction,
             temperature: valdTemp,
+            thinkingConfig: {
+              thinkingLevel: valdThinkingLevel,
+            },
           },
         });
         break;

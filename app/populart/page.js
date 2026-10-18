@@ -33,7 +33,7 @@ export default function PopulartPage() {
   const getSidaInfo = (sidaKey) => {
     switch (sidaKey) {
       case 'predikoideer':
-        return { namn: 'Predikoidéer & Disposition', url: '/predikoideer', ikon: '💡' };
+        return { namn: 'Predikoidéer', url: '/predikoideer', ikon: '💡' };
       case 'historik':
         return { namn: 'Historiska kommentarer', url: '/historik', ikon: '📜' };
       case 'grekiska':
@@ -112,7 +112,7 @@ export default function PopulartPage() {
           <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
             
             {/* VÄNSTER: Tillbaka-länk + Sida/Logotyp */}
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               <Link 
                 href="/" 
                 className="text-[#575c58] hover:text-[#1a1d1b] text-xs sm:text-sm font-medium transition-colors flex items-center gap-1"
@@ -125,7 +125,8 @@ export default function PopulartPage() {
               <span className="text-[#e8e4df]">|</span>
               
               <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
-                Populärt bland kollegorna
+                <span className="sm:hidden">Populärt</span>
+                <span className="hidden sm:inline">Populärt bland kollegorna</span>
               </h1>
             </div>
 

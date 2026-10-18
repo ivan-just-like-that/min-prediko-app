@@ -64,8 +64,10 @@ export default function StartSida() {
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Så roligt att du vill vara med och testa Predikoassistenten! Det är en AI-driven tjänst vars idé är att
               ge dig som predikant idéer och uppslag till ditt viktiga arbete med Ordet. Tanken är alltså inte att den ska användas för
-              att skriva fullständiga predikningar från början till slut, utan att ge dig förslag och inspiration. Ja, du kan såklart be denna AI:n att skriva en hel predikan, men som sagt,
-              meningen är att du själv ska ha kontrollen och sätta samman slutprodukten med din personliga stil, de nyanser och det tonläge som är ditt.
+              att skriva fullständiga predikningar från början till slut, utan att ge dig förslag och inspiration. Du behåller alltså kontrollen
+              och sätter samman din predikan som vanligt, med de språkliga nyanser och det tonläge som är ditt. <br />
+              Jag ser det som att denna app hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis som i ditt egna 
+              fysiska bibliotek där hemma, men via appen har du nu tillgång till långt många mer källor som ka ge uppslag och idéer.
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
@@ -73,8 +75,8 @@ export default function StartSida() {
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att uppdateras med nya funktioner och förbättringar under denna tid. Obs att sidan inte är helt mobilanpassad än, inte heller är sidorna för &quot;pris&quot; och &quot;login&quot; aktiverade.<br /><br />
-              Jag är tacksam om du inte sprider denna sida ännu, jag vill att vi testar den ordentligt först.<br /><br />
+              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att uppdateras med nya funktioner och förbättringar under denna tid. Obs att sidorna för &quot;pris&quot; och &quot;login&quot; inte är aktiverade än.<br /><br />
+              Jag är tacksam om du inte sprider denna sida till andra ännu, jag vill att vi testar den ordentligt först.<br /><br />
               Bästa hälsningar, Patric.
             
             </p>
