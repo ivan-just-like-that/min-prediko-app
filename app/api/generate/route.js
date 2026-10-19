@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -15,11 +16,10 @@ function isRateLimited(ip) {
   const maxRequests = 10;      // Max 10 anrop per minut per IP
 
   const userRequests = rateLimitMap.get(ip) || [];
-  // Rensa anrop som är äldre än 1 minut
   const recentRequests = userRequests.filter((time) => now - time < windowMs);
 
   if (recentRequests.length >= maxRequests) {
-    return true; // För många anrop!
+    return true;
   }
 
   recentRequests.push(now);
@@ -29,13 +29,50 @@ function isRateLimited(ip) {
 
 export async function POST(req) {
   try {
-    // 1. Kontrollera Rate Limit via användarens IP-adress
+    // 1. Rate Limiting
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
-
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { text: 'Du har gjort för många anrop just nu. Vänta en minut och försök igen.' },
         { status: 429 }
+      );
+    }
+
+    // 2. Autentisering via Supabase Header Token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { text: 'Du måste vara inloggad för att göra anrop.' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { text: 'Din inloggningssession har gått ut. Vänligen logga in igen.' },
+        { status: 401 }
+      );
+    }
+
+    // 3. Hämta användarens profil
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      console.error('Söker profil fel:', profileError);
+      return NextResponse.json(
+        { text: 'Kunde inte hämta din användarprofil och dina tokens.' },
+        { status: 400 }
       );
     }
 
@@ -47,26 +84,64 @@ export async function POST(req) {
     const valdPredikotext = body.valdPredikotext || 'Ej angiven text';
     const sida = body.sida || 'standard';
     const argang = body.argang || 'argang1';
-    
-    // Hämta verktygstyp från request body
     const verktyg = body.verktyg || body.promptLabel || body.kategori || 'Sökning';
 
-    // 2. Spara anonyma sökdata till Supabase (Exkludera både 'predikopepp' och 'predikantpepp')
     const arPeppSida = sida === 'predikopepp' || sida === 'predikantpepp';
-    if (
-      !arPeppSida && 
-      (helgdag !== 'Ej angiven helgdag' || valdPredikotext !== 'Ej angiven text')
-    ) {
+    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const isTester = profile.is_tester || false;
+
+    // Läs av nuvarande vanliga tokens/credits
+    const nuvarandeTokens = profile.tokens ?? profile.credits ?? 0;
+
+    // --- KREDIT- OCH GRÄNSKONTROLL ---
+    if (arPeppSida) {
+      // PREDIKANTPEPP: Dagsgräns på 10 anrop utan kreditavdrag
+      let currentPeppCount = profile.pepp_count_today || 0;
+      const lastPeppDate = profile.last_pepp_date;
+
+      if (lastPeppDate !== todayStr) {
+        currentPeppCount = 0;
+      }
+
+      if (!isTester && currentPeppCount >= 10) {
+        return NextResponse.json(
+          { text: 'Du har nått dagsgränsen på 10 pepp-anrop för idag. Välkommen åter imorgon!' },
+          { status: 429 }
+        );
+      }
+
+      // Uppdatera pepp-räknaren för dagen
+      if (!isTester) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({
+            pepp_count_today: currentPeppCount + 1,
+            last_pepp_date: todayStr,
+          })
+          .eq('id', user.id);
+      }
+    } else {
+      // ÖVRIGA SIDOR: Kräv och dra vanliga krediter
+      if (!isTester && nuvarandeTokens <= 0) {
+        return NextResponse.json(
+          { text: 'Dina gratisanrop är slut! Skapa ett nytt konto eller uppgradera för att fortsätta.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 4. Spara anonyma sökdata (exkludera pepp-sidor)
+    if (!arPeppSida && (helgdag !== 'Ej angiven helgdag' || valdPredikotext !== 'Ej angiven text')) {
       supabase
         .from('popular_searches')
         .insert([
           {
-            sida: sida,
-            helgdag: helgdag,
-            tema: tema,
-            argang: argang,
+            sida,
+            helgdag,
+            tema,
+            argang,
             predikotext: valdPredikotext,
-            verktyg: verktyg,
+            verktyg,
           },
         ])
         .then(({ error }) => {
@@ -74,7 +149,6 @@ export async function POST(req) {
         });
     }
 
-    // Identifiera om det är grekiska eller historik/historiska kommentarer
     const arGrekiskaEllerHistorik = 
       sida === 'grekiska' || 
       sida === 'historik' || 
@@ -83,10 +157,7 @@ export async function POST(req) {
       verktyg?.toLowerCase().includes('historik');
 
     const valdTemp = arGrekiskaEllerHistorik ? 0.3 : 0.7;
-    
-    // Sätt thinkingLevel: 'medium' för grekiska och historik, 'low' för allt annat
     const valdThinkingLevel = arGrekiskaEllerHistorik ? 'medium' : 'low';
-
     const inkluderaFraga = body.inkluderaFraga ?? true;
 
     if (!promptText.trim()) {
@@ -110,7 +181,6 @@ export async function POST(req) {
       ? "Avsluta alltid ditt svar med rubriken 'En reflekterande fråga för din förberedelse:' följt av en kort men fördjupande, existentiell eller praktisk fråga som kan hjälpa prästen vidare i sin egen tankeprocess."
       : "Avsluta INTE med någon reflekterande fråga.";
 
-    // Skriv BARA ut instruktionen om liturgisk färg om anropet kommer från predikoidéer
     const arPredikoideer = sida === 'predikoideer';
     const inledningsInstruktion = arPredikoideer
       ? `Inled ALLTID ditt svar med följande rad längst upp (bestäm den teologiskt korrekta liturgiska färgen enligt Svenska kyrkans kyrkoår baserat på helgdagen):\n**Tema:** ${tema} | **Liturgisk färg:** [FÄRG]`
@@ -147,7 +217,7 @@ ${fragaInstruktion}
           model: 'gemini-3.8-flash',
           contents: promptText,
           config: {
-            systemInstruction: systemInstruction,
+            systemInstruction,
             temperature: valdTemp,
             thinkingConfig: {
               thinkingLevel: valdThinkingLevel,
@@ -167,33 +237,36 @@ ${fragaInstruktion}
       response?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text ||
       'Inget svar genererades.';
 
-    // SÄKERHETSFILTER: Om det INTE är predikoidéer, rensa bort eventuella inledande rader som handlar om Tema/Liturgisk färg
     if (!arPredikoideer) {
       aiSvar = aiSvar
         .replace(/^(\*\*|\*)?Tema:?.*?(Liturgisk färg:?.*?\n|\n)/gi, '')
         .trim();
     }
 
-    return NextResponse.json({ text: aiSvar });
+    // 5. Minska tokens med 1 om det inte är ett testkonto och inte gäller predikantpepp
+    let nyTokenMängd = nuvarandeTokens;
+    if (!isTester && !arPeppSida) {
+      nyTokenMängd = Math.max(0, nuvarandeTokens - 1);
+      
+      const updateData = profile.tokens !== undefined 
+        ? { tokens: nyTokenMängd } 
+        : { credits: nyTokenMängd };
+
+      await supabaseAdmin
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
+    }
+
+    return NextResponse.json({ 
+      text: aiSvar,
+      tokensLeft: isTester ? 999 : nyTokenMängd
+    });
+
   } catch (error) {
     console.error('DETALJERAT FEL I API-ROUTE:', error?.message || error);
-
-    if (error?.message?.includes('not found') || error?.message?.includes('404')) {
-      return NextResponse.json(
-        { text: 'Fel: AI-modellen kunde inte hittas.' },
-        { status: 404 }
-      );
-    }
-
-    if (error?.message?.includes('API key') || error?.message?.includes('403')) {
-      return NextResponse.json(
-        { text: 'Fel: Ogiltig API-nyckel eller saknad behörighet.' },
-        { status: 403 }
-      );
-    }
-
     return NextResponse.json(
-      { text: 'AI-tjänsten är för tillfället hårt belastad. Prova att trycka på knappen igen om några sekunder!' },
+      { text: 'Ett oväntat fel uppstod vid genereringen.' },
       { status: 500 }
     );
   }

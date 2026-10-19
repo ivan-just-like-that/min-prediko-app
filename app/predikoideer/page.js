@@ -2,6 +2,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { generateContent } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import AuthModal from '@/components/AuthModal';
 
 function KopieraKnapp({ text }) {
   const [kopierad, setKopierad] = useState(false);
@@ -675,20 +678,66 @@ function PredikoideerInnehall() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
+  
+  // --- STATE FÖR ANVÄNDARE OCH MODAL ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [isTester, setIsTester] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+  useEffect(() => {
+    fetchProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setUser(null);
+        setCredits(null);
+        setIsTester(false);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAuthLoading(false);
+      return;
+    }
+    setUser(user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const startCredits = profile.credits ?? profile.tokens ?? 0;
+      setCredits(startCredits);
+      setIsTester(profile.is_tester);
+    }
+      setAuthLoading(false);
+  };
 
   // Läs av URL-parametrar om man kommer från /populart
   useEffect(() => {
     const urlHelgdag = searchParams.get('helgdag');
     const urlText = searchParams.get('text');
-    const urlTextTyp = searchParams.get('textTyp'); // Läs av textTyp ('gt', 'epistel', 'evangelium')
+    const urlTextTyp = searchParams.get('textTyp');
     const urlArgang = searchParams.get('argang');
 
-    // Sätt valda årgång om den finns i URL:en
     if (urlArgang) {
       setValdArgang(urlArgang);
     }
 
-    // 1. Sätt textTyp direkt om parametern finns i URL:en
     if (urlTextTyp) {
       if (['gt', 'epistel', 'evangelium'].includes(urlTextTyp.toLowerCase())) {
         setValdTextTyp(urlTextTyp.toLowerCase());
@@ -701,7 +750,6 @@ function PredikoideerInnehall() {
       if (hittad) {
         setValdHelgdagNamn(hittad.namn);
 
-        // Fallback: Om 'textTyp' saknas i URL:en kollar vi i 'text'
         if (!urlTextTyp && urlText) {
           if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
             setValdTextTyp('gt');
@@ -773,24 +821,28 @@ function PredikoideerInnehall() {
     setLaddarAi(true);
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: textAttSkicka,
-          helgdag: valdHelgdag?.namn,
-          tema: valdHelgdag?.tema,
-          argang: valdArgang, // Skickar med vald årgång (argang1, argang2, argang3)
-          texter: valdaTexter,
-          valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
-          inkluderaFraga: inkluderaFraga,
-          sida: 'predikoideer',
-          verktyg: rubrik,
-        }),
-      });
+      const payload = {
+        prompt: textAttSkicka,
+        helgdag: valdHelgdag?.namn,
+        tema: valdHelgdag?.tema,
+        argang: valdArgang,
+        texter: valdaTexter,
+        valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
+        inkluderaFraga: inkluderaFraga,
+        sida: 'predikoideer',
+        verktyg: rubrik,
+      };
 
-      const data = await res.json();
-      const nyttSvar = data.text || data.result || 'Inga förslag kunde genereras.';
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda AI-assistenten.');
+        setShowAuthModal(true);
+      });
+      
+      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
+
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
 
       const nyPost = {
         id: Date.now(),
@@ -808,7 +860,7 @@ function PredikoideerInnehall() {
         setAiPrompt('');
       }
     } catch (err) {
-      alert('Det uppstod ett fel vid anropet till AI-assistenten.');
+      alert(err.message || 'Det uppstod ett fel vid anropet till AI-assistenten.');
     } finally {
       setLaddarAi(false);
     }
@@ -831,8 +883,11 @@ function PredikoideerInnehall() {
 
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
+      
+      {/* TOPPMENY / HEADER */}
       <header className="bg-white border-b border-[#e8e4df] py-4">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 flex justify-between items-center gap-2">
+          
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link 
               href="/" 
@@ -855,15 +910,47 @@ function PredikoideerInnehall() {
             >
               Pris
             </Link>
-            <Link 
-              href="/login" 
-              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-            >
-              Logga in
-            </Link>
+            
+        {/* DYNAMISK LOGGA IN / LOGGA UT-KNAPP (Döljs under laddning för att undvika blinkning) */}
+            {!authLoading && (
+              user ? (
+                <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="bg-[#e8e4df] hover:bg-[#d8d4cf] text-[#1a1d1b] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga ut
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga in
+                </button>
+              )
+            )}
           </nav>
+
         </div>
       </header>
+
+{/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
+{user && (
+  <div className="bg-[#f4f0eb] border-b border-[#e8e4df] py-2 px-4">
+    <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+      <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+      
+      {credits !== null && (
+        <span className="bg-white border border-[#e8e4df] font-semibold px-2.5 py-1 rounded-full text-[#2d3732] shrink-0">
+          {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits} sökningar kvar`}
+        </span>
+      )}
+    </div>
+  </div>
+)}
 
       <div className="max-w-[1100px] mx-auto px-6 pt-8 pb-16">
         <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8">
@@ -1093,7 +1180,7 @@ function PredikoideerInnehall() {
           )}
         </section>
 
-      {/* NAVIGERA TILL ANDRA VERKTYG */}
+{/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
@@ -1194,10 +1281,19 @@ function PredikoideerInnehall() {
                 </div>
               </div>
             </Link>
-
           </div>
         </section>
 
+        {/* Inloggningsmodal */}
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+          message={modalMessage}
+          onAuthSuccess={() => {
+            setShowAuthModal(false);
+            fetchProfile();
+          }} 
+        />
 
         <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">
           Kyrkoårets bibeltexter är hämtade från Den svenska evangelieboken (2002) <br />

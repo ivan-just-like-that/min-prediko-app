@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { generateContent } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import AuthModal from '@/components/AuthModal';
 
 // Hjälp-komponent för kopiera-knapp
 function KopieraKnapp({ text }) {
@@ -60,6 +63,54 @@ export default function PredikantpeppPage() {
   const [historiaSvar, setHistoriaSvar] = useState('');
   const [loadingHistoria, setLoadingHistoria] = useState(false);
 
+  // --- STATE FÖR ANVÄNDARE OCH MODAL ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [isTester, setIsTester] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+  useEffect(() => {
+    fetchProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setUser(null);
+        setCredits(null);
+        setIsTester(false);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+    const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAuthLoading(false);
+      return;
+    }
+    setUser(user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const startCredits = profile.credits ?? profile.tokens ?? 0;
+      setCredits(startCredits);
+      setIsTester(profile.is_tester);
+    }
+      setAuthLoading(false);
+  };
+
   // 1. Generera själavårdande pepp till prästen
   const genereraPepp = async () => {
     setLoadingPepp(true);
@@ -76,12 +127,7 @@ export default function PredikantpeppPage() {
     const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
     const slumpId = Math.random().toString(36).substring(7);
 
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Du är en genuint varm, kärleksfull och trygg vän som skickar ett uppmuntrande meddelande.
+    const promptText = `Du är en genuint varm, kärleksfull och trygg vän som skickar ett uppmuntrande meddelande.
 
 Fokusera på detta tema: ${slumpVinkel}. (Unikt id: ${slumpId})
 
@@ -89,18 +135,32 @@ Regler för svaret:
 - Skriv 1–2 korta meningar som förmedlar djup värme, uppskattning och villkorslös acceptans.
 - Förbjudna ord och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "klyschor".
 - Låt det kännas äkta, personligt och innerligt, som en varm kram i textform.
-- Skriv enbart själva påminnelsen, utan citationstecken.`,
-          sida: 'predikantpepp',
-          inkluderaFraga: false,
-          temperature: 0.7,
-        }),
+- Skriv enbart själva påminnelsen, utan citationstecken.`;
+
+    try {
+      const payload = {
+        prompt: promptText,
+        sida: 'predikantpepp',
+        verktyg: 'Pepp-o-mat',
+        helgdag: 'Uppmuntran',
+        tema: slumpVinkel,
+        inkluderaFraga: false,
+        temperature: 0.7,
+      };
+
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda verktyget.');
+        setShowAuthModal(true);
       });
 
-      const data = await res.json();
       setPeppSvar(data.text || 'Kunde inte hämta pepp just nu.');
+
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
     } catch (err) {
       console.error(err);
-      setPeppSvar('Ett fel uppstod vid hämtning av pepp.');
+      setPeppSvar(err.message || 'Ett fel uppstod vid hämtning av pepp.');
     } finally {
       setLoadingPepp(false);
     }
@@ -114,22 +174,31 @@ Regler för svaret:
     setLoadingHaiku(true);
     setHaikuSvar('');
 
+    const promptText = `Skriv en teologiskt fördjupad, poetisk och stämningsfull haiku (5-7-5 stavelser) baserat på följande tema eller bibelställe: "${haikuTema}". Svara enbart med själva haikudikten samt en kort rad om dess teologiska klangbotten.`;
+
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Skriv en teologiskt fördjupad, poetisk och stämningsfull haiku (5-7-5 stavelser) baserat på följande tema eller bibelställe: "${haikuTema}". Svara enbart med själva haikudikten samt en kort rad om dess teologiska klangbotten.`,
-          sida: 'predikantpepp',
-          inkluderaFraga: false,
-        }),
+      const payload = {
+        prompt: promptText,
+        sida: 'predikantpepp',
+        verktyg: 'Haikugenerator',
+        helgdag: 'Haiku',
+        tema: haikuTema,
+        inkluderaFraga: false,
+      };
+
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda verktyget.');
+        setShowAuthModal(true);
       });
 
-      const data = await res.json();
       setHaikuSvar(data.text || 'Kunde inte generera haiku.');
+
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
     } catch (err) {
       console.error(err);
-      setHaikuSvar('Ett fel uppstod vid generering av haiku.');
+      setHaikuSvar(err.message || 'Ett fel uppstod vid generering av haiku.');
     } finally {
       setLoadingHaiku(false);
     }
@@ -143,22 +212,31 @@ Regler för svaret:
     setLoadingHistoria(true);
     setHistoriaSvar('');
 
+    const promptText = `Skriv en kort, varm, rumsren och mild humorfylld historia, anekdot eller uppvärmning som en präst kan inleda sin predikan med för att väcka församlingens leende. Den ska koppla an till temat eller bibelstället: "${historiaTema}". Den ska vara smakfull, avsedd för en kyrklig kontext och lätt att återge muntligt.`;
+
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Skriv en kort, varm, rumsren och mild humorfylld historia, anekdot eller uppvärmning som en präst kan inleda sin predikan med för att väcka församlingens leende. Den ska koppla an till temat eller bibelstället: "${historiaTema}". Den ska vara smakfull, avsedd för en kyrklig kontext och lätt att återge muntligt.`,
-          sida: 'predikantpepp',
-          inkluderaFraga: false,
-        }),
+      const payload = {
+        prompt: promptText,
+        sida: 'predikantpepp',
+        verktyg: 'Predikointro / Humor',
+        helgdag: 'Historia',
+        tema: historiaTema,
+        inkluderaFraga: false,
+      };
+
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda verktyget.');
+        setShowAuthModal(true);
       });
 
-      const data = await res.json();
       setHistoriaSvar(data.text || 'Kunde inte generera historia.');
+
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
     } catch (err) {
       console.error(err);
-      setHistoriaSvar('Ett fel uppstod vid generering av historien.');
+      setHistoriaSvar(err.message || 'Ett fel uppstod vid generering av historien.');
     } finally {
       setLoadingHistoria(false);
     }
@@ -196,16 +274,46 @@ Regler för svaret:
               >
                 Pris
               </Link>
-              <Link 
-                href="/login" 
-                className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-              >
-                Logga in
-              </Link>
-            </nav>
+              
+            {/* DYNAMISK LOGGA IN / LOGGA UT-KNAPP (Döljs under laddning för att undvika blinkning) */}
+            {!authLoading && (
+              user ? (
+                <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="bg-[#e8e4df] hover:bg-[#d8d4cf] text-[#1a1d1b] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga ut
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga in
+                </button>
+              )
+            )}
+          </nav>
 
           </div>
         </header>
+
+        {/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
+        {user && (
+          <div className="bg-[#f4f0eb] border-b border-[#e8e4df] py-2 px-4">
+            <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+              <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+              {credits !== null && (
+                <span className="bg-white border border-[#e8e4df] font-semibold px-2.5 py-1 rounded-full text-[#2d3732] shrink-0">
+                  {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits} sökningar kvar`}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* HUVUDINNEHÅLL */}
         <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-8">
@@ -304,7 +412,8 @@ Regler för svaret:
               </h2>
             </div>
             <p className="text-sm text-[#575c58]">
-              AI:ns känsla för humor varierar... Men ibland blir det bra och då kan man ju ha användning av lustigheten i något sammanhang, kanske som inledning till ett tal eller en andakt/predikan i vissa lägen.
+              AI:ns känsla för humor varierar... Men ibland blir det bra och då kan man ju ha användning av lustigheten i något sammanhang, 
+              kanske som inledning till ett tal eller, i vissa fall, en andakt/predikan.
             </p>
             <form onSubmit={genereraHistoria} className="flex flex-col sm:flex-row gap-3">
               <input
@@ -433,6 +542,17 @@ Regler för svaret:
 
         </div>
       </div>
+
+      {/* INLOGGNINGSMODAL */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        message={modalMessage}
+        onAuthSuccess={() => {
+          setShowAuthModal(false);
+          fetchProfile();
+        }} 
+      />
 
       {/* FOOTER */}
       <footer className="mt-16 py-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d] bg-white">

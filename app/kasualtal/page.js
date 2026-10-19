@@ -2,6 +2,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { generateContent } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import AuthModal from '@/components/AuthModal';
 
 // Hjälp-komponent för kopiera-knapp
 function KopieraKnapp({ text }) {
@@ -38,7 +41,7 @@ function KopieraKnapp({ text }) {
       ) : (
         <>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           <span>Kopiera</span>
         </>
@@ -688,8 +691,56 @@ function KasualtalInnehall() {
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
 
+  // --- STATE FÖR ANVÄNDARE OCH MODAL ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [isTester, setIsTester] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+  useEffect(() => {
+    fetchProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setUser(null);
+        setCredits(null);
+        setIsTester(false);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+    const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAuthLoading(false);
+      return;
+    }
+    setUser(user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const startCredits = profile.credits ?? profile.tokens ?? 0;
+      setCredits(startCredits);
+      setIsTester(profile.is_tester);
+    }
+      setAuthLoading(false);
+  };
+
   // Läs av URL-parametrar om man kommer från /populart
-useEffect(() => {
+  useEffect(() => {
     const urlHelgdag = searchParams.get('helgdag');
     const urlKasualTyp = searchParams.get('kasualTyp');
     const urlTextKalla = searchParams.get('textKalla');
@@ -807,34 +858,28 @@ Svara med ett varmt, själavårdande, teologiskt genomtänkt och personligt anpa
 För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och förväntan. För vigseltal, inkludera kärlek och gemenskap. Skriv i en stil som är lätt att tala inför en församling, med tydliga övergångar och naturliga pauser.
 `;
 
-    const helgdagVarde = textKalla === 'evangelieboken' && valdHelgdag?.namn 
-      ? valdHelgdag.namn 
-      : (egenText.trim() || 'Egen text');
+    try {
+      const payload = {
+        prompt: fullPrompt,
+        sida: 'kasualtal',
+        verktyg: typNamn,
+        helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
+        tema: egenText || valdHelgdag?.tema || 'Ej angivet tema',
+        argang: valdArgang,
+        valdPredikotext: textKalla === 'evangelieboken' ? `${textTypNamn}: ${valdPredikotext}` : egenText,
+        inkluderaFraga: inkluderaFraga,
+      };
 
-   try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: fullPrompt,
-          sida: 'kasualtal',
-          verktyg: typNamn,
-          helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
-          tema: egenText || valdHelgdag?.tema || 'Ej angivet tema',
-          argang: valdArgang,
-          valdPredikotext: textKalla === 'evangelieboken' ? `${textTypNamn}: ${valdPredikotext}` : egenText,
-          inkluderaFraga: inkluderaFraga,
-        }),
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda verktyget.');
+        setShowAuthModal(true);
       });
 
-      // Om servern svarar med felstatus (t.ex. 500 eller 400), hämta feltexten
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Serverfel (HTTP ${res.status})`);
-      }
+      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
 
-      const data = await res.json();
-      const nyttSvar = data.text || data.result || 'Inga förslag kunde genereras.';
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
 
       const nyPost = {
         id: Date.now(),
@@ -853,7 +898,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
       }
     } catch (err) {
       console.error('Fel vid anrop till AI-assistenten:', err);
-      alert(`Det uppstod ett fel vid anropet till AI-assistenten: ${err.message || 'Okänt fel'}`);
+      alert(err.message || 'Det uppstod ett fel vid anropet.');
     } finally {
       setLaddarAi(false);
     }
@@ -903,16 +948,46 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
             >
               Pris
             </Link>
-            <Link 
-              href="/login" 
-              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-            >
-              Logga in
-            </Link>
+            
+            {/* DYNAMISK LOGGA IN / LOGGA UT-KNAPP (Döljs under laddning för att undvika blinkning) */}
+            {!authLoading && (
+              user ? (
+                <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="bg-[#e8e4df] hover:bg-[#d8d4cf] text-[#1a1d1b] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga ut
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga in
+                </button>
+              )
+            )}
           </nav>
 
         </div>
       </header>
+
+      {/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
+      {user && (
+        <div className="bg-[#f4f0eb] border-b border-[#e8e4df] py-2 px-4">
+          <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+            <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+            {credits !== null && (
+              <span className="bg-white border border-[#e8e4df] font-semibold px-2.5 py-1 rounded-full text-[#2d3732] shrink-0">
+                {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits} sökningar kvar`}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1100px] mx-auto px-6 pt-8 pb-16">
@@ -1241,7 +1316,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
           )}
         </section>
 
-      {/* NAVIGERA TILL ANDRA VERKTYG */}
+        {/* NAVIGERA TILL ANDRA VERKTYG */}
         <section className="mt-12 pt-8 border-t border-[#e8e4df]">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Utforska fler verktyg
@@ -1342,6 +1417,17 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
 
           </div>
         </section>
+
+        {/* INLOGGNINGSMODAL */}
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+          message={modalMessage}
+          onAuthSuccess={() => {
+            setShowAuthModal(false);
+            fetchProfile();
+          }} 
+        />
 
         {/* FOOTER */}
         <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">

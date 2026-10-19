@@ -1,8 +1,59 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase'; // Anpassa sökvägen om det behövs
+import AuthModal from '@/components/AuthModal';
 
 export default function StartSida() {
+  // --- 1. STATE FÖR ANVÄNDARE, MODAL OCH LADDNINGSTATUS ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [isTester, setIsTester] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- 2. HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+  useEffect(() => {
+    fetchProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setUser(null);
+        setCredits(null);
+        setIsTester(false);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAuthLoading(false);
+      return;
+    }
+    setUser(user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const startCredits = profile.credits ?? profile.tokens ?? 0;
+      setCredits(startCredits);
+      setIsTester(profile.is_tester);
+    }
+    setAuthLoading(false);
+  };
+
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased">
       
@@ -20,7 +71,7 @@ export default function StartSida() {
             </span>
           </div>
 
-          {/* HÖGER: Navigation */}
+         {/* HÖGER: Navigation */}
           <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
             <Link 
               href="/pris" 
@@ -28,21 +79,49 @@ export default function StartSida() {
             >
               Pris
             </Link>
-            <Link 
-              href="/login" 
-              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-            >
-              Logga in
-            </Link>
+            
+            {/* DYNAMISK LOGGA IN / LOGGA UT-KNAPP (Döljs under laddning för att undvika blinkning) */}
+            {!authLoading && (
+              user ? (
+                <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="bg-[#e8e4df] hover:bg-[#d8d4cf] text-[#1a1d1b] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga ut
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga in
+                </button>
+              )
+            )}
           </nav>
 
         </div>
       </header>
 
+      {/* ANVÄNDARSTATUS & KREDITRÄKNARE (VISAS DIREKT UNDER HEADERN OM MAN ÄR INLOGGAD) */}
+      {user && (
+        <div className="bg-[#f4f0eb] border-b border-[#e8e4df] py-2 px-4">
+          <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+            <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+            <span className="bg-white border border-[#e8e4df] font-semibold px-2.5 py-1 rounded-full text-[#2d3732] shrink-0">
+              {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits ?? 0} sökningar kvar`}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1100px] mx-auto px-6 pt-10 pb-16">
         
-      {/* ILLUSTRATION */}
+        {/* ILLUSTRATION */}
         <div className="mb-8 overflow-hidden rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <Image
             src="/hero-illustration.jpeg"
@@ -63,22 +142,32 @@ export default function StartSida() {
             
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Så roligt att du vill vara med och testa Predikoassistenten! Det är en AI-driven tjänst vars idé är att
-              ge dig som predikant idéer och uppslag till ditt viktiga arbete med Ordet. Tanken är alltså inte att den ska användas för
-              att skriva fullständiga predikningar från början till slut, utan att ge dig förslag och inspiration. Du behåller alltså kontrollen
-              och sätter samman din predikan som vanligt, med de språkliga nyanser och det tonläge som är ditt. <br />
-              Jag ser det som att denna app hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis som i ditt egna 
-              fysiska bibliotek där hemma, men via appen har du nu tillgång till långt många mer källor som ka ge uppslag och idéer.
+              ge dig som predikant idéer och uppslag till ditt viktiga arbete med Ordet.<br /><br />
+              
+              Grundidén med denna webbapp är att användaren själv ska ha den fulla kontrollen över sin predikan eller sitt tal. Det är 
+              du som ska sätta samman din predikan från början till slut, med de språkliga nyanser och det tonläge som är ditt, inte AI:n. <br />
+              
+              Tanken är alltså inte att appen ska användas för att skriva fullständiga predikningar, utan att ge förslag och inspiration. Se det som att 
+              appen hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis som i ditt egna 
+              fysiska bibliotek där hemma, men att du via denna tjänst nu har tillgång till långt många fler källor som kan ge uppslag och idéer.
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              AI-modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta för i första hand Svenska kyrkans präster. Jag tänker dock att även pastorer inom andra kristna samfund kan ha nytta av den.
+              En annan stor fördel med tjänsten, är att AI-modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. 
+              Instruktionerna har provats fram och tillbaka för att ge de bästa möjliga svaren i en god ton. Du slipper alltså skriva långa
+              promtar på egen hand varje gång. Arbetet med att förfina instruktionerna är hela tiden igång.<br /> 
+              AI-modellen är i första hand instruerad att passa en svenskkyrklig kontext, med variationer i svaren som tar hänsyn till den bredd som finns där. 
+              Med detta sagt är min förhoppning också att pastorer inom andra kristna samfund kan ha nytta av tjänsten.
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att uppdateras med nya funktioner och förbättringar under denna tid. Obs att sidorna för &quot;pris&quot; och &quot;login&quot; inte är aktiverade än.<br /><br />
+              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att 
+              uppdateras med nya funktioner och förbättringar under denna tid.
+              (Bl a kommer sidan för "pris" fungera den dagen det är dags att lansera tjänsten på allvar.)<br /><br />
+              Notera att du som testare först bara får 10 krediter/sökningar när du registrerar dig, men så fort jag får notis om att du är med i testgruppen så 
+              justerar jag upp det. <br /><br />
               Jag är tacksam om du inte sprider denna sida till andra ännu, jag vill att vi testar den ordentligt först.<br /><br />
               Bästa hälsningar, Patric.
-            
             </p>
 
             <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8e4df] text-sm text-[#575c58] leading-relaxed mb-6">
@@ -94,10 +183,10 @@ export default function StartSida() {
               </p>
               <ul className="space-y-2 text-sm text-[#575c58] list-disc list-inside bg-[#f4f0eb]/50 p-4 rounded-xl border border-[#e8e4df]">
                 <li>Saknas någon funktion, isåfall vilken?</li>
-                <li>Känns svaren och förslagen du får från AI-modellen relevanta, eller känns de generellt för konstlade?</li>
-                <li>Hur korrekt upplever du att denna AI-modell är, går det att lita på svaren?</li>
+                <li>Känns svaren och förslagen du får från AI-modellen relevanta, eller upplever du dem generellt för konstlade?</li>
+                <li>Hur korrekt upplever du att denna AI-modell är, går det att lita på svaren? Har du fått rena faktafel? Isåfall var?</li>
                 <li>Hur fungerar sidan att navigera på, förstår man intuitivt vilka knappar man ska trycka på etc.</li>
-                <li>Vad skulle du vara villig att betala per månad för en färdigutvecklad tjänst? 49:- för 30 anrop, 69:- för 60, 99:- för 100, 139:-/mån för 150 anrop? mer? mindre? (Jag är tvungen att ta ut någon avgift framåt för att betala för serverplats, få den bästa AI-tjänst som är pålitlig o snabb, min egen tid mm...)</li>
+                <li>Vad skulle du vara villig att betala per månad för en sådan här tjänst? 59:- för 30 anrop, 79:- för 60, 99:- för 100, 139:-/mån för 150 anrop? mer? mindre? (Jag måste ta ut någon avgift framåt för att betala för serverplats, få bästa AI-tjänst etc.)</li>
               </ul>
             </div>
           </div>
@@ -107,7 +196,7 @@ export default function StartSida() {
           </p>
         </section>
 
-      {/* VERKTYGSKORT / HUVUDMENY */}
+        {/* VERKTYGSKORT / HUVUDMENY */}
         <section className="mb-12">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-[#575c58] mb-4 text-center">
             Våra verktyg
@@ -238,13 +327,11 @@ export default function StartSida() {
             method="POST"
             className="max-w-xl mx-auto space-y-4"
           >
-            {/* Din Web3Forms Access Key */}
             <input
               type="hidden"
               name="access_key"
               value="cf6ed5dc-1549-4541-925b-3224203bdf57"
             />
-            {/* Ämne i mejlet du får */}
             <input
               type="hidden"
               name="subject"
@@ -304,11 +391,29 @@ export default function StartSida() {
         </section>
 
         {/* FOOTER */}
-        <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">
-          © 2026 Patric Ivan. Alla rättigheter förbehållna.
+        <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d] flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+          <p>© 2026 Patric Ivan. Alla rättigheter förbehållna.</p>
+          <div className="flex items-center gap-3">
+            <Link href="/integritet" className="hover:text-[#1a1d1b] underline transition-colors">
+              Integritetspolicy
+            </Link>
+            <span>•</span>
+            <Link href="/villkor" className="hover:text-[#1a1d1b] underline transition-colors">
+              Användar- och köpvillkor
+            </Link>
+          </div>
         </footer>
 
       </div>
+
+      {/* MODALEN FÖR INLOGGNING / SKAPA KONTO */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        message={modalMessage}
+        onAuthSuccess={() => fetchProfile()}
+      />
+
     </main>
   );
 }

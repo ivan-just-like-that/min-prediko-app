@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { generateContent } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import AuthModal from '@/components/AuthModal';
 
 // Hjälp-komponent för kopiera-knapp
 function KopieraKnapp({ text }) {
@@ -52,6 +55,54 @@ export default function HistoriskKontext() {
   const [laddar, setLaddar] = useState(false);
   const [historik, setHistorik] = useState([]);
 
+  // --- STATE FÖR ANVÄNDARE OCH MODAL ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [isTester, setIsTester] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+  useEffect(() => {
+    fetchProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setUser(null);
+        setCredits(null);
+        setIsTester(false);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+    const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAuthLoading(false);
+      return;
+    }
+    setUser(user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const startCredits = profile.credits ?? profile.tokens ?? 0;
+      setCredits(startCredits);
+      setIsTester(profile.is_tester);
+    }
+      setAuthLoading(false);
+  };
+
   // Läs in sparad historik från localStorage
   useEffect(() => {
     try {
@@ -92,20 +143,24 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
 `;
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: promptText,
-          sida: 'historik',
-          verktyg: 'Historisk kommentar',
-          helgdag: 'Historisk kommentar',
-          tema: bibelstalle
-        }),
+      const payload = {
+        prompt: promptText,
+        sida: 'historik',
+        verktyg: 'Historisk kommentar',
+        helgdag: 'Historisk kommentar',
+        tema: bibelstalle
+      };
+
+      const data = await generateContent(payload, () => {
+        setModalMessage('Du måste vara inloggad för att använda verktyget.');
+        setShowAuthModal(true);
       });
 
-      const data = await res.json();
-      const nyttSvar = data.text || data.result || 'Kunde inte generera historisk kommentar.';
+      const nyttSvar = data.text || 'Kunde inte generera historisk kommentar.';
+
+      if (data.tokensLeft !== undefined) {
+        setCredits(data.tokensLeft);
+      }
 
       setKommentarSvar(nyttSvar);
 
@@ -121,7 +176,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
       localStorage.setItem('historiska_kommentarer_historik', JSON.stringify(uppdaterad));
 
     } catch (err) {
-      alert('Det uppstod ett fel vid anropet.');
+      alert(err.message || 'Det uppstod ett fel vid anropet.');
     } finally {
       setLaddar(false);
     }
@@ -155,12 +210,12 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
             <span className="text-[#e8e4df]">|</span>
             
             <h1 className="text-base sm:text-xl font-bold tracking-tight text-[#1a1d1b] truncate">
-                <span className="sm:hidden">Historia</span>
-                <span className="hidden sm:inline">Hisoriska kommentarer</span>
+              <span className="sm:hidden">Historia</span>
+              <span className="hidden sm:inline">Historiska kommentarer</span>
             </h1>
           </div>
 
-          {/* HÖGER: Navigation (Pris & Logga in) */}
+          {/* HÖGER: Navigation (Pris & Logga in/ut) */}
           <nav className="flex items-center gap-3 sm:gap-5 shrink-0">
             <Link 
               href="/pris" 
@@ -168,16 +223,46 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
             >
               Pris
             </Link>
-            <Link 
-              href="/login" 
-              className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
-            >
-              Logga in
-            </Link>
+            
+            {/* DYNAMISK LOGGA IN / LOGGA UT-KNAPP (Döljs under laddning för att undvika blinkning) */}
+            {!authLoading && (
+              user ? (
+                <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="bg-[#e8e4df] hover:bg-[#d8d4cf] text-[#1a1d1b] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga ut
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Logga in
+                </button>
+              )
+            )}
           </nav>
 
         </div>
       </header>
+
+      {/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
+      {user && (
+        <div className="bg-[#f4f0eb] border-b border-[#e8e4df] py-2 px-4">
+          <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+            <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+            {credits !== null && (
+              <span className="bg-white border border-[#e8e4df] font-semibold px-2.5 py-1 rounded-full text-[#2d3732] shrink-0">
+                {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits} sökningar kvar`}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* HUVUDINNEHÅLL */}
       <div className="max-w-[1000px] mx-auto px-6 pt-8 pb-16">
@@ -367,6 +452,17 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
 
           </div>
         </section>
+
+        {/* INLOGGNINGSMODAL */}
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+          message={modalMessage}
+          onAuthSuccess={() => {
+            setShowAuthModal(false);
+            fetchProfile();
+          }} 
+        />
 
         {/* FOOTER */}
         <footer className="mt-16 pt-6 border-t border-[#e8e4df] text-center text-xs text-[#8c918d]">
