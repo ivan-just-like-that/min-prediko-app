@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase'; // Anpassa sökvägen om det behövs
 
 export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
-  // Lägen: 'login' | 'signup' | 'forgot' | 'reset'
+  // Lägen: 'login' | 'signup' | 'verify-otp' | 'forgot' | 'reset'
   const [mode, setMode] = useState('login'); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [acceptedGdpr, setAcceptedGdpr] = useState(false); // <--- NYTT: State för GDPR-kryssruta
+  const [otpCode, setOtpCode] = useState(''); // <--- NYTT: State för 6-siffrig engångskod
+  const [acceptedGdpr, setAcceptedGdpr] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
@@ -35,6 +36,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
     setInfoMsg('');
     setPassword('');
     setConfirmPassword('');
+    setOtpCode('');
     setAcceptedGdpr(false);
   };
 
@@ -46,9 +48,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
     setInfoMsg('');
 
     try {
-      const currentUrl = typeof window !== 'undefined' ? window.location.href : undefined;
-
-      // 1. SKAPA KONTO
+      // 1. SKAPA KONTO (Initiera registrering och skicka 6-siffrig kod)
       if (mode === 'signup') {
         if (!acceptedGdpr) {
           setErrorMsg('Du måste godkänna integritetspolicyn för att skapa ett konto.');
@@ -62,26 +62,47 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
           return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: currentUrl },
         });
 
         if (error) throw error;
 
-        if (data?.user && data?.session === null) {
-          setInfoMsg('Ett bekräftelsemail har skickats! Kontrollera din inkorg för att aktivera kontot.');
-        } else {
-          setInfoMsg('Konto skapat! Du är nu inloggad med 10 gratisanrop.');
-          setTimeout(() => {
-            if (onAuthSuccess) onAuthSuccess();
-            onClose();
-          }, 1200);
-        }
+        // Byt vy i modalen till kodinmatning
+        setMode('verify-otp');
+        setInfoMsg('En 6-siffrig bekräftelsekod har skickats till din e-post. Skriv in den nedan.');
       } 
+
+      // 2. VERIFIERA 6-SIFFRIG KOD (OTP)
+      else if (mode === 'verify-otp') {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token: otpCode.trim(),
+          type: 'signup',
+        });
+
+        if (error) {
+          setErrorMsg('Felaktig eller utgången kod. Kontrollera koden i ditt mejl och försök igen.');
+          setLoading(false);
+          return;
+        }
+
+        // Skicka notis-mail till dig själv om ny registrerad & verifierad användare
+        fetch('/api/notify-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }).catch((err) => console.error('Kunde inte skicka notis-mail:', err));
+
+        setInfoMsg('E-postadressen bekräftad! Du är nu inloggad med 10 gratisanrop.');
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess();
+          onClose();
+        }, 1200);
+      }
       
-      // 2. LOGGA IN
+      // 3. LOGGA IN
       else if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -94,7 +115,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         onClose();
       }
 
-      // GLÖMT LÖSENORD (SKICKA ÅTERSTÄLLNINGSMAIL VIA VÅRT API)
+      // 4. GLÖMT LÖSENORD
       else if (mode === 'forgot') {
         const response = await fetch('/api/auth/reset-password', {
           method: 'POST',
@@ -108,7 +129,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         setInfoMsg('Ett e-postmeddelande med en återställningslänk har skickats till din adress!');
       }
 
-      // 4. SPARA NYTT LÖSENORD (NÄR KUNDEN KLICKAT PÅ MAILLÄNKEN)
+      // 5. SPARA NYTT LÖSENORD
       else if (mode === 'reset') {
         if (password !== confirmPassword) {
           setErrorMsg('Lösenorden matchar inte. Kontrollera och försök igen.');
@@ -168,12 +189,15 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
           </div>
           <h2 className="text-2xl font-bold text-[#1a1d1b]">
             {mode === 'signup' && 'Skapa ett konto'}
+            {mode === 'verify-otp' && 'Ange bekräftelsekod'}
             {mode === 'login' && 'Logga in'}
             {mode === 'forgot' && 'Återställ lösenord'}
             {mode === 'reset' && 'Välj nytt lösenord'}
           </h2>
           <p className="text-xs sm:text-sm text-[#575c58] mt-2 bg-[#faf8f5] border border-[#e8e4df] p-3 rounded-xl leading-relaxed">
-            {mode === 'forgot' 
+            {mode === 'verify-otp'
+              ? `Vi har skickat en 6-siffrig kod till ${email}. Skriv in den nedan för att slutföra registreringen.`
+              : mode === 'forgot' 
               ? 'Fyll i din e-postadress så skickar vi en länk för att återställa ditt lösenord.'
               : mode === 'reset'
               ? 'Skriv in ditt nya lösenord nedan.'
@@ -232,7 +256,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {/* E-postfält (Visas för login, signup & forgot) */}
-          {mode !== 'reset' && (
+          {mode !== 'reset' && mode !== 'verify-otp' && (
             <div>
               <label className="block text-[11px] font-semibold text-[#1a1d1b] uppercase tracking-wider mb-1">
                 E-postadress
@@ -248,8 +272,26 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
             </div>
           )}
 
+          {/* FÄLT FÖR 6-SIFFRIG BEKRÄFTELSEKOD (Visas endast i mode 'verify-otp') */}
+          {mode === 'verify-otp' && (
+            <div>
+              <label className="block text-[11px] font-semibold text-[#1a1d1b] uppercase tracking-wider mb-1">
+                Bekräftelsekod (6 siffror)
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="123456"
+                className="w-full text-center tracking-[0.3em] font-mono text-lg py-2.5 border border-[#e8e4df] bg-[#faf8f5] rounded-xl focus:outline-none focus:border-[#2d3732] focus:bg-white transition-all"
+              />
+            </div>
+          )}
+
           {/* Lösenordsfält (Visas för login, signup & reset) */}
-          {mode !== 'forgot' && (
+          {mode !== 'forgot' && mode !== 'verify-otp' && (
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-[11px] font-semibold text-[#1a1d1b] uppercase tracking-wider">
@@ -295,7 +337,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
             </div>
           )}
 
-          {/* --- NYTT: GDPR-KRYSSRUTA (Visas endast vid registrering) --- */}
+          {/* GDPR-KRYSSRUTA (Visas endast vid registrering) */}
           {mode === 'signup' && (
             <div className="flex items-start gap-2 pt-1">
               <input
@@ -327,6 +369,8 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
               ? 'Bearbetar...'
               : mode === 'signup'
               ? 'Skapa konto & få 10 gratisanrop'
+              : mode === 'verify-otp'
+              ? 'Bekräfta kod & logga in'
               : mode === 'login'
               ? 'Logga in'
               : mode === 'forgot'
@@ -348,6 +392,16 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
                 Logga in här
               </button>
             </p>
+          )}
+
+          {mode === 'verify-otp' && (
+            <button
+              type="button"
+              onClick={() => switchMode('signup')}
+              className="text-xs font-bold text-[#1a1d1b] hover:underline"
+            >
+              ← Byt e-postadress eller börja om
+            </button>
           )}
 
           {mode === 'login' && (

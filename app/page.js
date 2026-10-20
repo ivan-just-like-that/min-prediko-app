@@ -141,32 +141,50 @@ export default function StartSida() {
             </h2>
             
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              Så roligt att du vill vara med och testa Predikoassistenten! Det är en AI-driven tjänst vars idé är att
-              ge dig som predikant idéer och uppslag till ditt viktiga arbete med Ordet.<br /><br />
+              Så roligt att du vill vara med och testa Predikoassistenten! Det är en AI-driven tjänst som är skapad för att ge dig 
+              byggstenar, inspiration och teologiskt stöd – medan du behåller den fulla kontrollen över 
+              din predikan eller ditt tal. Det är ditt budskap och dina teologiska reflektioner som ska stå i centrum. Med din erfarenhet, 
+              ditt personliga tonläge och dina språkliga nyanser är du helt oersättlig. Denna AI-tjänst kommer alltså aldrig ersätta dig
+              eller ta ditt jobb.
+            </p>
               
-              Grundidén med denna webbapp är att användaren själv ska ha den fulla kontrollen över sin predikan eller sitt tal. Det är 
-              du som ska sätta samman din predikan från början till slut, med de språkliga nyanser och det tonläge som är ditt, inte AI:n. <br />
-              
-              Tanken är alltså inte att appen ska användas för att skriva fullständiga predikningar, utan att ge förslag och inspiration. Se det som att 
-              appen hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis som i ditt egna 
-              fysiska bibliotek där hemma, men att du via denna tjänst nu har tillgång till långt många fler källor som kan ge uppslag och idéer.
+            <p className="text-[#575c58] text-base leading-relaxed mb-4">
+              Utöver idéer till predikan utifrån helgdagens texter hittar du här verktyg som hjälper till med fördjupning i historia, grundtextanalys 
+              (endast för NT än), idéer till arbetet med barn & unga mm.
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
-              En annan stor fördel med tjänsten, är att AI-modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. 
+              I sin helhet kan man se det som att appen hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis 
+              som i ditt eget fysiska bibliotek där hemma, men att du via denna tjänst har tillgång till långt många fler 
+              källor som kan ge uppslag och idéer.
+            </p>
+
+            <p className="text-[#575c58] text-base leading-relaxed mb-4">
+              Bland fördelarna med appen är att du får tillgång till en av de bästa AI-modeller som finns för dessa uppgifter, vilket är anledningen till att den 
+              kostar en del att använda.<br />
+
+              AI-modellen är också instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. 
               Instruktionerna har provats fram och tillbaka för att ge de bästa möjliga svaren i en god ton. Du slipper alltså skriva långa
               promtar på egen hand varje gång. Arbetet med att förfina instruktionerna är hela tiden igång.<br /> 
-              AI-modellen är i första hand instruerad att passa en svenskkyrklig kontext, med variationer i svaren som tar hänsyn till den bredd som finns där. 
-              Med detta sagt är min förhoppning också att pastorer inom andra kristna samfund kan ha nytta av tjänsten.
+              AI-modellen är i första hand styrd att passa en svenskkyrklig kontext, med variationer i svaren som tar hänsyn till den bredd som finns. 
+              Med detta sagt är min förhoppning att även pastorer inom andra kristna samfund kan ha nytta av tjänsten.
             </p>
 
             <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att 
               uppdateras med nya funktioner och förbättringar under denna tid.
-              (Bl a kommer sidan för "pris" fungera den dagen det är dags att lansera tjänsten på allvar.)<br /><br />
+              (Bl.a. kommer sidan för "pris" fungera den dagen det är dags att lansera tjänsten på allvar.)
+            </p>
+
+            <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Notera att du som testare först bara får 10 krediter/sökningar när du registrerar dig, men så fort jag får notis om att du är med i testgruppen så 
-              justerar jag upp det. <br /><br />
-              Jag är tacksam om du inte sprider denna sida till andra ännu, jag vill att vi testar den ordentligt först.<br /><br />
+              justerar jag upp det.
+            </p>
+
+            <p className="text-[#575c58] text-base leading-relaxed mb-4">
+              Jag är tacksam om du inte sprider denna sida till andra ännu, jag vill att vi testar den ordentligt först.
+            </p>
+            <p className="text-[#575c58] text-base leading-relaxed mb-4">
               Bästa hälsningar, Patric.
             </p>
 
