@@ -350,7 +350,7 @@ export default function PopulartPage() {
                       Predikoidéer →
                     </h4>
                     <p className="text-xs text-[#575c58]">
-                      Dispositioner & vinklar.
+                      Dispositioner och vinklar.
                     </p>
                   </div>
                 </div>
@@ -412,6 +412,21 @@ export default function PopulartPage() {
                 </div>
               </Link>
 
+            {/* 6. BIBELSTUDIUM */}
+            <Link href="/bibelstudium" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📖</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Bibelstudieguiden →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    10 samtalsfrågor för gruppen.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
               <Link href="/predikantpepp" className="group block">
                 <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                   <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🌱</span>
@@ -420,7 +435,7 @@ export default function PopulartPage() {
                       Predikantpepp →
                     </h4>
                     <p className="text-xs text-[#575c58]">
-                      Pepp, haikuer & humor.
+                      Pepp, haikuer och humor.
                     </p>
                   </div>
                 </div>

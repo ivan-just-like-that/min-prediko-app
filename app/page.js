@@ -14,12 +14,16 @@ export default function StartSida() {
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // --- 2. HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
+// --- 2. HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
   useEffect(() => {
     fetchProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
+      // OM ANVÄNDAREN KOMMER VIA ÅTERSTÄLLNINGSLÄNK I MEJL
+      if (event === 'PASSWORD_RECOVERY') {
+        setModalMessage('Skriv in ditt nya lösenord nedan:');
+        setShowAuthModal(true); // Öppnar din AuthModal!
+      } else if (session?.user) {
         fetchProfile();
       } else {
         setUser(null);
@@ -297,6 +301,23 @@ export default function StartSida() {
               </div>
             </Link>
 
+            {/* 6. BIBELSTUDIUM */}
+            <Link href="/bibelstudium" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">📖</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Bibelstudieguiden →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    10 samtalsfrågor för gruppen.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+
+            {/* 7. PEPP */}
             <Link href="/predikantpepp" className="group block">
               <div className="p-6 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex items-start gap-4 h-full">
                 <span className="text-3xl p-3 bg-[#f4f0eb] rounded-xl shrink-0">🌱</span>
@@ -311,6 +332,7 @@ export default function StartSida() {
               </div>
             </Link>
 
+            {/* 8. POPULÄRT */}
             <Link href="/populart" className="group block">
               <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
                 <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>

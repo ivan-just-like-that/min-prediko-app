@@ -10,27 +10,39 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otpCode, setOtpCode] = useState(''); // <--- NYTT: State för 6-siffrig engångskod
+  const [otpCode, setOtpCode] = useState('');
   const [acceptedGdpr, setAcceptedGdpr] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
+
+  // Tvingar modalen att hållas öppen när användaren kommer via en lösenordslänk
+  const [forceOpenReset, setForceOpenReset] = useState(false);
 
   // Lyssna på om användaren klickat på en "Återställ lösenord"-länk i e-posten
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
+        setForceOpenReset(true); // Tvingar modalen att öppnas direkt
       }
     });
 
     return () => authListener.subscription?.unsubscribe();
   }, []);
 
-  if (!isOpen && mode !== 'reset') return null;
+  // Stängningsfunktion som rensar återställningsläget och anropar parent onClose
+  const handleClose = () => {
+    setForceOpenReset(false);
+    setMode('login');
+    setErrorMsg('');
+    setInfoMsg('');
+    if (onClose) onClose();
+  };
 
   // Nollställ formulär, felmeddelanden och kryssruta vid lägesbyte
   const switchMode = (newMode) => {
+    setForceOpenReset(false);
     setMode(newMode);
     setErrorMsg('');
     setInfoMsg('');
@@ -39,6 +51,9 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
     setOtpCode('');
     setAcceptedGdpr(false);
   };
+
+  // Låt modalen vara öppen om den öppnats via props ELLER om vi är i tvingat återställningsläge
+  if (!isOpen && !forceOpenReset) return null;
 
   // Hantera alla formulärinlämningar
   const handleSubmit = async (e) => {
@@ -98,7 +113,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         setInfoMsg('E-postadressen bekräftad! Du är nu inloggad med 10 gratisanrop.');
         setTimeout(() => {
           if (onAuthSuccess) onAuthSuccess();
-          onClose();
+          handleClose();
         }, 1200);
       }
       
@@ -112,7 +127,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         if (error) throw error;
 
         if (onAuthSuccess) onAuthSuccess();
-        onClose();
+        handleClose();
       }
 
       // 4. GLÖMT LÖSENORD
@@ -146,8 +161,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         setInfoMsg('Ditt lösenord har uppdaterats! Du är nu inloggad.');
         setTimeout(() => {
           if (onAuthSuccess) onAuthSuccess();
-          switchMode('login');
-          onClose();
+          handleClose();
         }, 1500);
       }
     } catch (err) {
@@ -175,7 +189,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
         
         {/* Stäng-knapp (Kryss) */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           type="button"
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full text-xl leading-none"
         >
