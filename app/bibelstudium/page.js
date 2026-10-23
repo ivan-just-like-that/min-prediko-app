@@ -460,6 +460,20 @@ Ge ett kort förslag på hur ledaren kan runda av samtalet i bön eller gemensam
                 </div>
               </div>
             </Link>
+
+            <Link href="/populart" className="group block">
+              <div className="p-5 bg-white rounded-xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all flex items-center gap-4 h-full">
+                <span className="text-2xl p-2.5 bg-[#f4f0eb] rounded-lg">🔥</span>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors">
+                    Populärt bland kollegorna →
+                  </h4>
+                  <p className="text-xs text-[#575c58]">
+                    Se vad andra utforskar.
+                  </p>
+                </div>
+              </div>
+            </Link>
           </div>
         </section>
 
