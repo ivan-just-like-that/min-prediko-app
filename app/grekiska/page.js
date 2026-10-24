@@ -152,17 +152,19 @@ export default function GrekiskAnalys() {
 
     setLaddar(true);
 
-    const promptText = `
+const promptText = `
 Ge en noggrann grekisk grundtextanalys (koinégrekiska) för följande bibelställe: "${bibelstalle}".
 
 Strukturera svaret så här:
 1. **Grekisk grundtext**: Skriv versen/texten på grekiska med accentuerade tecken.
 2. **Translitterering**: Hur ord och uttal utläses på svenska/latinska bokstäver.
-3. **Svensk översättning**: Ord-för-ord / nära översättning.
-4. **Ordanalys & Grammatik**: Välj ut 3-5 viktiga nyckelord i texten. För varje ord ange:
-- Ordets grundform (lexikonform)
-- Grammatisk form (t.ex. Substantiv Akkusativ Maskulinum, eller Verb Aorist Indikativ Aktiv)
-- Betydelsenyanser och teologisk relevans för predikan.
+3. **Textnära översättning**: En ord-för-ord-översättning som ligger så nära grundtexten som möjligt.
+4. **Ordanalys & Grammatik**: Välj ut 3-5 viktiga nyckelord i texten. 
+   Formatera varje punkt exakt så här:
+   1. Translitterering (Grekiska) = Svensk översättning (t.ex. 1. Makarios (μακάριος) = Saliga / Lyckliga)
+   - Grundform: ...
+   - Grammatisk form: ...
+   - Betydelsenyans och teologisk relevans: ...
 `;
 
     try {
@@ -191,7 +193,12 @@ Strukturera svaret så här:
         id: Date.now(),
         bibelstalle: bibelstalle,
         svar: nyttSvar,
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdaterad = [nyPost, ...historik];

@@ -331,7 +331,7 @@ export default function PopulartPage() {
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-                <Flame className="w-5 h-5 text-amber-600" />
+                <TrendingUp className="w-5 h-5 text-[#2d3732]" />
               </div>
               <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
                 Populärt bland kollegorna

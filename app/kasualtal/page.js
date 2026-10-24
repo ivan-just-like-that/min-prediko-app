@@ -6,7 +6,9 @@ import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
-  ChevronDown, 
+  ChevronDown,
+  Droplets,
+  Blend, 
   Sparkles, 
   BookOpen, 
   Languages, 
@@ -910,7 +912,12 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
         titel: `${rubrik} – ${typNamn}`,
         svar: nyttSvar,
         helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -1110,7 +1117,7 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
             {/* VÄNSTER SPALT: Val av tillfälle, text & bakgrund */}
             <section className="space-y-6">
               
-              {/* 1. VÄLJ KASUALTILLFÄLLE */}
+             {/* 1. VÄLJ KASUALTILLFÄLLE */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-4 border-b border-[#e8e4df] pb-3">
                   1. Välj tillfälle
@@ -1118,22 +1125,26 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
 
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
-                    { id: 'dop', label: '👶 Dop' },
-                    { id: 'vigsel', label: '💍 Vigsel' },
-                    { id: 'begravning', label: '✝️ Begravning' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setKasualTyp(item.id)}
-                      className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                        kasualTyp === item.id
-                          ? 'bg-[#2d3732] text-white shadow-sm'
-                          : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                    { id: 'dop', label: 'Dop', icon: Droplets },
+                    { id: 'vigsel', label: 'Vigsel', icon: Blend },
+                    { id: 'begravning', label: 'Begravning', icon: Feather },
+                  ].map((item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setKasualTyp(item.id)}
+                        className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                          kasualTyp === item.id
+                            ? 'bg-[#2d3732] text-white shadow-sm'
+                            : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
+                        }`}
+                      >
+                        <IconComponent className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -22,6 +22,7 @@ import {
   X,
   Copy,
   Check,
+  HandHeart,
   PenTool,
   Heart
 } from 'lucide-react';
@@ -431,15 +432,15 @@ Regler för svaret:
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-              Uppmuntran, poesi och kanske ett leende? Denna sida ingår utan att dra av dina krediter.
+              Uppmuntran, poesi och kanske ett leende? På denna sida dras inga krediter.
             </p>
           </div>
 
           {/* MODUL 1: Själavårdande pepp till prästen */}
           <section className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 text-center space-y-4 mb-8">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] mb-2">
-              <Heart className="w-6 h-6 text-rose-500" />
-            </div>
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] mb-2">
+            <HandHeart className="w-6 h-6 text-rose-700" />
+          </div>
             <h2 className="text-lg font-bold text-[#1a1d1b]">
               Pepp-o-mat
             </h2>

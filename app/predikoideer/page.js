@@ -881,7 +881,12 @@ function PredikoideerInnehall() {
         titel: rubrik,
         svar: nyttSvar,
         helgdag: valdHelgdag?.namn || 'Allmänt',
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -1064,15 +1069,15 @@ function PredikoideerInnehall() {
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-                <Lightbulb className="w-5 h-5 text-amber-600" />
-              </div>
+              <Lightbulb className="w-5 h-5 text-[#2d3732]" />
+            </div>
               <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
                 Predikoidéer
               </h1>
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-              Få teologiska vinklar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
+              Få nya ingångar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
             </p>
           </div>
 

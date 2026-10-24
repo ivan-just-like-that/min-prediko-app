@@ -22,7 +22,9 @@ import {
   X,
   Copy,
   Check,
-  Trash2
+  Trash2,
+  MessageSquareQuote,
+  HeartHandshake
 } from 'lucide-react';
 
 // Hjälp-komponent för kopiera-knapp i Attio-stil
@@ -245,11 +247,16 @@ För varje lek ska du tydligt ange:
 
       const nyPost = {
         id: Date.now(),
-        typ: huvudLage === 'andakt' ? '🙏 Andakt' : '🪢 Lekar',
+        typ: huvudLage === 'andakt' ? 'andakt' : 'lekar',
         alder: aldersKategoriText,
         rubrik: valttTemaHeader,
         svar: nyttSvar,
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdaterad = [nyPost, ...historik];
@@ -420,9 +427,9 @@ För varje lek ska du tydligt ange:
           {/* INTRO OCH FORMULÄR */}
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-lg shrink-0">
-                🎈
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+              <Smile className="w-5 h-5 text-[#2d3732]" />
+            </div>
               <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
                 Barn & unga
               </h1>
@@ -448,7 +455,7 @@ För varje lek ska du tydligt ange:
                         : 'bg-[#faf8f5] border-[#e8e4df] text-[#575c58] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    <span>🙏</span> Andakt & budskap
+                    <MessageSquareQuote className="w-4 h-4" /> Andakt & budskap
                   </button>
                   <button
                     type="button"
@@ -459,7 +466,7 @@ För varje lek ska du tydligt ange:
                         : 'bg-[#faf8f5] border-[#e8e4df] text-[#575c58] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    <span>🪢</span> Lekar & övningar
+                    <HeartHandshake className="w-4 h-4" /> Lekar & övningar
                   </button>
                 </div>
               </div>
@@ -557,8 +564,9 @@ För varje lek ska du tydligt ange:
             <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
               <div className="pb-4 border-b border-[#e8e4df] mb-6 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-[#1a1d1b] flex items-center gap-2">
-                  <span>
-                    {huvudLage === 'andakt' ? 'Förslag på andakt' : 'Förslag på lekar'} för{' '}
+                  <span className="flex items-center gap-1.5">
+                    {huvudLage === 'andakt' ? <MessageSquareQuote className="w-4 h-4 text-[#2d3732]" /> : <HeartHandshake className="w-4 h-4 text-[#2d3732]" />}
+                    Förslag på {huvudLage === 'andakt' ? 'andakt' : 'lekar'} för{' '}
                     <span className="text-[#2d3732] underline decoration-[#e8e4df]">
                       {alder === '14+' ? '14+ / Konfa' : `${alder} år`}
                     </span>
@@ -605,8 +613,9 @@ För varje lek ska du tydligt ange:
                   >
                     <div className="flex justify-between items-center mb-3 border-b border-[#e8e4df] pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2d3732] text-white px-2 py-0.5 rounded-md">
-                          {item.typ}
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2d3732] text-white px-2.5 py-1 rounded-md flex items-center gap-1">
+                          {item.typ === 'andakt' ? <MessageSquareQuote className="w-3 h-3" /> : <HeartHandshake className="w-3 h-3" />}
+                          {item.typ === 'andakt' ? 'Andakt' : 'Lekar'}
                         </span>
                         <span className="text-xs font-bold text-[#1a1d1b]">
                           {item.alder}

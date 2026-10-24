@@ -210,7 +210,12 @@ Ge ett kort förslag på hur ledaren kan runda av samtalet i bön eller gemensam
         id: Date.now(),
         bibelstalle: bibelstalle,
         svar: nyttSvar,
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdaterad = [nyPost, ...historik];
@@ -390,7 +395,7 @@ Ge ett kort förslag på hur ledaren kan runda av samtalet i bön eller gemensam
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed mb-6">
-              Skriv in ett kapitel eller ett bibelställe så skapar AI:n 10 anpassade samtalsfrågor för gruppen. Frågorna täcker in textens innehåll, historiska mottagare och vardaglig tillämpning.
+              Skriv in ett kapitel eller ett bibelställe så genereras 10 samtalsfrågor för gruppen. Frågorna täcker in textens innehåll, historiska mottagare och vardaglig tillämpning.
             </p>
 
             <form onSubmit={hanteraGenerering} className="flex flex-col sm:flex-row gap-3">

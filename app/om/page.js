@@ -282,7 +282,7 @@ export default function OmPage() {
           </p>
 
           <p>
-            Jag som skapat appen heter Patric och är själv prästvigd i Svenska kyrkan, för Växjö stift 2004. De senaste åren har jag dock jobbat 
+            Jag som skapat appen heter Patric och är själv prästvigd i Svenska kyrkan för Växjö stift 2004. De senaste åren har jag dock jobbat 
             heltid med min hobby inom fotografi, men tankarna på såväl prästeriet som kyrkan finns alltid med. <br />
             Just detta med förkunnelsen har alltid engagerat mig, allt från arbetet med texternas historia till retorik och framförande. Det är är bakgrunden till 
             att jag utvecklar denna tjänst, ett arbete som känns både roligt och angeläget.
@@ -358,8 +358,7 @@ export default function OmPage() {
         <section className="bg-white rounded-3xl p-8 border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h3 className="text-lg font-bold text-[#1a1d1b] mb-2">Återkoppling</h3>
           <p className="text-xs text-[#575c58] leading-relaxed mb-6">
-            PREDIKA är skapat för att ge teologiska byggstenar och inspiration utan att ta över ditt eget budskap. 
-            Skriv gärna dina synpunkter nedan så utvecklar vi tjänsten tillsammans!
+            PREDIKA är i en testfas. Har du förslag på hur verktyget kan bli ännu bättre för dig? Skriv gärna dina synpunkter nedan!
           </p>
 
           {feedbackSubmitted ? (

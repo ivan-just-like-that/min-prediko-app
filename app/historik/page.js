@@ -198,7 +198,12 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
         id: Date.now(),
         bibelstalle: bibelstalle,
         svar: nyttSvar,
-        tid: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+        tid: new Date().toLocaleDateString('sv-SE', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
       };
 
       const uppdaterad = [nyPost, ...historik];

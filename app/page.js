@@ -17,8 +17,17 @@ import {
   LogOut,
   KeyRound,
   Menu,
-  X
+  X,
+  Lightbulb
 } from 'lucide-react';
+
+const heroPhrases = [
+  "Upptäck en ny form av förberedelse.",
+  "Ditt nya teologiska bibliotek.",
+  "Djupdyk i böckernas bok.",
+  "Alla verktyg på ett ställe.",
+  "Idétorka? Här finns inspiration."
+];
 
 export default function PredikaLandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -27,6 +36,10 @@ export default function PredikaLandingPage() {
   const [credits, setCredits] = useState(null);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // States för rotérande hero-rubrik
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroVisible, setHeroVisible] = useState(true);
 
   // States för menyer
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -38,6 +51,20 @@ export default function PredikaLandingPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackError, setFeedbackError] = useState('');
+
+  // Effekt för att tona in/ut hero-meningarna
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroVisible(false);
+
+      setTimeout(() => {
+        setHeroIndex((prevIndex) => (prevIndex + 1) % heroPhrases.length);
+        setHeroVisible(true);
+      }, 1000); // 1000ms toningstid
+    }, 5000); // Byter mening var 5:e sekund
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchProfile();
@@ -123,7 +150,7 @@ export default function PredikaLandingPage() {
   };
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Lightbulb },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
@@ -264,32 +291,53 @@ export default function PredikaLandingPage() {
         )}
       </header>
 
-      {/* 2. HERO SEKTION (ATTIO-TYPOGRAFI) */}
-      <section className="pt-20 pb-16 max-w-4xl mx-auto px-6 text-center">
-        
-        {/* LITEN BADGE HÖGST UPP */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-[#e8e4df] rounded-full text-xs font-semibold text-[#575c58] mb-8 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Byggd för präster & teologer
-        </div>
+{/* 2. HERO SEKTION (REN & TIGHT) */}
+<section className="pt-20 pb-16 max-w-3xl mx-auto px-6 text-center">
+  
+  {/* 1. BADGE */}
+  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-[#e8e4df] rounded-full text-xs font-semibold text-[#575c58] mb-8 shadow-sm">
+    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+    Utvecklad för präster & teologer
+  </div>
 
-        {/* RIKTIGT STOR, SNYGG RUBRIK */}
-        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#1a1d1b] leading-[1.1] mb-6">
-          Upptäck en ny form av förberedelse.
-        </h1>
+  {/* 2. ROTERANDE RUBRIK */}
+  <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#1a1d1b] leading-[1.1] mb-6 min-h-[2.2em] sm:min-h-[1.2em] flex items-center justify-center">
+    <span 
+      className={`transition-opacity duration-1000 ease-in-out ${
+        heroVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
+      {heroPhrases[heroIndex]}
+    </span>
+  </h1>
 
-        {/* UNDERTEXT */}
-        <p className="text-lg sm:text-xl text-[#575c58] font-medium tracking-tight max-w-xl mx-auto">
-          tydlig struktur &bull; nya idéer &bull; ny kunskap
-        </p>
+  {/* 3. REN & ENKEL UNDERTEXT */}
+  <p className="text-base sm:text-lg text-[#575c58] leading-relaxed font-normal max-w-xl mx-auto mb-10">
+    Teologiska byggstenar och inspiration till församlingsarbetet.
+  </p>
 
-        {/* INLOGGAD-STATUS NOTIS */}
-        {user && (
-          <div className="mt-8 inline-block bg-white border border-[#e8e4df] px-4 py-2 rounded-xl text-xs text-[#575c58] shadow-sm">
-            Inloggad som <strong className="text-[#1a1d1b]">{user.email}</strong> &bull; {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} sökningar kvar`}
-          </div>
-        )}
-      </section>
+  {/* 4. CALL TO ACTION */}
+  {!user ? (
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <button
+        onClick={() => {
+          setModalMessage('Skapa ett konto och få 10 gratis sökningar direkt!');
+          setShowAuthModal(true);
+        }}
+        className="px-6 py-3.5 text-xs font-bold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-2xl transition-all shadow-sm hover:shadow flex items-center gap-2 active:scale-95"
+      >
+        <Sparkles className="w-4 h-4 text-amber-400" />
+        Påbörja testperiod
+      </button>
+      <span className="text-[11px] text-[#8c918d]">10 gratis anrop &bull; Inget kort krävs</span>
+    </div>
+  ) : (
+    <div className="inline-block bg-white border border-[#e8e4df] px-4 py-2.5 rounded-2xl text-xs text-[#575c58] shadow-sm">
+      Inloggad som <strong className="text-[#1a1d1b]">{user.email}</strong> &bull; {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} sökningar kvar`}
+    </div>
+  )}
+
+</section>
 
       {/* 3. VERKTYGSGRID (ATTIO CARD-DESIGN) */}
       <section className="max-w-6xl mx-auto px-6 pb-24">
@@ -332,8 +380,7 @@ export default function PredikaLandingPage() {
         <div className="bg-white rounded-3xl p-8 border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h3 className="text-lg font-bold text-[#1a1d1b] mb-2">Återkoppling</h3>
           <p className="text-xs text-[#575c58] leading-relaxed mb-6">
-            PREDIKA är skapat för att ge teologiska byggstenar och inspiration utan att ta över ditt eget budskap. 
-            Skriv gärna dina synpunkter nedan så utvecklar vi tjänsten tillsammans!
+            PREDIKA är i testfasen. Har du förslag på hur verktyget kan bli ännu bättre för dig? Skriv gärna dina synpunkter nedan!
           </p>
 
           {feedbackSubmitted ? (
