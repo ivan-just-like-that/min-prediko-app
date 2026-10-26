@@ -6,6 +6,7 @@ import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown, 
   Sparkles, 
   BookOpen, 
@@ -712,6 +713,7 @@ function PredikoideerInnehall() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -1065,21 +1067,37 @@ function PredikoideerInnehall() {
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
 
-          {/* INTRO-RUTA */}
-          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+        {/* INTRO-RUTA */}
+        <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
               <Lightbulb className="w-5 h-5 text-[#2d3732]" />
             </div>
-              <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                Predikoidéer
-              </h1>
-            </div>
-            
-            <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
+            <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+              Predikoidéer
+            </h1>
+          </div>
+          
+          <div className="text-xs sm:text-sm text-[#575c58] leading-relaxed space-y-3">
+            <p>
               Få nya ingångar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
             </p>
+            <div className="space-y-2">
+              <p>
+                <span className="font-semibold text-[#2d3732]">Generera disposition:</span> Ger förslag på dispositioner och pedagogiska upplägg för 
+                predikans struktur – från inledning till trygg landning.
+              </p>
+              <p>
+                <span className="font-semibold text-[#2d3732]">Predikobilder & liknelser:</span> Genererar nyskapande metaforer, vardagsnära liknelser 
+                och illustrationer från natur, kultur och tradition som hjälper till att göra teologin levande.
+              </p>
+              <p>
+                <span className="font-semibold text-[#2d3732]">Psalmförslag:</span> Ger tematiskt passande psalmer ur Den svenska psalmboken för mässans 
+                och gudstjänstens olika delar. (Tänk på att psalmval ska ske i samråd med tjänstgörande kyrkomusiker.)
+              </p>
+            </div>
           </div>
+        </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
@@ -1205,25 +1223,91 @@ function PredikoideerInnehall() {
 
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      onClick={() => hanteraAiAnrop(`Ge mig 3-4 olika förslag på disposition/upplägg för en predikan utifrån den valda texten (${textTypNamn}: ${valdPredikotext}) för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}".`, 'Disposition')}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
-                    >
-                      Generera disposition
-                    </button>
+                  <button
+                    onClick={() => hanteraAiAnrop(`
+                    Du är en mycket god retoriker och teologisk pedagog som vet hur man bygger upp ett tal för att både fånga åhörarna och få fram 
+                    kärnan i budskapet.
+
+                    Ge 4 olika förslag på disposition för predikan. Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att 
+                    det i kyrkbänken sitter människor som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på 
+                    tacksamhet och är nöjda med livet. Åtminstone ett förslag ska ge ett tydligt svar på frågan "Vad spelar dagens budskap för roll i mitt liv?", 
+                    men utan att ställa frågan rakt ut. Väva gärna in allmänna paralleller till samtiden, nyheter eller omvärlden där det passar.
+
+                    FÖRDELNING AV UPPLÄGG:
+                    1. Modell 1 & 2 (Text- och versförankrade): Två förslag som är förankrade i bibeltexten, dess teologiska kärna eller kretsar kring en särskild 
+                    nyckelmening i texten.
+                    2. Modell 3 (Helgdagens tema): Ett förslag som utgår helt från dagens tema snarare än textens enskilda verser. Detta förslag ska innehålla 
+                    konkreta exempel ur verkligheten, visa hur man kan leva som kristen idag och vara djupt inkännande för människors liv i vår samtid.
+                    3. Modell 4 (Pedagogisk, narrativ eller induktiv): Ett förslag med en tydlig berättande eller induktiv linje som utgår från människans vardag och 
+                    tar församlingen med på en upptäcktsresa från anslag till landning.
+
+                    STRUKTUR PER DISPOSITION:
+                    - MODELLENS NAMN OCH KARAKTÄR
+                    - INLEDNING / ANSLAG (Hur predikan öppnas)
+                    - HUVUDDEL / RÖRELSE (2–3 tydliga steg med köranvisningar för vad predikanten gör)
+                    - AVSLUTNING / LANDNING (Hur predikan knyts ihop)
+                    `.trim(), 'Disposition')}
+                    disabled={laddarAi}
+                    className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                  >
+                    Generera disposition
+                  </button>
                     
-                    <button
-                      onClick={() => hanteraAiAnrop(`Ge mig några olika förslag på bilder, illustrationer, metaforer eller liknelser som passar för en predikan utifrån den valda texten (${textTypNamn}: ${valdPredikotext}) för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}".`, 'Predikobilder & liknelser')}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
-                    >
-                      Predikobilder & liknelser
-                    </button>
+                  <button
+                    onClick={() => hanteraAiAnrop(`
+                    Ge 4 varierade och tankeväckande predikobilder, metaforer eller liknelser baserade på dagens text och tema. 
+                    Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att det i kyrkbänken sitter människor 
+                    som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på tacksamhet och är nöjda med livet. 
+                    Bilderna ska hjälpa församlingen att förstå vad dagens budskap spelar för roll i deras faktiska liv. Väv gärna in konkreta paralleller 
+                    till samtiden, kulturen, nyheter eller vår tids omvärld där det passar.
+
+                    FÖRDELNING AV BILDER OCH MÖJLIGA MÖNSTERSKAPANDE INGÅNGAR:
+                    1. Bild 1 & 2 (Text- och teologinära): Två förslag som fördjupar bibeltextens verser, teologiska nyckelord eller historia med 
+                    hjälp av överraskande paralleller (t.ex. från natur, vetenskap, konst eller kyrklig tradition).
+                    2. Bild 3 (Tematisk, nutidsnära & vardaglig): Ett förslag som utgår helt från dagens tema och hämtas direkt ur 2020-talets 
+                    vardagsrealism, arbetsliv, digitala samtid eller moderna relationer. Bilden ska innehålla konkreta exempel på hur det är att vara kristen idag och vara djupt inkännande för människors livssmärta.
+                    3. Bild 4 (Själavårdande & trösterik): En bild som särskilt möter den som bär på spruckna drömmar, oro, sorg eller en känsla av 
+                    otillräcklighet.
+
+                    STRUKTUR PER FÖRSLAG:
+                    - TITEL OCH KATEGORI (T.ex. "Vardagsbild: Skärmtid och tystnad")
+                    - BESKRIVNING AV BILDEN (Det konkreta motivet, miljöbilden eller händelsen)
+                    - TEOLOGISK OCH SJÄLAVÅRDANDE BÄRIGHET (Vad bilden förklarar i temat/texten och hur den möter människors liv)
+                    - PREDIKOTIPS (Hur bilden kan introduceras och vävas in i predikan)
+                    `.trim(), 'Predikobilder & liknelser')}
+                    disabled={laddarAi}
+                    className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                  >
+                    Predikobilder & liknelser
+                  </button>
                   </div>
 
                   <button
-                    onClick={() => hanteraAiAnrop(`Ge mig 5 passande psalmförslag ur Den svenska psalmboken för ${valdHelgdag?.namn} med temat "${valdHelgdag?.tema}" och den valda texten (${textTypNamn}: ${valdPredikotext}). Motivera kort varför varje psalm passar.`, 'Psalmförslag')}
+                    onClick={() => hanteraAiAnrop(`
+                    Du är en teologiskt och kyrkomusikaliskt kunnig assistent med god kännedom om Den svenska psalmboken (med tillägg).
+                    Ge mig 5 välvalda psalmförslag som passar för gudstjänsten.
+
+                    **Kontext:**
+                    - **Helgdag:** ${valdHelgdag?.namn || 'Ej angiven'}
+                    - **Tema:** "${valdHelgdag?.tema || 'Ej angivet'}"
+                    - **Predikotext (${textTypNamn}):** ${valdPredikotext}
+
+                    **Krav på psalmförslagen:**
+                    1. **Precision:** Ange exakt psalm nummer och korrekt titel ur Den svenska psalmboken (eller PSALMER i 2000-talet / tillägg).
+                    2. **Funktion i gudstjänsten:** Ge en varierad blandning som täcker olika delar av mässan/gudstjänsten (t.ex. ingång, psalm före 
+                    evangeliet, nattvard, utgång/avslutning).
+                    3. **Konkret motivering:** Ge en kort teologisk/tematisk motivering till varför psalmen passar just denna helgdag och predikotext. 
+                    Lyft gärna fram om någon specifik vers är extra bärande.
+
+                    **Struktur per psalm:**
+                    - **Psalmnummer & Titel** (T.ex. "Psalmer 201: En vänlig grönskas rika dräkt")
+                    - **Gudstjänstled / Plats** (T.ex. "Ingångspsalm" eller "Gradualpsalm")
+                    - **Motivering & Versförslag** (Kort teologisk koppling till dagens tema och text)
+
+                    FORMATERING:
+                  - Skriv i helt ren klartext utan stjärnor (* eller **), brädgårdar (#) eller understreck (_).
+                  - Använd dubbla radbrytningar mellan stycken.
+                    `.trim(), 'Psalmförslag')}                    
                     disabled={laddarAi}
                     className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
                   >

@@ -5,6 +5,7 @@ import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown, 
   Sparkles, 
   BookOpen, 
@@ -86,6 +87,7 @@ export default function BibelstudieGuide() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -152,37 +154,40 @@ export default function BibelstudieGuide() {
     setLaddar(true);
 
     const promptText = `
-Du är en erfaren lärare i bibelkunskap, historia och livsåskådning, samt en god och varm själasörjare. Din uppgift är att skriva samtalsfrågor för en bibelstudiegrupp. Tonen ska vara vardaglig, inbjudande, varm och teologiskt genomtänkt.
+      Du är en erfaren lärare i bibelkunskap, historia och livsåskådning, samt en god och varm själasörjare. Din uppgift är att skriva samtalsfrågor 
+      för en bibelstudiegrupp. Tonen ska vara vardaglig, inbjudande, varm och teologiskt genomtänkt.
 
-VIKTIGT OM FORMULERINGEN: Alla frågor ska vara inkluderande och ställas ur ett gemensamt "vi/oss"-perspektiv (använd uttryck som "vad tänker vi", "vad säger det oss", "hur kan vi relatera till", "vilka i texten kan vi känna igen oss i"). Undvik att ställa direkt personliga frågor till en enskild individ (som "vad gör det med dig" eller "vad tycker du personligen").
+      VIKTIGT OM FORMULERINGEN: Alla frågor ska vara inkluderande och ställas ur ett gemensamt "vi/oss"-perspektiv (använd uttryck som "vad tänker vi", 
+      "vad säger det oss", "hur kan vi relatera till", "vilka i texten kan vi känna igen oss i"). Undvik att ställa direkt personliga frågor till en 
+      enskild individ (som "vad gör det med dig" eller "vad tycker du personligen").
 
-Skapa ett komplett samtalsschema med exakt 10 frågor anpassade till följande bibelställe/kapitel: "${bibelstalle}".
+      Skapa ett komplett samtalsschema med exakt 10 frågor anpassade till följande bibelställe/kapitel: "${bibelstalle}".
 
-Svaret SKALL struktureras och delas upp med följande rubriker och upplägg:
+      Svaret SKALL struktureras och delas upp med följande rubriker och upplägg:
 
-### 📖 Kort introduktion för samtalets ledare
-Ge en kort (2-4 meningar) pedagogisk och varm introduktion till texten som ledaren kan läsa upp för gruppen.
+      ### 📖 Kort introduktion för samtalets ledare
+      Ge en kort (2-4 meningar) pedagogisk och varm introduktion till texten som ledaren kan läsa upp för gruppen.
 
----
+      ---
 
-### 💬 10 Samtalsfrågor för gruppen
+      ### 💬 10 Samtalsfrågor för gruppen
 
-1. **Vad handlar texten om?** (Observation & händelseförlopp)
-2. **Mottagare & Ursprungskontext** (Vem skrevs texten till ursprungligen och varför?)
-3. **Kulturell bakgrund** (Vilka samtida förhållanden eller traditioner är viktiga för oss att känna till?)
-4. **Guds bild & Budskap** (Vad uppenbarar texten om Gud, Jesus eller människans relation till det heliga?)
-5. **Identifikation** (Vilka personer eller roller i texten kan vi lättast känna igen oss i, och varför?)
-6. **Utmaning i texten** (Vad i denna text kan kännas svårt, provokativt eller utmanande för oss idag?)
-7. **Koppling till vår vardag** (Hur talar detta direkt in i våra relationer, gemenskaper eller vår vardagliga tro?)
-8. **Gemensam reflektion** (Finns det en specifik vers eller tanke som stannar kvar hos oss extra mycket?)
-9. **Livsåskådning & Samhälle** (Hur utmanar eller stöttar detta budskap den värld och det samhälle vi lever i nu?)
-10. **Bön & Handling** (Vad skickar denna text med oss gemensamt för handling eller böneämne i veckan?)
+      1. **Vad handlar texten om?** (Observation & händelseförlopp)
+      2. **Mottagare & Ursprungskontext** (Vem skrevs texten till ursprungligen och varför?)
+      3. **Kulturell bakgrund** (Vilka samtida förhållanden eller traditioner är viktiga för oss att känna till?)
+      4. **Guds bild & Budskap** (Vad uppenbarar texten om Gud, Jesus eller människans relation till det heliga?)
+      5. **Identifikation** (Vilka personer eller roller i texten kan vi lättast känna igen oss i, och varför?)
+      6. **Utmaning i texten** (Vad i denna text kan kännas svårt, provokativt eller utmanande för oss idag?)
+      7. **Koppling till vår vardag** (Hur talar detta direkt in i våra relationer, gemenskaper eller vår vardagliga tro?)
+      8. **Gemensam reflektion** (Finns det en specifik vers eller tanke som stannar kvar hos oss extra mycket?)
+      9. **Livsåskådning & Samhälle** (Hur utmanar eller stöttar detta budskap den värld och det samhälle vi lever i nu?)
+      10. **Bön & Handling** (Vad skickar denna text med oss gemensamt för handling eller böneämne i veckan?)
 
----
+      ---
 
-### 🙏 Avslutande tanke / Böneförslag
-Ge ett kort förslag på hur ledaren kan runda av samtalet i bön eller gemensam stund.
-`;
+      ### 🙏 Avslutande tanke / Böneförslag
+      Ge ett kort förslag på hur ledaren kan runda av samtalet i bön eller gemensam stund.
+      `;
 
     try {
       const payload = {

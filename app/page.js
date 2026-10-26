@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown, 
   Sparkles, 
   BookOpen, 
@@ -153,6 +154,7 @@ export default function PredikaLandingPage() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Lightbulb },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -442,6 +444,7 @@ export default function PredikaLandingPage() {
               <li><Link href="/predikoideer" className="hover:text-[#1a1d1b] transition-colors">Predikoidéer</Link></li>
               <li><Link href="/historik" className="hover:text-[#1a1d1b] transition-colors">Historiska kommentarer</Link></li>
               <li><Link href="/grekiska" className="hover:text-[#1a1d1b] transition-colors">Rena grekiskan</Link></li>
+              <li><Link href="/karta" className="hover:text-[#1a1d1b] transition-colors">Bibelatlas</Link></li>
               <li><Link href="/barn-och-unga" className="hover:text-[#1a1d1b] transition-colors">Barn & unga</Link></li>
               <li><Link href="/kasualtal" className="hover:text-[#1a1d1b] transition-colors">Kasualtal</Link></li>
               <li><Link href="/bibelstudium" className="hover:text-[#1a1d1b] transition-colors">Bibelstudieguiden</Link></li>

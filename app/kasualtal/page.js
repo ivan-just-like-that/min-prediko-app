@@ -6,6 +6,7 @@ import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown,
   Droplets,
   Blend, 
@@ -723,6 +724,7 @@ function KasualtalInnehall() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -870,19 +872,35 @@ function KasualtalInnehall() {
     );
 
     const fullPrompt = `
-Du är en erfaren präst i Svenska kyrkan som hjälper till att förbereda ett ${typNamn.toLowerCase()}.
+    Du är en erfaren och teologiskt skarp präst i Svenska kyrkan som fungerar som ett kollegialt sparringpartner inför ett ${typNamn.toLowerCase()}.
 
-TILLFÄLLE: ${typNamn}
-VALD TEXT/TEMA: ${aktivTextBeskrivning || 'Ingen text angiven'}
-PERSONLIG BAKGRUND OCH KONTEXT:
-"${personligBakgrund && personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven ännu.'}"
+    TILLFÄLLE: ${typNamn}
+    VALD TEXT / TEMA: ${aktivTextBeskrivning || 'Ingen specifik text angiven'}
 
-INSTRUKTION:
-${textAttSkicka}
+    PERSONLIG BAKGRUND OCH KONTEXT:
+    "${personligBakgrund && personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven.'}"
 
-Svara med ett varmt, själavårdande, teologiskt genomtänkt och personligt anpassat tonläge. 
-För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och förväntan. För vigseltal, inkludera kärlek och gemenskap. Skriv i en stil som är lätt att tala inför en församling, med tydliga övergångar och naturliga pauser.
-`;
+    SPECIFIK INSTRUKTION / UPPDRAG:
+    ${textAttSkicka}
+
+    TONLÄGE OCH SJÄLAVÅRDANDE KÄNSLA:
+    - Svara varmt, personligt, teologiskt genomtänkt och med djup respekt för den mänskliga situationen.
+    - Anpassa karaktären efter tillfället:
+      * Griftetal: Bärs av tröst, hopp, respekterande av sorgen och tillit till Guds nåd.
+      * Doptal: Bärs av glädje, förväntan, tacksamhet för livet och Guds skydd.
+      * Vigseltal: Bärs av kärlek, gemenskap, trofasthet och livets möjligheter.
+
+    RÅD FÖR UTFORMNINGEN:
+    1. **Talbarhet:** Skriv i en muntlig rytm med naturliga pauser, anpassat för att tala direkt till de anhöriga/församlingen.
+    2. **Hantering av personliga detaljer:** Väv samman den personliga bakgrunden med den teologiska kärnan på ett varsamt och smakfullt sätt. 
+    Undvik att göra det för privat eller mekaniskt.
+    3. **Konkreta byggstenar:** Ge strukturerade uppslag och ingångar som prästen enkelt kan bearbeta vidare i sitt eget personliga hantverk.
+
+    FORMATERING:
+    - Använd inte Markdown-stjärnor (* eller **).
+    - Dela upp texten med dubbla radbrytningar.
+    - Använd rena VERSALER för eventuella rubriker (t.ex. INLEDNING, TEOLOGISK BRYGGA, AVSLUTANDE ORD).
+    `.trim();
 
     try {
       const payload = {
@@ -1332,7 +1350,10 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
-                      onClick={() => hanteraAiAnrop(`Ge mig 2-3 olika förslag på disposition och upplägg för ett ${kasualTypNamn.toLowerCase()} utifrån texten/temat "${aktivTextBeskrivning}". Väv in den personliga bakgrunden på ett naturligt och respektfullt sätt.`, 'Disposition')}
+                      onClick={() => hanteraAiAnrop(
+                        `Ge 2–3 olika förslag på disposition och strukturellt upplägg för talet. För varje del, ge korta köranvisningar för hur den personliga bakgrunden och teologin vävs samman.`,
+                        'Disposition'
+                      )}
                       disabled={laddarAi}
                       className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
                     >
@@ -1340,7 +1361,10 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     </button>
                     
                     <button
-                      onClick={() => hanteraAiAnrop(`Ge mig förslag på en varm och värdig inledning till ett ${kasualTypNamn.toLowerCase()} som knyter ihop den personliga kontexten med texten/temat "${aktivTextBeskrivning}".`, 'Inledning & ev personlig koppling')}
+                      onClick={() => hanteraAiAnrop(
+                        `Ge 3 förslag på faktiska inledningsord (hälsningsord enligt kyrkohandbokens stil) att säga direkt när handlingen inleds. Formulera dem varmt, värdigt och anpassat efter tillfället och den personliga kontexten.`,
+                        'Inledningsord'
+                      )}
                       disabled={laddarAi}
                       className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
                     >
@@ -1348,13 +1372,16 @@ För griftetal, inkludera tröst och hopp. För doptal, inkludera glädje och f�
                     </button>
                   </div>
 
-                  <button
-                    onClick={() => hanteraAiAnrop(`Ge mig 4-5 passande psalmförslag ur Den svenska psalmboken/psalmbokstillägget som lämpar sig för detta ${kasualTypNamn.toLowerCase()} med temat "${aktivTextBeskrivning}". Motivera kort varför varje psalm passar.`, 'Psalmförslag')}
-                    disabled={laddarAi}
-                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
-                  >
-                    Psalmförslag för tillfället
-                  </button>
+                    <button
+                      onClick={() => hanteraAiAnrop(
+                        `Ge 4–5 tematiskt passande psalmförslag ur Den svenska psalmboken eller tillägg som lämpar sig för detta tillfälle. Motivera kort varför varje psalm passar.`,
+                        'Psalmförslag'
+                      )}
+                      disabled={laddarAi}
+                      className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      Psalmförslag för tillfället
+                    </button>
                 </div>
 
                 <div>

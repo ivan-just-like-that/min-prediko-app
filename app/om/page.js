@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown, 
   Sparkles, 
   BookOpen, 
@@ -127,6 +128,7 @@ export default function OmPage() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -305,7 +307,7 @@ export default function OmPage() {
 
           <p>
             AI-modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. Instruktionerna har provats fram och tillbaka 
-            för att ge de bästa möjliga svaren i en god ton. Du slipper alltså skriva långa promptar på egen hand varje gång. Arbetet med att förfina 
+            för att ge bästa möjliga svar i en god ton. Du slipper alltså skriva långa promptar på egen hand varje gång. Arbetet med att förfina 
             instruktionerna sker fortlöpande.
           </p>
 
@@ -331,7 +333,7 @@ export default function OmPage() {
 
           <p>
             Och, till sist: Som många andra har jag haft mina dubier kring detta med AI, inte minst miljöasspekten. Är det verkligen vettigt att vi som förvaltare av 
-            skapelsen överhuvudtaget ska hålla på med AI, som bl a drar mycket energi? Och vad händer med oss som människor? Det är stora frågor som verkligen
+            skapelsen överhuvudtaget ska hålla på med AI, som drar mycket energi? Och vad händer med oss som människor? Det är stora frågor som verkligen
             är värda att diskutera och undersöka. Jag har själv försökt att räkna på hur mycket ett av de anrop som kräver mest datakraft här motsvarar i energi. 
             Det mest krävande verktyget är sidan med grekiska och språkanalys, ett anrop där visar sig motsvara en handfull sökningar på en helt vanlig sökmotor. Jag 
             tycker det verkar överkomligt, om man tänker på att man hur många sökningar man kan göra inför predikningar i vanliga fall. Hur tänker du? Skriv gärna
@@ -421,6 +423,7 @@ export default function OmPage() {
               <li><Link href="/predikoideer" className="hover:text-[#1a1d1b] transition-colors">Predikoidéer</Link></li>
               <li><Link href="/historik" className="hover:text-[#1a1d1b] transition-colors">Historiska kommentarer</Link></li>
               <li><Link href="/grekiska" className="hover:text-[#1a1d1b] transition-colors">Rena grekiskan</Link></li>
+              <li><Link href="/karta" className="hover:text-[#1a1d1b] transition-colors">Bibelatlas</Link></li>
               <li><Link href="/barn-och-unga" className="hover:text-[#1a1d1b] transition-colors">Barn & unga</Link></li>
               <li><Link href="/kasualtal" className="hover:text-[#1a1d1b] transition-colors">Kasualtal</Link></li>
               <li><Link href="/bibelstudium" className="hover:text-[#1a1d1b] transition-colors">Bibelstudieguiden</Link></li>

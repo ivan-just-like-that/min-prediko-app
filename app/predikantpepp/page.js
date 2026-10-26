@@ -6,6 +6,7 @@ import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { 
+  Compass,
   ChevronDown, 
   Sparkles, 
   BookOpen, 
@@ -95,6 +96,7 @@ export default function PredikantpeppPage() {
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
     { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
@@ -147,26 +149,43 @@ export default function PredikantpeppPage() {
     setLoadingPepp(true);
     setPeppSvar('');
 
+    // Breddade vinklar som täcker fler aspekter av prästvardagen
     const vinklar = [
-      'påminnelse om att du är älskad precis som du är',
-      'att ditt värde inte sitter i hur bra din predikan blir',
-      'någon som viskar att du duger precis med dina brister',
-      'att du är buren, när du känner dig otillräcklig',
-      'en varm påminnelse om att du är värdefull i dig själv',
-      'att nåden gäller dig lika mycket som alla andra'
+      'påminnelse om att nåden gäller dig i sakristian lika mycket som församlingen i bänken',
+      'att Gud verkar genom dina sprickor och din mjukhet, inte genom din perfektion',
+      'att predikan inte behöver bära hela världen – det räcker att så ett litet frö',
+      'en kollegial klapp på axeln om att ditt värde ligger i vem du är, inte vad du levererar',
+      'att heliga ande gör det tunga arbetet och att du får vara redskapet',
+      'en påminnelse om att vila och återhämtning också är en teologisk handling',
+      'en varm tanke om att de ord du säger i dag berör mer än du någonsin får veta',
+      'att du är buren av bönen från hela kyrkan när du står där framme'
     ];
+
+    // Olika tonlägen för att skapa helt olika meningsbyggnader
+    const tonlagen = [
+      'nära, vardagligt och kollegialt',
+      'poetiskt och bildrikt utifrån naturen eller kyrkorummet',
+      'lugnt, teologiskt djupt och tryggt',
+      'varmt, kort och befriande avdramatiserande'
+    ];
+
     const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
+    const slumpTon = tonlagen[Math.floor(Math.random() * tonlagen.length)];
     const slumpId = Math.random().toString(36).substring(7);
 
-    const promptText = `Du är en genuint varm, kärleksfull och trygg vän som skickar ett uppmuntrande meddelande.
+    const promptText = `Du är en genuint varm, teologiskt skarp och kollegialt trygg vän till en präst i Svenska kyrkan.
 
-Fokusera på detta tema: ${slumpVinkel}. (Unikt id: ${slumpId})
+    Skicka en kort, unikt utformad uppmuntran inför predikan eller gudstjänsten.
 
-Regler för svaret:
-- Skriv 1–2 korta meningar som förmedlar djup värme, uppskattning och villkorslös acceptans.
-- Förbjudna ord och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "klyschor".
-- Låt det kännas äkta, personligt och innerligt, som en varm kram i textform.
-- Skriv enbart själva påminnelsen, utan citationstecken.`;
+    TEMA: ${slumpVinkel}
+    TONLÄGE: Skriv i ett ${slumpTon} tonläge.
+    UNIK REFEFENS: ${slumpId}
+
+    REGLER FÖR SVARET:
+    - Skriv 1–2 korta, koncisa meningar.
+    - Förbjudna klyschor och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "krama dig själv", "kom ihåg att andas".
+    - Undvik stela Markdown-tecken som stjärnor (*) eller brädgårdar (#).
+    - Skriv enbart själva hälsningen utan citationstecken.`;
 
     try {
       const payload = {
@@ -174,9 +193,9 @@ Regler för svaret:
         sida: 'predikantpepp',
         verktyg: 'Pepp-o-mat',
         helgdag: 'Uppmuntran',
-        tema: slumpVinkel,
+        tema: `${slumpVinkel} (${slumpTon})`,
         inkluderaFraga: false,
-        temperature: 0.7,
+        temperature: 0.85, // Högre temperatur ger mer variation i ordval
       };
 
       const data = await generateContent(payload, () => {
