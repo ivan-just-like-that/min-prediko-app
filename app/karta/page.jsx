@@ -34,7 +34,7 @@ import dynamic from 'next/dynamic';
 const BibelKartaKomponent = dynamic(() => import('@/components/BibelKartaKomponent'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[500px] bg-[#faf8f5] rounded-2xl border border-[#e8e4df] flex items-center justify-center text-[#737874] text-sm font-medium">
+    <div className="w-full h-[600px] bg-[#faf8f5] rounded-2xl border border-[#e8e4df] flex items-center justify-center text-[#737874] text-sm font-medium">
       Laddar den bibliska kartan...
     </div>
   )
@@ -70,7 +70,7 @@ export default function BibelKartaSida() {
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Inspiration & reflektion', href: '/predikantpepp', icon: Sprout },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
     { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
   ];
 
@@ -114,16 +114,19 @@ export default function BibelKartaSida() {
     setAuthLoading(false);
   };
 
-  // Filtrera platser och rutter baserat på vald epok
+  // Filtrera platser (visa alla om valdeEpok är null)
   const epokPlatser = useMemo(() => {
+    if (valdeEpok === null) return PLATSER;
     return PLATSER.filter(p => p.epokId === valdeEpok);
   }, [valdeEpok]);
 
+  // Visa INGA rutter om "Visa alla platser" (valdeEpok === null) är valt
   const filtreradeRutter = useMemo(() => {
+    if (valdeEpok === null) return [];
     return RUTTER.filter(r => r.epokId === valdeEpok);
   }, [valdeEpok]);
 
-  // Se till att den valda platsen (t.ex. från tidslinjen) alltid skickas med till kartan
+  // Se till att den valda platsen alltid skickas med till kartan
   const visadePlatser = useMemo(() => {
     const finnsILista = epokPlatser.some((p) => p.id === valdVard?.id);
     if (valdVard && valdVard.koordinater && !finnsILista) {
@@ -132,7 +135,7 @@ export default function BibelKartaSida() {
     return epokPlatser;
   }, [epokPlatser, valdVard]);
 
-  // Sökresultat (söker i alla platser oavsett epok så att användaren hittar rätt direkt)
+  // Sökresultat
   const sokResultat = useMemo(() => {
     if (!sokfragor.trim()) return [];
     const fraga = sokfragor.toLowerCase();
@@ -145,34 +148,37 @@ export default function BibelKartaSida() {
   }, [sokfragor]);
 
   const hanteraValjPlatsFransok = (plats) => {
-    setValdEpok(plats.epokId); // Byt epok automatiskt om platsen tillhör en annan
+    setValdEpok(plats.epokId);
     setValdVard(plats);
-    setSokfragor(''); // Rensa sökfältet efter val
+    setSokfragor('');
   };
 
   const hanteraEpokByte = (epokId) => {
     setValdEpok(epokId);
     setValdVard(null);
-    setValdRuttId(null); // Nollställ vald rutt vid epokbyte
+    setValdRuttId(null);
     setValdTidslinjeHandelseId(null);
   };
 
-  // Hantera klick på en händelse i tidslinjen
+  const hanteraVisaAllaPlatser = () => {
+    setValdEpok(null);
+    setValdVard(null);
+    setValdRuttId(null);
+    setValdTidslinjeHandelseId(null);
+  };
+
   const hanteraValjTidslinjeHandelse = (handelse) => {
     setValdTidslinjeHandelseId(handelse.id);
 
-    // Byt epok om händelsen tillhör en annan epok
     if (handelse.era && handelse.era !== valdeEpok) {
       setValdEpok(handelse.era);
     }
 
-    // Om händelsen saknar koordinater (t.ex. Skapelsen)
     if (!handelse.coordinates) {
       setValdVard(null);
       return;
     }
 
-    // Hitta motsvarande plats i PLATSER-registret eller skapa dynamiskt
     const hittadPlats = PLATSER.find(
       (p) => p.id === handelse.siteId || p.namn.toLowerCase() === handelse.title.toLowerCase()
     );
@@ -198,11 +204,10 @@ export default function BibelKartaSida() {
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
       <div>
         
-        {/* HEADER (ATTIO-STYLE NAVIGATION) */}
-        <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
+        {/* HEADER */}
+        <header className="sticky top-0 z-[9998] bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             
-            {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight text-[#1a1d1b]">PREDIKA</span>
@@ -211,7 +216,6 @@ export default function BibelKartaSida() {
                 </span>
               </Link>
 
-              {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
@@ -226,7 +230,7 @@ export default function BibelKartaSida() {
                   {toolsOpen && (
                     <div 
                       onMouseEnter={() => setToolsOpen(true)}
-                      className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
+                      className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150 z-[9999]"
                     >
                       {verktygLista.map((v) => {
                         const Icon = v.icon;
@@ -258,7 +262,6 @@ export default function BibelKartaSida() {
               </nav>
             </div>
 
-            {/* HÖGER NAVIGATION (LOGIN / KONTO) */}
             <div className="hidden md:flex items-center gap-4">
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
@@ -287,7 +290,6 @@ export default function BibelKartaSida() {
               )}
             </div>
 
-            {/* MOBIL MENY-KNAPP */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
@@ -296,7 +298,6 @@ export default function BibelKartaSida() {
             </button>
           </div>
 
-          {/* MOBIL MENY */}
           {mobileMenuOpen && (
             <div className="md:hidden bg-white border-b border-[#e8e4df] px-6 py-4 space-y-4">
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
@@ -323,10 +324,9 @@ export default function BibelKartaSida() {
           )}
         </header>
 
-        {/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
-            <div className="max-w-6xl mx-auto flex justify-between items-center text-xs text-[#575c58]">
+            <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
               
               {credits !== null && (
@@ -338,8 +338,7 @@ export default function BibelKartaSida() {
           </div>
         )}
 
-        {/* HUVUDINNEHÅLL */}
-        <main className="max-w-6xl mx-auto px-6 py-8">
+        <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
           
           {/* HEADER & SÖKFÄLT */}
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -357,7 +356,6 @@ export default function BibelKartaSida() {
               </p>
             </div>
 
-            {/* SÖKRUTA */}
             <div className="relative w-full md:w-72 shrink-0">
               <div className="relative flex items-center">
                 <Search className="w-4 h-4 text-[#737874] absolute left-3.5 pointer-events-none" />
@@ -378,7 +376,6 @@ export default function BibelKartaSida() {
                 )}
               </div>
 
-              {/* TRÄFFLISTA VID SÖKNING */}
               {sokResultat.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#e8e4df] rounded-xl shadow-lg max-h-60 overflow-y-auto z-50 p-1">
                   {sokResultat.map((plats) => (
@@ -405,17 +402,22 @@ export default function BibelKartaSida() {
             </div>
           </div>
 
-          {/* INTERAKTIV TIDSLINJE (Placerad ovanför kartan) */}
-          <div className="mb-6 rounded-2xl overflow-hidden border border-[#e8e4df] shadow-sm">
-            <TimelineBar
-              selectedEventId={valdTidslinjeHandelseId}
-              onSelectEvent={hanteraValjTidslinjeHandelse}
-              onOpenScripture={(scripture) => setAktivBibelSkrift(scripture)}
-            />
-          </div>
-
           {/* EPOKVÄLJARE */}
           <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={hanteraVisaAllaPlatser}
+              className={`px-3.5 py-2 rounded-xl text-left transition-all border shrink-0 flex flex-col justify-center ${
+                valdeEpok === null
+                  ? 'bg-[#2d3732] text-white border-[#2d3732] shadow-sm'
+                  : 'bg-white text-[#575c58] border-[#e8e4df] hover:border-[#2d3732]/30 hover:bg-[#faf8f5]'
+              }`}
+            >
+              <span className="text-xs font-semibold leading-snug">Visa alla platser</span>
+              <span className={`text-[10px] leading-tight mt-0.5 ${valdeEpok === null ? 'text-[#e8e4df] ' : 'text-[#737874]'}`}>
+                (Hela bibelatlasen)
+              </span>
+            </button>
+
             {EPOKER.map((epok) => {
               const [titel, period] = epok.namn.split(' (');
               const arVald = valdeEpok === epok.id;
@@ -445,7 +447,7 @@ export default function BibelKartaSida() {
             })}
           </div>
 
-          {/* RUTTVÄLJARE (Syns endast om epoken innehåller historiska rutter/linjer) */}
+          {/* RUTTVÄLJARE (Döljs automatiskt vid "Visa alla platser") */}
           {filtreradeRutter.length > 0 && (
             <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df] mb-6 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-[#2d3732] flex items-center gap-1.5 mr-1">
@@ -457,10 +459,10 @@ export default function BibelKartaSida() {
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
                   valdRuttId === null
                     ? 'bg-[#2d3732] text-white border-[#2d3732]'
-                    : 'bg-white text-[#575c58] border-[#e8e4df] hover:bg-[#faf8f5]'
+                    : 'bg-[#faf8f5] text-[#575c58] border-[#e8e4df] hover:bg-white'
                 }`}
               >
-                Visa alla
+                Visa alla rutter
               </button>
               {filtreradeRutter.map((rutt) => (
                 <button
@@ -482,54 +484,59 @@ export default function BibelKartaSida() {
             </div>
           )}
 
-          {/* KARTAN & INFOPANELEN */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* KARTMOTOR */}
-            <div className="lg:col-span-2 h-[500px] rounded-2xl overflow-hidden border border-[#e8e4df] shadow-sm bg-[#faf8f5]">
-              <BibelKartaKomponent
-                platser={visadePlatser}
-                rutter={filtreradeRutter}
-                valdVard={valdVard}
-                onValjPlats={setValdVard}
-                valdRuttId={valdRuttId}
-              />
-            </div>
+          {/* KARTMOTOR */}
+          <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-[#e8e4df] shadow-sm bg-[#faf8f5] mb-6">
+            <BibelKartaKomponent
+              platser={visadePlatser}
+              rutter={filtreradeRutter}
+              valdVard={valdVard}
+              onValjPlats={setValdVard}
+              valdRuttId={valdRuttId}
+              valdeEpok={valdeEpok}
+            />
 
-            {/* INFOPANEL */}
-            <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-sm flex flex-col justify-between">
-              {valdVard ? (
-                <div className="space-y-4">
+            {/* SVÄVANDE INFOPANEL MED HÖGT Z-INDEX */}
+            {valdVard && (
+              <div className="absolute bottom-0 inset-x-0 sm:bottom-auto sm:top-4 sm:right-4 sm:left-auto z-[9999] w-full sm:max-w-sm bg-white/95 backdrop-blur-md p-5 rounded-t-2xl sm:rounded-2xl border-t sm:border border-[#e8e4df] shadow-2xl max-h-[60vh] sm:max-h-[85vh] flex flex-col justify-between animate-in slide-in-from-bottom sm:slide-in-from-top-2 duration-200">
+                <button 
+                  onClick={() => setValdVard(null)}
+                  className="absolute top-3 right-3 text-[#737874] hover:text-[#1a1d1b] p-2 sm:p-1.5 rounded-lg hover:bg-[#faf8f5] transition-colors z-10"
+                >
+                  <X className="w-5 h-5 sm:w-4 sm:h-4" />
+                </button>
+
+                <div className="space-y-3 overflow-y-auto pr-1">
                   <div>
-                    <span className="inline-block px-2.5 py-1 bg-[#faf8f5] border border-[#e8e4df] text-[#2d3732] text-[11px] font-semibold rounded-lg mb-2">
+                    <span className="inline-block px-2.5 py-0.5 bg-[#faf8f5] border border-[#e8e4df] text-[#2d3732] text-[10px] font-semibold rounded-lg mb-1.5">
                       {valdVard.kategori}
                     </span>
-                    <h2 className="text-xl font-bold text-[#1a1d1b]">{valdVard.namn}</h2>
+                    <h2 className="text-lg font-bold text-[#1a1d1b] leading-snug pr-8">{valdVard.namn}</h2>
                     <p className="text-xs text-[#737874] flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3.5 h-3.5" /> Idag: {valdVard.idag}
                     </p>
                   </div>
 
-                  <div className="text-xs text-[#575c58] leading-relaxed border-t border-[#e8e4df] pt-3">
+                  <div className="text-xs text-[#575c58] leading-relaxed border-t border-[#e8e4df] pt-2.5">
                     {valdVard.beskrivning}
                   </div>
 
                   {valdVard.kyrkohistoriskBetydelse && (
-                    <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df] text-xs">
-                      <span className="font-semibold text-[#2d3732] block mb-1 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> Kyrkohistorisk kontext:
+                    <div className="bg-[#faf8f5] p-2.5 rounded-xl border border-[#e8e4df] text-xs">
+                      <span className="font-semibold text-[#2d3732] block mb-0.5 flex items-center gap-1 text-[11px]">
+                        <Clock className="w-3 h-3" /> Kyrkohistorisk kontext:
                       </span>
-                      <p className="text-[#575c58]">{valdVard.kyrkohistoriskBetydelse}</p>
+                      <p className="text-[#575c58] text-[11px] leading-relaxed">{valdVard.kyrkohistoriskBetydelse}</p>
                     </div>
                   )}
 
                   {valdVard.bibelreferenser?.length > 0 && (
-                    <div className="pt-2">
-                      <span className="font-semibold text-xs text-[#2d3732] block mb-1.5 flex items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5" /> Bibelställen:
+                    <div className="pt-1 pb-2">
+                      <span className="font-semibold text-[11px] text-[#2d3732] block mb-1 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Bibelställen:
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1">
                         {valdVard.bibelreferenser.map((ref, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-[#faf8f5] border border-[#e8e4df] text-[11px] text-[#2d3732] font-medium rounded-md">
+                          <span key={idx} className="px-2 py-0.5 bg-[#faf8f5] border border-[#e8e4df] text-[10px] text-[#2d3732] font-medium rounded-md">
                             {ref}
                           </span>
                         ))}
@@ -537,16 +544,17 @@ export default function BibelKartaSida() {
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#737874]">
-                  <MapPin className="w-8 h-8 mb-2 opacity-40 text-[#2d3732]" />
-                  <p className="text-xs font-medium text-[#1a1d1b] mb-1">Ingen plats vald</p>
-                  <p className="text-xs">
-                    Klicka på en markör i kartan, använd tidslinjen eller sök i sökfältet ovan för att panorera direkt till orten.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
+
+          {/* INTERAKTIV TIDSLINJE */}
+          <div className="rounded-2xl overflow-hidden border border-[#e8e4df] shadow-sm">
+            <TimelineBar
+              selectedEventId={valdTidslinjeHandelseId}
+              onSelectEvent={hanteraValjTidslinjeHandelse}
+              onOpenScripture={(scripture) => setAktivBibelSkrift(scripture)}
+            />
           </div>
 
           {/* NAVIGERA TILL ANDRA VERKTYG */}
@@ -584,7 +592,6 @@ export default function BibelKartaSida() {
         </main>
       </div>
 
-      {/* ATTIO-STYLE FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           
@@ -620,13 +627,11 @@ export default function BibelKartaSida() {
         </div>
       </footer>
 
-      {/* POPUPMODAL FÖR BIBELTEXTER */}
       <ScriptureModal
         scripture={aktivBibelSkrift}
         onClose={() => setAktivBibelSkrift(null)}
       />
 
-      {/* INLOGGNINGSMODAL */}
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 

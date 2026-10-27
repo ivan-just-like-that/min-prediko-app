@@ -178,7 +178,7 @@ export default function AuthModal({ isOpen, onClose, message, onAuthSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1a1d1b]/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-99999 flex items-center justify-center bg-[#1a1d1b]/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-[#e8e4df] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         
         {/* Stäng-knapp */}

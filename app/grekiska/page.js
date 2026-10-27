@@ -92,7 +92,7 @@ export default function GrekiskAnalys() {
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Inspiration & reflektion', href: '/predikantpepp', icon: Sprout },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
     { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
   ];
 
@@ -366,7 +366,7 @@ Strukturera svaret så här:
         )}
 
         {/* HUVUDINNEHÅLL */}
-        <main className="max-w-[1000px] mx-auto px-6 pt-12 pb-16">
+        <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
           
           {/* INTRO OCH SÖKFORMULÄR */}
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">

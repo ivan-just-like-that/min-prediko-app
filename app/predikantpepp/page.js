@@ -25,7 +25,7 @@ import {
   Check,
   HandHeart,
   PenTool,
-  Heart
+  UserCheck
 } from 'lucide-react';
 
 // Hjälp-komponent för kopiera-knapp i Attio-stil
@@ -100,7 +100,7 @@ export default function PredikantpeppPage() {
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Inspiration & reflektion', href: '/predikantpepp', icon: Sprout },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
     { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
   ];
 
@@ -149,7 +149,6 @@ export default function PredikantpeppPage() {
     setLoadingPepp(true);
     setPeppSvar('');
 
-    // Breddade vinklar som täcker fler aspekter av prästvardagen
     const vinklar = [
       'påminnelse om att nåden gäller dig i sakristian lika mycket som församlingen i bänken',
       'att Gud verkar genom dina sprickor och din mjukhet, inte genom din perfektion',
@@ -161,7 +160,6 @@ export default function PredikantpeppPage() {
       'att du är buren av bönen från hela kyrkan när du står där framme'
     ];
 
-    // Olika tonlägen för att skapa helt olika meningsbyggnader
     const tonlagen = [
       'nära, vardagligt och kollegialt',
       'poetiskt och bildrikt utifrån naturen eller kyrkorummet',
@@ -182,10 +180,11 @@ export default function PredikantpeppPage() {
     UNIK REFEFENS: ${slumpId}
 
     REGLER FÖR SVARET:
-    - Skriv 1–2 korta, koncisa meningar.
-    - Förbjudna klyschor och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "krama dig själv", "kom ihåg att andas".
-    - Undvik stela Markdown-tecken som stjärnor (*) eller brädgårdar (#).
-    - Skriv enbart själva hälsningen utan citationstecken.`;
+- Skriv 1–2 korta, koncisa meningar.
+- Förbjudna klyschor och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "krama dig själv", "kom ihåg att andas".
+- Undvik stela Markdown-tecken som stjärnor (*) eller brädgårdar (#).
+- Skriv enbart själva hälsningen utan citationstecken.`
+;
 
     try {
       const payload = {
@@ -195,7 +194,7 @@ export default function PredikantpeppPage() {
         helgdag: 'Uppmuntran',
         tema: `${slumpVinkel} (${slumpTon})`,
         inkluderaFraga: false,
-        temperature: 0.85, // Högre temperatur ger mer variation i ordval
+        temperature: 0.85,
       };
 
       const data = await generateContent(payload, () => {
@@ -437,7 +436,7 @@ export default function PredikantpeppPage() {
         )}
 
         {/* HUVUDINNEHÅLL */}
-        <main className="max-w-[1000px] mx-auto px-6 pt-12 pb-16">
+        <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
           
           {/* INTRO-RUTA */}
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
@@ -451,7 +450,7 @@ export default function PredikantpeppPage() {
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-              Uppmuntran, poesi och kanske ett leende? På denna sida dras inga krediter.
+              Uppmuntran, quiz, poesi och kanske ett leende? På denna sida dras inga krediter.
             </p>
           </div>
 
@@ -529,7 +528,7 @@ export default function PredikantpeppPage() {
           </section>
 
           {/* MODUL 3: Rolig historia / Predikointro */}
-          <section className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 space-y-4">
+          <section className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 space-y-4 mb-12">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
                 <Smile className="w-5 h-5" />
@@ -573,8 +572,73 @@ export default function PredikantpeppPage() {
             )}
           </section>
 
+          {/* INTERAKTIVA TESTER & QUIZ */}
+          <section className="mb-16">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-4">
+              Interaktiva tester & quiz
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* KORT 1: Bibliska personen */}
+              <div className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 flex flex-col justify-between group hover:border-[#d6d0c7] transition-all">
+                <div className="space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732]">
+                    <UserCheck className="w-6 h-6 text-[#2d3732]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                      Vilken biblisk person är du?
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
+                      Svara på 12 frågor och få din matchning — se dina styrkor. Givetvis 100% tillförlitligt.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <Link
+                    href="/predikantpepp/quiz"
+                    className="w-full bg-[#2d3732] hover:bg-[#1f2723] text-white px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <span>Gör testet</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* KORT 2: Kyrkoarketyper */}
+              <div className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 flex flex-col justify-between group hover:border-[#d6d0c7] transition-all">
+                <div className="space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732]">
+                    <Compass className="w-6 h-6 text-[#2d3732]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors mb-1">
+                      Vilken kyrkoarketyp är du?
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
+                      Från Högkyrkliga Hanna till Gitarrjocke – upptäck din sanna hemvist i svenskt kyrkoliv.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <Link
+                    href="/predikantpepp/kyrkoarketyper"
+                    className="w-full bg-[#2d3732] hover:bg-[#1f2723] text-white px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <span>Gör testet</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
           {/* NAVIGERA TILL ANDRA VERKTYG */}
-          <section className="mt-16 pt-8 border-t border-[#e8e4df]">
+          <section className="pt-8 border-t border-[#e8e4df]">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#8c918d] mb-6 text-center">
               Utforska fler verktyg
             </h3>

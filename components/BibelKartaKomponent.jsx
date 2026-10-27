@@ -9,7 +9,7 @@ import { STAM_OMRADEN } from '@/lib/bibel-data';
 // Anpassade, stilrena kartikoner för markörer
 const skapadIkon = (kategori, arVald, prioritet) => {
   const isSecondary = prioritet === 2;
-  const farg = arVald ? '#c85a32' : isSecondary ? '#575c58' : '#2d3732'; // Lite dovare färg på sekundära
+  const farg = arVald ? '#c85a32' : isSecondary ? '#575c58' : '#2d3732';
   const storlek = arVald ? 20 : isSecondary ? 10 : 14;
 
   return L.divIcon({
@@ -30,16 +30,12 @@ const skapadIkon = (kategori, arVald, prioritet) => {
   });
 };
 
-// Hjälpkomponent för att hantera zoom och mjukt flytta kartan samt stänga tidigare popups
 function KartFokus({ valdVard }) {
   const map = useMap();
 
   useEffect(() => {
     if (valdVard?.koordinater) {
-      // Stäng öppen popup så att kartan inte dras tillbaka till tidigare klickad plats
       map.closePopup();
-
-      // Bestäm zoomnivå vid fokus
       const targetZoom = valdVard.prioritet === 2 ? 8 : 9;
 
       map.flyTo(valdVard.koordinater, targetZoom, {
@@ -52,7 +48,6 @@ function KartFokus({ valdVard }) {
   return null;
 }
 
-// Hjälpkomponent som rapporterar aktuell zoom till föräldern
 function ZoomLyssnare({ onZoomChange }) {
   const map = useMapEvents({
     zoomend: () => {
@@ -62,7 +57,6 @@ function ZoomLyssnare({ onZoomChange }) {
   return null;
 }
 
-// Lista på absolut viktigaste nyckelnaven vid utzoomat läge (Zoom <= 6)
 const SUPER_PRIMARA_ID = new Set([
   'jerusalem_monarki',
   'jerusalem_evangelier',
@@ -80,38 +74,32 @@ const SUPER_PRIMARA_ID = new Set([
   'konstantinopel',
 ]);
 
-export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjPlats, valdRuttId }) {
+export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjPlats, valdRuttId, valdeEpok }) {
   const [aktuellZoom, setAktuellZoom] = useState(5);
 
-  // Standardcentrum (Medelhavet/Mellanöstern)
   const standardCentrum = [35.5, 28.0];
   const standardZoom = 5;
 
-  // Kontrollera om den aktiva epoken är Israels 12 stammar
-  const visarStammar = platser.some((p) => p.epokId === 'gt_stammar');
+  // VISA ENDAST STAMMAR OM SPECIFIK EPOK "gt_stammar" ÄR VALD
+  const visarStammar = valdeEpok === 'gt_stammar';
 
-  // Filtrera platser baserat på den förskjutna zoomtrappan
+  // Filtrera platser baserat på zoom
   const synligaPlatser = platser.filter((plats) => {
-    // 1. Om platsen är markerad som vald eller sökts fram -> VISA ALLTID
     if (valdVard?.id === plats.id) return true;
 
-    // 2. Övergripande vy (Zoom 1–6): Visa endast de absolut viktigaste nyckelnaven
     if (aktuellZoom <= 6) {
       return SUPER_PRIMARA_ID.has(plats.id);
     }
 
-    // 3. Mellanzoom (Zoom 7–8): Visa alla primära städer (prioritet: 1)
     if (aktuellZoom >= 7 && aktuellZoom <= 8) {
       return plats.prioritet === 1;
     }
 
-    // 4. Inzoomat läge (Zoom >= 9): Visa alla platser (både prioritet 1 och 2)
     return true;
   });
 
   return (
     <div className="relative w-full h-full">
-      {/* CSS-stil för ortsetiketter */}
       <style jsx global>{`
         .map-orth-label {
           background-color: rgba(255, 255, 255, 0.92) !important;
@@ -140,16 +128,14 @@ export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjP
         style={{ width: '100%', height: '100%', backgroundColor: '#faf8f5' }}
         zoomControl={true}
       >
-        {/* Lyssna på zoom-ändringar */}
         <ZoomLyssnare onZoomChange={setAktuellZoom} />
 
-        {/* Esri World Topo */}
         <TileLayer
           attribution='Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), swisstopo, MapmyIndia, &#169; OpenStreetMap contributors, and the GIS User Community'
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
         />
 
-        {/* Ritar ut Israels 12 stamområden som polygoner när "gt_stammar" är valt */}
+        {/* Stamområden visas endast vid valet "Israels 12 stammar" */}
         {visarStammar &&
           STAM_OMRADEN.map((stam) => (
             <Polygon
@@ -169,7 +155,7 @@ export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjP
             </Polygon>
           ))}
 
-        {/* Ritar ut historiska rutter */}
+        {/* Rutter ritas ut om epoken innehåller rutter */}
         {rutter.map((rutt) => {
           const arFramhavd = !valdRuttId || valdRuttId === rutt.id;
           return (
@@ -186,7 +172,7 @@ export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjP
           );
         })}
 
-        {/* Ritar ut synliga ortsmarkörer */}
+        {/* Ort-markörer */}
         {synligaPlatser.map((plats) => {
           const arVald = valdVard?.id === plats.id;
           return (
@@ -221,31 +207,8 @@ export default function BibelKartaKomponent({ platser, rutter, valdVard, onValjP
           );
         })}
 
-        {/* Styr kartans fokus vid klick eller sökning */}
         <KartFokus valdVard={valdVard} />
       </MapContainer>
-
-      {/* TECKENFÖRKLARING FÖR RUTTER */}
-      {rutter.length > 0 && (
-        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm p-3 rounded-xl border border-[#e8e4df] shadow-md z-[1000] max-w-[220px]">
-          <span className="text-[10px] font-bold text-[#1a1d1b] uppercase tracking-wider block mb-2 border-b border-[#e8e4df] pb-1">
-            Resvägar & Rutter
-          </span>
-          <div className="space-y-1.5">
-            {rutter.map((rutt) => (
-              <div key={rutt.id} className="flex items-center gap-2">
-                <div
-                  className="w-4 h-1 rounded-full shrink-0"
-                  style={{ backgroundColor: rutt.farg }}
-                />
-                <span className="text-[11px] text-[#2d3732] font-medium truncate">
-                  {rutt.namn}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
