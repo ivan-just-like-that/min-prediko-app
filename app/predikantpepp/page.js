@@ -149,53 +149,52 @@ export default function PredikantpeppPage() {
     setLoadingPepp(true);
     setPeppSvar('');
 
-    const vinklar = [
-      'påminnelse om att nåden gäller dig i sakristian lika mycket som församlingen i bänken',
-      'att Gud verkar genom dina sprickor och din mjukhet, inte genom din perfektion',
-      'att predikan inte behöver bära hela världen – det räcker att så ett litet frö',
-      'en kollegial klapp på axeln om att ditt värde ligger i vem du är, inte vad du levererar',
-      'att heliga ande gör det tunga arbetet och att du får vara redskapet',
-      'en påminnelse om att vila och återhämtning också är en teologisk handling',
-      'en varm tanke om att de ord du säger i dag berör mer än du någonsin får veta',
-      'att du är buren av bönen från hela kyrkan när du står där framme'
-    ];
+const vinklar = [
+  // Mänsklighet & sårbarhet
+  'att det är helt okej att själv känna sig lite vilsen eller trött ibland',
+  'en påminnelse om att din egen mänsklighet och dina sprickor är din största tillgång i mötet med andra',
+  'att du inte behöver ha svar på alla svåra frågor som folk bär med sig',
+  'att det räcker med att bara vara närvarande i rummet, du behöver inte lösa någons liv',
 
-    const tonlagen = [
-      'nära, vardagligt och kollegialt',
-      'poetiskt och bildrikt utifrån naturen eller kyrkorummet',
-      'lugnt, teologiskt djupt och tryggt',
-      'varmt, kort och befriande avdramatiserande'
-    ];
+  // Gränser & återhämtning
+  'en påminnelse om att dina egna gränser också är heliga och behöver skyddas',
+  'att du har rätt att ta plats som bara dig själv, inte bara i din yrkesroll',
+  'en kollegial påminnelse om att världen inte står och faller med din insats idag',
+  'att det är helt ordning att lämna jobbet bakom sig när dagen är slut och bara få vara ledig',
 
-    const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
-    const slumpTon = tonlagen[Math.floor(Math.random() * tonlagen.length)];
-    const slumpId = Math.random().toString(36).substring(7);
+  // Relationer & vardagsnåd
+  'att de små, obetydliga stunderna vid kaffebryggaren ofta betyder mer för folk än vi tror',
+  'en varm tanke om att du gör skillnad bara genom att lyssna utan att döma',
+  'att nåden och omsorgen gäller dig i ditt eget liv lika mycket som dem du möter',
+  'att du är värdefull för den du är, helt oberoende av vad du uträttar eller levererar'
+];
 
-    const promptText = `Du är en genuint varm, teologiskt skarp och kollegialt trygg vän till en präst i Svenska kyrkan.
+const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
+const slumpId = Math.random().toString(36).substring(7);
 
-    Skicka en kort, unikt utformad uppmuntran inför predikan eller gudstjänsten.
+const promptText = `Du är en varm, avspänd och klok kollega i Svenska kyrkan. Du ger en kort, genuint stöttande och mänsklig hälsning till din kollega i vardagen.
 
-    TEMA: ${slumpVinkel}
-    TONLÄGE: Skriv i ett ${slumpTon} tonläge.
-    UNIK REFEFENS: ${slumpId}
+TEMA ATT UTGÅ FRÅN: ${slumpVinkel}
+UNIK REF: ${slumpId}
 
-    REGLER FÖR SVARET:
-- Skriv 1–2 korta, koncisa meningar.
-- Förbjudna klyschor och fraser som INTE får finnas med: "släpp ner axlarna", "andas ut", "ta ett djupt andetag", "krama dig själv", "kom ihåg att andas".
-- Undvik stela Markdown-tecken som stjärnor (*) eller brädgårdar (#).
-- Skriv enbart själva hälsningen utan citationstecken.`
-;
+INSTRUKTIONER:
+- Skriv 2 helt vanliga, raka meningar med ett modernt, varmt och vardagligt språk.
+- Fokusera på att vara människa, inte på prestation eller teologisk analys.
+- Det ska kännas avdramatiserande, äkta och stöttande på ett helt naturligt sätt.
+- INGA klyschor om att "andas ut", "släppa axlarna", "mottaga nåden" eller "luta dig tillbaka".
+- Inga citationstecken, rubriker eller stjärnor (*). Skriv bara texten rakt av.`;
 
     try {
-      const payload = {
-        prompt: promptText,
-        sida: 'predikantpepp',
-        verktyg: 'Pepp-o-mat',
-        helgdag: 'Uppmuntran',
-        tema: `${slumpVinkel} (${slumpTon})`,
-        inkluderaFraga: false,
-        temperature: 0.85,
-      };
+// NYTT (korrigerat):
+const payload = {
+  prompt: promptText,
+  sida: 'predikantpepp',
+  verktyg: 'Pepp-o-mat',
+  helgdag: 'Uppmuntran',
+  tema: slumpVinkel,
+  inkluderaFraga: false,
+  temperature: 0.85,
+};
 
       const data = await generateContent(payload, () => {
         setModalMessage('Du måste vara inloggad för att använda verktyget.');

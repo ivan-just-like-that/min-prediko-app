@@ -112,7 +112,7 @@ const FRAGOR = [
   {
     fraga: "2. Vad lägger du helst överst i väskan inför församlingslägret?",
     alternativ: [
-      { text: "Mässhake, gregorianska notblad och missale (afk:s!).", poang: { hanna: 2, knut: 1 } },
+      { text: "Mässhake, gregorianska notblad och missale (afk:s).", poang: { hanna: 2, knut: 1 } },
       { text: "Akustiska gitarren, capotasto och röda sångboken.", poang: { jocke: 2, folke: 1 } },
       { text: "iPhone på gimbal-stativ, trådlöst myggset och powerbank.", poang: { doris: 2, kurt: 1 } },
       { text: "Flanellografen, saftblandning och pysselguld.", poang: { sussie: 2, daniel: 1 } }
@@ -178,7 +178,7 @@ const FRAGOR = [
       { text: "De är församlingens absoluta centrum och får lärjungaskap att levandegöras.", poang: { sussie: 2, daniel: 1 } },
       { text: "Vi tar med dem ut i skogen, bygger kojor och lär dem be under stjärnorna.", poang: { folke: 2, jocke: 1 } },
       { text: "Vi bygger en komplett produktion med rökmaskin, DJ och professionellt barnmöte.", poang: { kurt: 2, doris: 1 } },
-      { text: "Vi ser till att det finns saft, bullar och ett öppet öra när livet känns svårt.", poang: { daniel: 2, sussie: 1 } }
+      { text: "Vi ser till att det finns saft, bullar och ett lyssnande öra när livet känns svårt.", poang: { daniel: 2, sussie: 1 } }
     ]
   },
   {
@@ -193,9 +193,9 @@ const FRAGOR = [
   {
     fraga: "11. Hur ser din vision för kyrkans framtid ut?",
     alternativ: [
-      { text: "Den vilar tryggt på traditionens fasta berggrund, Sakramenten och liturgin.", poang: { hanna: 2, knut: 1 } },
+      { text: "Den vilar tryggt på traditionens fasta berggrund, sakramenten och liturgin.", poang: { hanna: 2, knut: 1 } },
       { text: "Den blomstrar där människor samlas i enkelhet kring Ordet, bönen och lägerelden.", poang: { folke: 2, bosse: 1 } },
-      { text: "Den finns där kulturen, konsten och teologin möts i djup klangbotten.", poang: { knut: 2, paula: 1 } },
+      { text: "Den finns där kulturen, konsten och teologin möts.", poang: { knut: 2, paula: 1 } },
       { text: "Den växer viralt och dynamiskt – vi ska nå miljontals via feeds och events!", poang: { doris: 2, kurt: 1 } }
     ]
   },
@@ -203,7 +203,7 @@ const FRAGOR = [
     fraga: "12. Om din teologiska gärning blev en boktitel, vad heter den?",
     alternativ: [
       { text: "\"Mellan rökelsekar, mässhakar och mystik\"", poang: { hanna: 2, knut: 1 } },
-      { text: "\"Sjunde koppen bryggkaffe – där själavården faktiskt sker\"", poang: { daniel: 2, sussie: 1 } },
+      { text: "\"Sjunde koppen bryggkaffe – själavård på riktigt\"", poang: { daniel: 2, sussie: 1 } },
       { text: "\"Från biblisk grundtext till exegetisk hermeneutik\"", poang: { paula: 2, bosse: 1 } },
       { text: "\"Tre ackord, en gitarr och en öppen himmel\"", poang: { jocke: 2, folke: 1 } }
     ]
