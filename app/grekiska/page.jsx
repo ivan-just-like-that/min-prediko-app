@@ -941,7 +941,7 @@ function GrekiskAnalysContent() {
 
                 <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
                   <strong className="text-[#1a1d1b] block mb-1">
-                    Löpande översättningar & Copyright
+                    Löpande översättningar & copyright
                   </strong>
                   <p className="mb-2">
                     Av upphovsrättsskäl så används dessa etablerade bibelöversättningar för den löpande texten:

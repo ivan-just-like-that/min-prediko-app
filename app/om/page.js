@@ -285,8 +285,9 @@ export default function OmPage() {
             </h1>
 
             <p>
-              Så roligt att du vill vara med och testa PREDIKA! Det är en AI-driven tjänst som är skapad för att ge dig byggstenar, 
-              inspiration och teologiskt stöd – medan du behåller den fulla kontrollen över din predikan eller ditt tal. <span className="font-semibold text-[#1a1d1b]">Det är ditt budskap och dina teologiska reflektioner som ska stå i centrum. Med din erfarenhet, 
+              Så roligt att du vill vara med och testa PREDIKA! Det är en delvis AI-driven tjänst som är skapad för att ge dig byggstenar, 
+              inspiration och teologiskt stöd – medan du behåller den fulla kontrollen över din predikan eller ditt tal. 
+              <span className="font-semibold text-[#1a1d1b]">Det är ditt budskap och dina teologiska reflektioner som ska stå i centrum. Med din erfarenhet, 
               ditt personliga tonläge och dina språkliga nyanser är du helt oersättlig.</span> Denna AI-tjänst kommer alltså aldrig ersätta dig eller ta ditt jobb.
             </p>
 
@@ -342,7 +343,7 @@ export default function OmPage() {
               Och, till sist: Som många andra har jag haft mina dubier kring detta med AI, inte minst miljöasspekten. Är det verkligen vettigt att vi som förvaltare av 
               skapelsen överhuvudtaget ska hålla på med AI, som drar mycket energi? Och vad händer med oss som människor? Det är stora frågor som verkligen
               är värda att diskutera och undersöka. Jag har själv försökt att räkna på hur mycket ett av de anrop som kräver mest datakraft här motsvarar i energi. 
-              Det mest krävande verktyget är sidan med grekiska och språkanalys, ett anrop där visar sig motsvara en handfull sökningar på en helt vanlig sökmotor. Jag 
+              De mest krävande anropen här, predikoidéer och historiska kommentarer, visar sig motsvara en handfull sökningar på en helt vanlig sökmotor. Jag 
               tycker det verkar överkomligt, om man tänker på hur många sökningar man kan göra inför predikningar i vanliga fall. Hur tänker du? Skriv gärna
               en kommentar om det om du vill.
             </p>

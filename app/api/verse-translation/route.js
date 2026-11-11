@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const book = searchParams.get('book')?.toLowerCase() || '';
+    const book = searchParams.get('book')?.toLowerCase().trim() || '';
     const chapter = searchParams.get('chapter');
     const verse = searchParams.get('verse');
     const lang = searchParams.get('lang') || 'sv';
@@ -13,6 +13,26 @@ export async function GET(request) {
     }
 
     const bookNumberMap = {
+      // --- GAMLA TESTAMENTET (1 - 39) ---
+      'genesis': 1, 'gen': 1,
+      'exodus': 2, 'exod': 2, 'ex': 2,
+      'leviticus': 3, 'lev': 3,
+      'numbers': 4, 'num': 4,
+      'deuteronomy': 5, 'deut': 5, 'dt': 5,
+      'joshua': 6, 'josh': 6,
+      'judges': 7, 'judg': 7,
+      '1_samuel': 8, '1samuel': 8, '1sam': 8,
+      '2_samuel': 9, '2samuel': 9, '2sam': 9,
+      '1_kings': 10, '1kings': 10, '1kgs': 10,
+      '2_kings': 11, '2kings': 11, '2kgs': 11,
+      'isaiah': 23, 'isa': 23,
+      'jeremiah': 24, 'jer': 24,
+      'ezekiel': 26, 'ezek': 26,
+      'psalms': 19, 'psalm': 19, 'ps': 19,
+      'proverbs': 20, 'prov': 20, 'prv': 20,
+      'job': 18,
+
+      // --- NYA TESTAMENTET (40 - 66) [O förändrat] ---
       'matthew': 40, 'matt': 40, 'mat': 40,
       'mark': 41, 'mrk': 41,
       'luke': 42, 'luk': 42,
@@ -44,7 +64,7 @@ export async function GET(request) {
 
     const bookNum = bookNumberMap[book];
     if (!bookNum) {
-      return NextResponse.json({ text: 'Bok saknas i mappningen' });
+      return NextResponse.json({ text: `Bok saknas i mappningen: ${book}` });
     }
 
     let translationCodes = [];
