@@ -42,7 +42,7 @@ export default function PopulartPage() {
   const verktygLista = [
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
     { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys för Nya Testamentet', href: '/grekiska', icon: Languages },
+    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
     { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
     { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
@@ -251,7 +251,7 @@ export default function PopulartPage() {
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">
-                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} sökningar`}
+                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
                   </span>
                   <button
                     onClick={() => supabase.auth.signOut()}
@@ -311,17 +311,12 @@ export default function PopulartPage() {
           )}
         </header>
 
-        {/* ANVÄNDARSTATUS & KREDITRÄKNARE */}
+        {/* ANVÄNDARSTATUS */}
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
-            <div className="max-w-[1000px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
+            <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
               
-              {credits !== null && (
-                <span className="bg-[#faf8f5] border border-[#e8e4df] font-semibold px-3 py-1 rounded-full text-[#2d3732] shrink-0">
-                  {isTester ? '✨ Testkonto (Obegränsat)' : `⚡ ${credits} sökningar kvar`}
-                </span>
-              )}
             </div>
           </div>
         )}
