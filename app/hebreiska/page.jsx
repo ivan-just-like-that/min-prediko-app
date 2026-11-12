@@ -214,10 +214,20 @@ function HebrewAnalysContent() {
   const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId) || hebrewBooks[0];
   const chapters = Array.from({ length: currentBookObj.chapters }, (_, i) => i + 1);
 
-  useEffect(() => {
+ useEffect(() => {
     async function loadChapterWords() {
       setLoading(true);
       try {
+        // DIAGNOS: Hämta de första 5 raderna för att se exakt hur reference är skriven i tabellen
+        let { data: diagData, error: diagError } = await supabase
+          .from('hebrew_verses')
+          .select('reference, hebrew')
+          .limit(5);
+
+        console.log("DIAGNOS - Exempel på rader i databasen:", diagData);
+
+        if (diagError) throw diagError;
+
         // Hämta alla rader för den valda boken (t.ex. Gen% eller Genesis%)
         let { data, error } = await supabase
           .from('hebrew_verses')
@@ -238,7 +248,7 @@ function HebrewAnalysContent() {
 
         if (error) throw error;
 
-        // Filtrera ut rätt kapitel i JavaScript (t.ex. "Gen.1." eller "Genesis.1.")
+        // Filtrera ut rätt kapitel i JavaScript
         const chapterPrefix1 = `${selectedBookId}.${selectedChapter}.`;
         const chapterPrefix2 = `${currentBookObj.fullName}.${selectedChapter}.`;
 
