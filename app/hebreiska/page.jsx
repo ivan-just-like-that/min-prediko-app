@@ -16,13 +16,8 @@ import {
   BookMarked, 
   Sprout, 
   TrendingUp, 
-  LogOut,
-  KeyRound,
-  Menu,
-  X,
   ChevronLeft,
-  ChevronRight,
-  Info
+  ChevronRight
 } from 'lucide-react';
 
 function parseHebrewMorphology(code) {
@@ -117,9 +112,6 @@ function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
 
 function HebrewAnalysContent() {
   const searchParams = useSearchParams();
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
 
   const hebrewBooks = [
@@ -167,7 +159,7 @@ function HebrewAnalysContent() {
   const [selectedBookId, setSelectedBookId] = useState('Genesis');
   const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(1);
-  const [chapterData, setChapterData] = useState({});
+  const [bibleData, setBibleData] = useState({});
   const [verses, setVerses] = useState([]);
   const [selectedVerse, setSelectedVerse] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -180,19 +172,6 @@ function HebrewAnalysContent() {
   const [credits, setCredits] = useState(null);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-
-  const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Rena hebreiskan', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
-  ];
 
   useEffect(() => {
     fetchProfile();
@@ -239,6 +218,27 @@ function HebrewAnalysContent() {
     if (verseParam) setSelectedVerse(Number(verseParam) || 1);
   }, [searchParams]);
 
+  // Ladda den samlade hebreiska databasen en gång vid sidladdning
+  useEffect(() => {
+    async function loadBibleData() {
+      setLoading(true);
+      try {
+        const res = await fetch('/data/hebrew-bible.json');
+        if (!res.ok) throw new Error('Kunde inte ladda hebrew-bible.json');
+        const data = await res.json();
+        setBibleData(data);
+      } catch (err) {
+        console.error('Kunde inte ladda hebreiska databasen:', err);
+        setBibleData({});
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBibleData();
+  }, []);
+
+  // Uppdatera tillgängliga kapitel när bok ändras
   useEffect(() => {
     const currentBook = hebrewBooks.find(b => b.id === selectedBookId);
     if (currentBook) {
@@ -250,33 +250,23 @@ function HebrewAnalysContent() {
     }
   }, [selectedBookId]);
 
+  // Uppdatera tillgängliga verser när bok eller kapitel ändras
   useEffect(() => {
-    async function loadStaticChapter() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/data/hebrew/${selectedBookId}/${selectedChapter}.json`);
-        if (!res.ok) throw new Error('Kapitelfil saknas');
-        const data = await res.json();
-        setChapterData(data);
-
-        const verseNumbers = Object.keys(data).map(Number).sort((a, b) => a - b);
-        setVerses(verseNumbers);
-        if (!verseNumbers.includes(selectedVerse)) {
-          setSelectedVerse(verseNumbers[0] || 1);
-        }
-      } catch (err) {
-        console.error('Kunde inte läsa statisk hebreisk text:', err);
-        setChapterData({});
-        setVerses([]);
-      } finally {
-        setLoading(false);
+    const bookObj = bibleData[selectedBookId];
+    if (bookObj && bookObj[selectedChapter]) {
+      const verseNumbers = Object.keys(bookObj[selectedChapter]).map(Number).sort((a, b) => a - b);
+      setVerses(verseNumbers);
+      if (!verseNumbers.includes(selectedVerse)) {
+        setSelectedVerse(verseNumbers[0] || 1);
       }
+    } else {
+      setVerses([]);
     }
+  }, [selectedBookId, selectedChapter, bibleData]);
 
-    loadStaticChapter();
-  }, [selectedBookId, selectedChapter]);
-
-  const currentWords = chapterData[selectedVerse] || [];
+  const currentBookData = bibleData[selectedBookId] || {};
+  const currentChapterData = currentBookData[selectedChapter] || {};
+  const currentWords = currentChapterData[selectedVerse] || [];
   const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId);
   const currentVerseIndex = verses.indexOf(selectedVerse);
 
