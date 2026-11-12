@@ -6,18 +6,11 @@ import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { useSearchParams } from 'next/navigation';
 import { 
-  Compass,
   ChevronDown, 
-  Sparkles, 
-  BookOpen, 
   Languages, 
-  Smile, 
-  Feather, 
-  BookMarked, 
-  Sprout, 
-  TrendingUp, 
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 
 function parseHebrewMorphology(code) {
@@ -113,55 +106,56 @@ function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
 function HebrewAnalysContent() {
   const searchParams = useSearchParams();
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
+  const [showSourceInfo, setShowSourceInfo] = useState(false);
 
+  // Boklista med korrekta engelska ID:n som matchar TAHOT i databasen (t.ex. Gen, Exo, Lev...)
   const hebrewBooks = [
-    { id: 'Genesis', name_sv: 'Första Moseboken', chapters: 50 },
-    { id: 'Exodus', name_sv: 'Andra Moseboken', chapters: 40 },
-    { id: 'Leviticus', name_sv: 'Tredje Moseboken', chapters: 27 },
-    { id: 'Numbers', name_sv: 'Fjärde Moseboken', chapters: 36 },
-    { id: 'Deuteronomy', name_sv: 'Femte Moseboken', chapters: 34 },
-    { id: 'Joshua', name_sv: 'Josua', chapters: 24 },
-    { id: 'Judges', name_sv: 'Domarboken', chapters: 21 },
-    { id: 'Ruth', name_sv: 'Rut', chapters: 4 },
-    { id: '1Samuel', name_sv: '1 Samuelsboken', chapters: 31 },
-    { id: '2Samuel', name_sv: '2 Samuelsboken', chapters: 24 },
-    { id: '1Kings', name_sv: '1 Kungaboken', chapters: 22 },
-    { id: '2Kings', name_sv: '2 Kungaboken', chapters: 25 },
-    { id: '1Chronicles', name_sv: '1 Krönikeboken', chapters: 29 },
-    { id: '2Chronicles', name_sv: '2 Krönikeboken', chapters: 36 },
-    { id: 'Ezra', name_sv: 'Esra', chapters: 10 },
-    { id: 'Nehemiah', name_sv: 'Nehemja', chapters: 13 },
-    { id: 'Esther', name_sv: 'Ester', chapters: 10 },
+    { id: 'Gen', name_sv: 'Första Moseboken', chapters: 50 },
+    { id: 'Exo', name_sv: 'Andra Moseboken', chapters: 40 },
+    { id: 'Lev', name_sv: 'Tredje Moseboken', chapters: 27 },
+    { id: 'Num', name_sv: 'Fjärde Moseboken', chapters: 36 },
+    { id: 'Deu', name_sv: 'Femte Moseboken', chapters: 34 },
+    { id: 'Jos', name_sv: 'Josua', chapters: 24 },
+    { id: 'Jdg', name_sv: 'Domarboken', chapters: 21 },
+    { id: 'Rut', name_sv: 'Rut', chapters: 4 },
+    { id: '1Sa', name_sv: '1 Samuelsboken', chapters: 31 },
+    { id: '2Sa', name_sv: '2 Samuelsboken', chapters: 24 },
+    { id: '1Ki', name_sv: '1 Kungaboken', chapters: 22 },
+    { id: '2Ki', name_sv: '2 Kungaboken', chapters: 25 },
+    { id: '1Ch', name_sv: '1 Krönikeboken', chapters: 29 },
+    { id: '2Ch', name_sv: '2 Krönikeboken', chapters: 36 },
+    { id: 'Ezr', name_sv: 'Esra', chapters: 10 },
+    { id: 'Neh', name_sv: 'Nehemja', chapters: 13 },
+    { id: 'Est', name_sv: 'Ester', chapters: 10 },
     { id: 'Job', name_sv: 'Job', chapters: 42 },
-    { id: 'Psalms', name_sv: 'Psaltaren', chapters: 150 },
-    { id: 'Proverbs', name_sv: 'Ordspråksboken', chapters: 31 },
-    { id: 'Ecclesiastes', name_sv: 'Predikaren', chapters: 12 },
-    { id: 'SongOfSolomon', name_sv: 'Höga Visan', chapters: 8 },
-    { id: 'Isaiah', name_sv: 'Jesaja', chapters: 66 },
-    { id: 'Jeremiah', name_sv: 'Jeremia', chapters: 52 },
-    { id: 'Lamentations', name_sv: 'Klagovisorna', chapters: 5 },
-    { id: 'Ezekiel', name_sv: 'Hesekiel', chapters: 48 },
-    { id: 'Daniel', name_sv: 'Daniel', chapters: 12 },
-    { id: 'Hosea', name_sv: 'Hosea', chapters: 14 },
-    { id: 'Joel', name_sv: 'Joel', chapters: 3 },
-    { id: 'Amos', name_sv: 'Amos', chapters: 9 },
-    { id: 'Obadiah', name_sv: 'Obadja', chapters: 1 },
-    { id: 'Jonah', name_sv: 'Jona', chapters: 4 },
-    { id: 'Micah', name_sv: 'Mika', chapters: 7 },
-    { id: 'Nahum', name_sv: 'Nahum', chapters: 3 },
-    { id: 'Habakkuk', name_sv: 'Habackuk', chapters: 3 },
-    { id: 'Zephaniah', name_sv: 'Sefanja', chapters: 3 },
-    { id: 'Haggai', name_sv: 'Haggai', chapters: 2 },
-    { id: 'Zechariah', name_sv: 'Sakarja', chapters: 14 },
-    { id: 'Malachi', name_sv: 'Malaki', chapters: 4 }
+    { id: 'Psa', name_sv: 'Psaltaren', chapters: 150 },
+    { id: 'Pro', name_sv: 'Ordspråksboken', chapters: 31 },
+    { id: 'Ecc', name_sv: 'Predikaren', chapters: 12 },
+    { id: 'Sng', name_sv: 'Höga Visan', chapters: 8 },
+    { id: 'Isa', name_sv: 'Jesaja', chapters: 66 },
+    { id: 'Jer', name_sv: 'Jeremia', chapters: 52 },
+    { id: 'Lam', name_sv: 'Klagovisorna', chapters: 5 },
+    { id: 'Eze', name_sv: 'Hesekiel', chapters: 48 },
+    { id: 'Dan', name_sv: 'Daniel', chapters: 12 },
+    { id: 'Hos', name_sv: 'Hosea', chapters: 14 },
+    { id: 'Joe', name_sv: 'Joel', chapters: 3 },
+    { id: 'Amo', name_sv: 'Amos', chapters: 9 },
+    { id: 'Oba', name_sv: 'Obadja', chapters: 1 },
+    { id: 'Jon', name_sv: 'Jona', chapters: 4 },
+    { id: 'Mic', name_sv: 'Mika', chapters: 7 },
+    { id: 'Nah', name_sv: 'Nahum', chapters: 3 },
+    { id: 'Hab', name_sv: 'Habackuk', chapters: 3 },
+    { id: 'Zep', name_sv: 'Sefanja', chapters: 3 },
+    { id: 'Hag', name_sv: 'Haggai', chapters: 2 },
+    { id: 'Zec', name_sv: 'Sakarja', chapters: 14 },
+    { id: 'Mal', name_sv: 'Malaki', chapters: 4 }
   ];
 
-  const [selectedBookId, setSelectedBookId] = useState('Genesis');
-  const [chapters, setChapters] = useState([]);
+  const [selectedBookId, setSelectedBookId] = useState('Gen');
   const [selectedChapter, setSelectedChapter] = useState(1);
-  const [bibleData, setBibleData] = useState({});
-  const [verses, setVerses] = useState([]);
   const [selectedVerse, setSelectedVerse] = useState(1);
+  
+  const [chapterWords, setChapterWords] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedWord, setSelectedWord] = useState(null);
@@ -173,6 +167,7 @@ function HebrewAnalysContent() {
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // Hämta användarprofil
   useEffect(() => {
     fetchProfile();
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -208,6 +203,7 @@ function HebrewAnalysContent() {
     setAuthLoading(false);
   };
 
+  // URL-parametrar
   useEffect(() => {
     const bookParam = searchParams.get('book');
     const chapterParam = searchParams.get('chapter');
@@ -218,56 +214,61 @@ function HebrewAnalysContent() {
     if (verseParam) setSelectedVerse(Number(verseParam) || 1);
   }, [searchParams]);
 
-  // Ladda den samlade hebreiska databasen en gång vid sidladdning
+  const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId) || hebrewBooks[0];
+  
+  // Skapa listor för kapitel och verser baserat på nuvarande bok
+  const chapters = Array.from({ length: currentBookObj.chapters }, (_, i) => i + 1);
+
+  // Hämta alla ord för det valda kapitlet från Supabase
   useEffect(() => {
-    async function loadBibleData() {
+    async function loadChapterWords() {
       setLoading(true);
       try {
-        const res = await fetch('/data/hebrew-bible.json');
-        if (!res.ok) throw new Error('Kunde inte ladda hebrew-bible.json');
-        const data = await res.json();
-        setBibleData(data);
+        const prefix = `${selectedBookId}.${selectedChapter}.`;
+        const { data, error } = await supabase
+          .from('hebrew_verses')
+          .select('*')
+          .ilike('reference', `${prefix}%`)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+        setChapterWords(data || []);
       } catch (err) {
-        console.error('Kunde inte ladda hebreiska databasen:', err);
-        setBibleData({});
+        console.error('Kunde inte hämta kapiteldata från Supabase:', err);
+        setChapterWords([]);
       } finally {
         setLoading(false);
       }
     }
 
-    loadBibleData();
-  }, []);
+    loadChapterWords();
+  }, [selectedBookId, selectedChapter]);
 
-  // Uppdatera tillgängliga kapitel när bok ändras
-  useEffect(() => {
-    const currentBook = hebrewBooks.find(b => b.id === selectedBookId);
-    if (currentBook) {
-      const chapList = Array.from({ length: currentBook.chapters }, (_, i) => i + 1);
-      setChapters(chapList);
-      if (!chapList.includes(selectedChapter)) {
-        setSelectedChapter(1);
-      }
+  // Hämta unika versnummer som finns i detta kapitel
+  const verses = Array.from(
+    new Set(
+      chapterWords.map(w => {
+        // Exempel på referens: "Gen.1.2#01" -> plocka ut versdelen "2"
+        const parts = w.reference.split('.');
+        if (parts.length >= 2) {
+          const versePart = parts[1].split('#')[0];
+          return Number(versePart);
+        }
+        return 1;
+      }).filter(v => !isNaN(v))
+    )
+  ).sort((a, b) => a - b);
+
+  // Filtrera ut orden som hör till den valda versen
+  const currentWords = chapterWords.filter(w => {
+    const parts = w.reference.split('.');
+    if (parts.length >= 2) {
+      const versePart = Number(parts[1].split('#')[0]);
+      return versePart === selectedVerse;
     }
-  }, [selectedBookId]);
+    return false;
+  });
 
-  // Uppdatera tillgängliga verser när bok eller kapitel ändras
-  useEffect(() => {
-    const bookObj = bibleData[selectedBookId];
-    if (bookObj && bookObj[selectedChapter]) {
-      const verseNumbers = Object.keys(bookObj[selectedChapter]).map(Number).sort((a, b) => a - b);
-      setVerses(verseNumbers);
-      if (!verseNumbers.includes(selectedVerse)) {
-        setSelectedVerse(verseNumbers[0] || 1);
-      }
-    } else {
-      setVerses([]);
-    }
-  }, [selectedBookId, selectedChapter, bibleData]);
-
-  const currentBookData = bibleData[selectedBookId] || {};
-  const currentChapterData = currentBookData[selectedChapter] || {};
-  const currentWords = currentChapterData[selectedVerse] || [];
-  const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId);
   const currentVerseIndex = verses.indexOf(selectedVerse);
 
   const handlePrevVerse = () => {
@@ -311,7 +312,7 @@ function HebrewAnalysContent() {
                   </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-                  Studera Gamla testamentets grundtext (Westminster Leningrad Codex) med Strongs-nummer och morfologi.
+                  Studera Gamla testamentets grundtext (TAHOT Dataset) med translitteration, glosa, Strongs-nummer och morfologi.
                 </p>
               </div>
 
@@ -320,7 +321,11 @@ function HebrewAnalysContent() {
                 <div className="relative">
                   <select
                     value={selectedBookId}
-                    onChange={(e) => setSelectedBookId(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedBookId(e.target.value);
+                      setSelectedChapter(1);
+                      setSelectedVerse(1);
+                    }}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
                     {hebrewBooks.map(book => (
@@ -332,8 +337,11 @@ function HebrewAnalysContent() {
 
                 <div className="relative">
                   <select
-                    value={selectedChapter || 1}
-                    onChange={(e) => setSelectedChapter(Number(e.target.value) || 1)}
+                    value={selectedChapter}
+                    onChange={(e) => {
+                      setSelectedChapter(Number(e.target.value) || 1);
+                      setSelectedVerse(1);
+                    }}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
                     {chapters.map(chap => (
@@ -345,13 +353,13 @@ function HebrewAnalysContent() {
 
                 <div className="relative">
                   <select
-                    value={selectedVerse || 1}
+                    value={selectedVerse}
                     onChange={(e) => setSelectedVerse(Number(e.target.value) || 1)}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
-                    {verses.map(v => (
+                    {verses.length > 0 ? verses.map(v => (
                       <option key={v} value={v}>Vers {v}</option>
-                    ))}
+                    )) : <option value={1}>Vers 1</option>}
                   </select>
                   <ChevronDown className="w-4 h-4 text-[#575c58] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -362,14 +370,28 @@ function HebrewAnalysContent() {
           {/* AKTIV VERSVISNING */}
           <section className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[#e8e4df] pb-3">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="text-xs font-bold text-[#8c918d] uppercase tracking-wider">
                   <span>{currentBookObj ? currentBookObj.name_sv : ''} {selectedChapter}:{selectedVerse}</span>
                 </div>
-                <div className="flex items-center bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-0.5 text-[11px] font-medium">
-                  <button type="button" onClick={() => setRunningTranslationLang('sv')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>SFB 2015</button>
-                  <button type="button" onClick={() => setRunningTranslationLang('en')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'en' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>ESV</button>
-                  <button type="button" onClick={() => setRunningTranslationLang('es')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'es' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>Reina-Valera</button>
+                
+                {/* Val av löpande översättning + Info-knapp */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-0.5 text-[11px] font-medium">
+                    <button type="button" onClick={() => setRunningTranslationLang('sv')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>SFB 2015</button>
+                    <button type="button" onClick={() => setRunningTranslationLang('en')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'en' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>ESV</button>
+                    <button type="button" onClick={() => setRunningTranslationLang('es')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'es' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>Reina-Valera</button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSourceInfo(!showSourceInfo)}
+                    className="flex items-center gap-1 text-[11px] font-medium bg-[#faf8f5] hover:bg-[#f0ece6] border border-[#e8e4df] text-[#575c58] px-2.5 py-1.5 rounded-lg transition-colors"
+                    title="Information om översättningskällor"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                    <span>Info</span>
+                  </button>
                 </div>
               </div>
 
@@ -380,42 +402,60 @@ function HebrewAnalysContent() {
               </div>
             </div>
 
+            {/* INFO-BOX OM KÄLLOR (VISAS VID KLICK PÅ INFO) */}
+            {showSourceInfo && (
+              <div className="mb-6 p-4 bg-[#faf8f5] rounded-xl border border-[#e8e4df] text-xs text-[#575c58] space-y-2">
+                <div className="font-bold text-[#1a1d1b] flex items-center justify-between">
+                  <span>Om översättningskällorna</span>
+                  <button onClick={() => setShowSourceInfo(false)} className="text-[10px] text-[#8c918d] hover:text-[#1a1d1b]">Stäng ✕</button>
+                </div>
+                <p>• <strong>SFB 2015:</strong> Svenska Folkbilden 2015, utgiven av Svenska Bibelbibeln / Bibeltrogna Vänner.</p>
+                <p>• <strong>ESV (English Standard Version):</strong> En ordagrann och pålitlig engelsk bibelöversättning som balanserar bokstavstrogenhet med god läsbarhet.</p>
+                <p>• <strong>Reina-Valera 1960:</strong> En av de mest spridda och historiska spanska bibelöversättningarna.</p>
+              </div>
+            )}
+
             {loading ? (
               <div className="py-12 text-center text-xs text-[#8c918d]">Laddar hebreisk grundtext...</div>
             ) : currentWords.length > 0 ? (
               <div>
                 <div dir="rtl" className="py-6 flex flex-wrap gap-x-6 gap-y-10 items-end justify-start">
                   {currentWords.map((word) => (
-                  <div 
-                    key={word.id} 
-                    className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
-                    onClick={() => setSelectedWord(word)}
-                  >
-                    {/* Hebrew text */}
-                    <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors" dir="rtl">
-                      {word.hebrew}
-                    </span>
-                    
-                    {/* Glosan här - vi säkerställer att word.gloss visas */}
-                    <span className="text-xs font-semibold text-blue-800 mt-1" dir="ltr">
-                      {word.gloss || word.strongs || '—'}
-                    </span>
+                    <div 
+                      key={word.id} 
+                      className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
+                      onClick={() => setSelectedWord(word)}
+                    >
+                      {/* Hebrew text */}
+                      <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors" dir="rtl">
+                        {word.hebrew}
+                      </span>
+                      
+                      {/* Transliteration */}
+                      <span className="text-[11px] font-mono text-[#8c918d] mt-0.5" dir="ltr">
+                        {word.transliteration}
+                      </span>
 
-                    {/* Strongs och morfologi */}
-                    <div className="flex items-center gap-1.5 mt-1" dir="ltr">
-                      {word.strongs && (
-                        <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
-                          {word.strongs}
-                        </span>
-                      )}
-                      {word.morph && (
-                        <span className="text-[9px] font-mono text-[#8c918d] bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
-                          {word.morph}
-                        </span>
-                      )}
+                      {/* Engelsk glosa direkt under */}
+                      <span className="text-xs font-semibold text-blue-800 mt-1 max-w-[120px] text-center truncate" dir="ltr">
+                        {word.translation || '—'}
+                      </span>
+
+                      {/* Strongs och grammatik */}
+                      <div className="flex items-center gap-1.5 mt-1" dir="ltr">
+                        {word.strongs && (
+                          <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
+                            {word.strongs}
+                          </span>
+                        )}
+                        {word.grammar && (
+                          <span className="text-[9px] font-mono text-[#8c918d] bg-[#faf8f5] px-1 rounded border border-[#e8e4df] max-w-[80px] truncate">
+                            {word.grammar}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
 
                 <RunningVerseTranslation book={selectedBookId} chapter={selectedChapter} verse={selectedVerse} lang={runningTranslationLang} />
@@ -427,13 +467,13 @@ function HebrewAnalysContent() {
         </main>
       </div>
 
-      {/* KLICK-SIDOPANEL (DRAWER) */}
+      {/* KLICK-SIDOPANEL (DRAWER) FÖR FULLSTÄNDIG MORFOLOGI & LEXIKON */}
       {selectedWord && (
         <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
           <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="text-3xl font-serif text-[#1a1d1b] font-medium">{selectedWord.hebrew}</h3>
+                <h3 className="text-3xl font-serif text-[#1a1d1b] font-medium" dir="rtl">{selectedWord.hebrew}</h3>
                 {selectedWord?.strongs && (
                   <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200 font-semibold">
                     {selectedWord.strongs}
@@ -441,7 +481,10 @@ function HebrewAnalysContent() {
                 )}
               </div>
               <p className="text-xs text-[#575c58] mt-2">
-                Översättning: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
+                Transliteration: <span className="font-mono">{selectedWord.transliteration}</span>
+              </p>
+              <p className="text-xs text-[#575c58] mt-1">
+                Glosa: <span className="font-semibold text-blue-800">{selectedWord.translation || '—'}</span>
               </p>
             </div>
             <button type="button" onClick={() => setSelectedWord(null)} className="w-8 h-8 rounded-full bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#575c58] hover:text-[#1a1d1b]">✕</button>
@@ -452,16 +495,25 @@ function HebrewAnalysContent() {
               <div>
                 <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Grammatisk analys</span>
                 <p className="text-sm text-[#1a1d1b] leading-relaxed font-medium">
-                  {parseHebrewMorphology(selectedWord.morph)}
+                  {parseHebrewMorphology(selectedWord.grammar)}
                 </p>
               </div>
 
-              {selectedWord?.morph && (
+              {selectedWord?.grammar && (
                 <div className="pt-3 border-t border-[#e8e4df]">
-                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Original morfologikod (OSHB)</span>
+                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Original morfologikod (TAHOT)</span>
                   <span className="font-mono text-xs text-[#1a1d1b] bg-white px-2 py-1 rounded border border-[#e8e4df] inline-block">
-                    {selectedWord.morph}
+                    {selectedWord.grammar}
                   </span>
+                </div>
+              )}
+
+              {selectedWord?.expanded_tags && (
+                <div className="pt-3 border-t border-[#e8e4df]">
+                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Lexikoninformation & Rot</span>
+                  <div className="font-mono text-[11px] text-[#1a1d1b] bg-white p-2.5 rounded border border-[#e8e4df] whitespace-pre-wrap leading-relaxed">
+                    {selectedWord.expanded_tags}
+                  </div>
                 </div>
               )}
             </div>
