@@ -37,6 +37,7 @@ async function testAndBuild() {
         }
         strongsDict[strongsKey] = glossText || strongsKey;
       }
+      console.log(`✓ Laddade ${Object.keys(strongsDict).length} Strongs-ord.`);
     }
   } catch (err) {
     console.error('Lexikonfel:', err);
@@ -56,7 +57,6 @@ async function testAndBuild() {
     const xmlText = await res.text();
     completeBible[book.id] = {};
 
-    // Stöd för både standard <chapter> och osisID-format i WLC
     const chapterRegex = /<chapter\b([^>]*)>([\s\S]*?)<\/chapter>/g;
     let chapterMatch;
     let chapterCount = 0;
@@ -88,25 +88,33 @@ async function testAndBuild() {
 
         while ((wordMatch = wordRegex.exec(verseContent)) !== null) {
           const wAttrs = wordMatch[1];
-          const hebrewText = wordMatch[2].replace(/\//g, '').trim();
+          const hebrewText = wordMatch[2].replace(/[\/]/g, '').trim();
 
           const lemmaMatch = wAttrs.match(/lemma="([^"]+)"/);
           const morphMatch = wAttrs.match(/morph="([^"]+)"/);
 
           let strongs = '';
           if (lemmaMatch) {
-            const numMatch = lemmaMatch[1].match(/(\d+)/);
-            if (numMatch) strongs = `H${numMatch[1]}`;
+            // Fånga alla förekomster av h-nummer i lemma-strängen (t.ex. "h7200" eller "strong:H7200")
+            const numMatches = lemmaMatch[1].match(/[hH](\d+)/g);
+            if (numMatches && numMatches.length > 0) {
+              const digits = numMatches[0].replace(/[hH]/g, '');
+              strongs = `H${Number(digits)}`;
+            }
           }
 
           let gloss = '';
           if (strongs && strongsDict[strongs]) {
             gloss = strongsDict[strongs];
-          } else if (lemmaMatch) {
-            gloss = lemmaMatch[1].replace(/[\/\d]/g, '').trim();
+          } 
+          
+          if (!gloss && lemmaMatch) {
+            gloss = lemmaMatch[1].replace(/[\/\d\s:hH]/g, '').trim();
           }
 
-          if (!gloss || gloss.length <= 1) gloss = strongs || 'ord';
+          if (!gloss || gloss.length <= 1) {
+            gloss = strongs || 'ord';
+          }
 
           words.push({
             id: wordIndex++,
