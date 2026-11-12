@@ -4,25 +4,24 @@ const path = require('path');
 const BOOKS = [
   { xml: 'Gen', id: 'Genesis' }, { xml: 'Exod', id: 'Exodus' }, { xml: 'Lev', id: 'Leviticus' },
   { xml: 'Num', id: 'Numbers' }, { xml: 'Deut', id: 'Deuteronomy' }, { xml: 'Josh', id: 'Joshua' },
-  { xml: 'Judg', id: 'Judges' }, { xml: 'Ruth', id: 'Ruth' }, { xml: '1Sam', id: '1Samuel' },
-  { xml: '2Sam', id: '2Samuel' }, { xml: '1Kgs', id: '1Kings' }, { xml: '2Kgs', id: '2Kings' },
-  { xml: '1Chr', id: '1Chronicles' }, { xml: '2Chr', id: '2Chronicles' }, { xml: 'Ezra', id: 'Ezra' },
-  { xml: 'Neh', id: 'Nehemiah' }, { xml: 'Esth', id: 'Esther' }, { xml: 'Job', id: 'Job' },
-  { xml: 'Ps', id: 'Psalms' }, { xml: 'Prov', id: 'Proverbs' }, { xml: 'Eccl', id: 'Ecclesiastes' },
-  { xml: 'Song', id: 'SongOfSolomon' }, { xml: 'Isa', id: 'Isaiah' }, { xml: 'Jer', id: 'Jeremiah' },
-  { xml: 'Lam', id: 'Lamentations' }, { xml: 'Ezek', id: 'Ezekiel' }, { xml: 'Dan', id: 'Daniel' },
+  { xml: 'Judg', id: 'Domarboken' }, { xml: 'Ruth', id: 'Rut' }, { xml: '1Sam', id: '1Samuel' },
+  { xml: '2Sam', id: '2Samuel' }, { xml: '1Kgs', id: '1Kungaboken' }, { xml: '2Kgs', id: '2Kungaboken' },
+  { xml: '1Chr', id: '1Chronicles' }, { xml: '2Chr', id: '2Chronicles' }, { xml: 'Ezra', id: 'Esra' },
+  { xml: 'Neh', id: 'Nehemja' }, { xml: 'Esth', id: 'Ester' }, { xml: 'Job', id: 'Job' },
+  { xml: 'Ps', id: 'Psalms' }, { xml: 'Prov', id: 'Ordspråksboken' }, { xml: 'Eccl', id: 'Predikaren' },
+  { xml: 'Song', id: 'Höga Visan' }, { xml: 'Isa', id: 'Jesaja' }, { xml: 'Jer', id: 'Jeremia' },
+  { xml: 'Lam', id: 'Klagovisorna' }, { xml: 'Ezek', id: 'Hesekiel' }, { xml: 'Dan', id: 'Daniel' },
   { xml: 'Hos', id: 'Hosea' }, { xml: 'Joel', id: 'Joel' }, { xml: 'Amos', id: 'Amos' },
-  { xml: 'Obad', id: 'Obadiah' }, { xml: 'Jonah', id: 'Jonah' }, { xml: 'Mic', id: 'Micah' },
-  { xml: 'Nah', id: 'Nahum' }, { xml: 'Hab', id: 'Habakkuk' }, { xml: 'Zeph', id: 'Zephaniah' },
-  { xml: 'Hag', id: 'Haggai' }, { xml: 'Zech', id: 'Zechariah' }, { xml: 'Mal', id: 'Malachi' }
+  { xml: 'Obad', id: 'Obadja' }, { xml: 'Jonah', id: 'Jona' }, { xml: 'Mic', id: 'Mika' },
+  { xml: 'Nah', id: 'Nahum' }, { xml: 'Hab', id: 'Habackuk' }, { xml: 'Zeph', id: 'Sefanja' },
+  { xml: 'Hag', id: 'Haggai' }, { xml: 'Zech', id: 'Sakarja' }, { xml: 'Mal', id: 'Malaki' }
 ];
 
 const BASE_URL = 'https://raw.githubusercontent.com/openscriptures/morphhb/master/wlc';
-// Officiell öppen Strongs-lexikonfil för hebreiska (Open Scriptures / STEPBible)
 const STRONGS_DICT_URL = 'https://raw.githubusercontent.com/openscriptures/strongs/master/hebrew/strongs-hebrew-dictionary.json';
-const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'hebrew');
+const OUTPUT_FILE = path.join(process.cwd(), 'public', 'data', 'hebrew-bible.json');
 
-async function buildHebrewData() {
+async function buildSingleHebrewFile() {
   console.log('Laddar ner komplett Strongs-lexikon...');
   let strongsDict = {};
 
@@ -30,29 +29,24 @@ async function buildHebrewData() {
     const dictRes = await fetch(STRONGS_DICT_URL);
     if (dictRes.ok) {
       const rawDict = await dictRes.json();
-      // Bygg ett rent uppslagslexikon { H1: "father", H2: "perish", ... }
       for (const [key, val] of Object.entries(rawDict)) {
-        // Rensa fram själva sifferdelen, ex "H0776" -> "H776"
         const cleanNum = key.replace(/[^0-9]/g, '');
         const strongsKey = `H${Number(cleanNum)}`;
-        
-        // Plocka ut bästa möjliga glosa (t.ex. 'lemma' eller 'definition')
         let glossText = val.gloss || val.definition || val.kjv_def || '';
         if (glossText) {
-          // Ta bort onödig HTML eller långa utläggningar, behåll det kärnfulla
           glossText = glossText.replace(/<[^>]*>?/gm, '').split(';')[0].trim();
         }
         strongsDict[strongsKey] = glossText || strongsKey;
       }
       console.log(`✓ Hämtade ${Object.keys(strongsDict).length} Strongs-definitioner.`);
-    } else {
-      console.warn('Kunde inte hämta externa Strongs-lexikonet, använder fallback.');
     }
   } catch (err) {
-    console.error('Fel vid hämtning av Strongs-lexikon:', err);
+    console.error('Kunde inte hämta Strongs-lexikon:', err);
   }
 
-  console.log('Startar generering av alla kapitel med inbakade glosor...');
+  const completeBible = {};
+
+  console.log('Hämtar och parsar alla böcker...');
 
   for (const book of BOOKS) {
     const url = `${BASE_URL}/${book.xml}.xml`;
@@ -60,8 +54,7 @@ async function buildHebrewData() {
     if (!res.ok) continue;
 
     const xmlText = await res.text();
-    const bookDir = path.join(OUTPUT_DIR, book.id);
-    fs.mkdirSync(bookDir, { recursive: true });
+    completeBible[book.id] = {};
 
     const chapterRegex = /<chapter osisID="[^.]+\.(\d+)">([\s\S]*?)<\/chapter>/g;
     let chapterMatch;
@@ -69,7 +62,7 @@ async function buildHebrewData() {
     while ((chapterMatch = chapterRegex.exec(xmlText)) !== null) {
       const chapterNum = Number(chapterMatch[1]);
       const chapterContent = chapterMatch[2];
-      const versesData = {};
+      completeBible[book.id][chapterNum] = {};
 
       const verseRegex = /<verse osisID="[^.]+\.\d+\.(\d+)">([\s\S]*?)<\/verse>/g;
       let verseMatch;
@@ -98,7 +91,6 @@ async function buildHebrewData() {
             }
           }
 
-          // Hämta exakt glosa från vårt lexikon, annars lemma eller strongs-nummer
           let gloss = '';
           if (strongs && strongsDict[strongs]) {
             gloss = strongsDict[strongs];
@@ -119,15 +111,16 @@ async function buildHebrewData() {
           });
         }
 
-        versesData[verseNum] = words;
+        completeBible[book.id][chapterNum][verseNum] = words;
       }
-
-      const filePath = path.join(bookDir, `${chapterNum}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(versesData));
     }
-    console.log(`✓ ${book.id} klart.`);
+    console.log(`✓ ${book.id} inläst.`);
   }
-  console.log('\nAlla kapitelfiler har genererats med inbakade Strongs-glosor!');
+
+  // Skapa mappen om den inte finns
+  fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(completeBible));
+  console.log(`\n🎉 Klart! All data sparades till ${OUTPUT_FILE}`);
 }
 
-buildHebrewData();
+buildSingleHebrewFile();
