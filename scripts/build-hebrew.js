@@ -2,75 +2,26 @@ const fs = require('fs');
 const path = require('path');
 
 const BOOKS = [
-  { xml: 'Gen', id: 'Genesis' },
-  { xml: 'Exod', id: 'Exodus' },
-  { xml: 'Lev', id: 'Leviticus' },
-  { xml: 'Num', id: 'Numbers' },
-  { xml: 'Deut', id: 'Deuteronomy' },
-  { xml: 'Josh', id: 'Joshua' },
-  { xml: 'Judg', id: 'Judges' },
-  { xml: 'Ruth', id: 'Ruth' },
-  { xml: '1Sam', id: '1Samuel' },
-  { xml: '2Sam', id: '2Samuel' },
-  { xml: '1Kgs', id: '1Kings' },
-  { xml: '2Kgs', id: '2Kings' },
-  { xml: '1Chr', id: '1Chronicles' },
-  { xml: '2Chr', id: '2Chronicles' },
-  { xml: 'Ezra', id: 'Ezra' },
-  { xml: 'Neh', id: 'Nehemiah' },
-  { xml: 'Esth', id: 'Esther' },
-  { xml: 'Job', id: 'Job' },
-  { xml: 'Ps', id: 'Psalms' },
-  { xml: 'Prov', id: 'Ordspråksboken' },
-  { xml: 'Eccl', id: 'Ecclesiastes' },
-  { xml: 'Song', id: 'SongOfSolomon' },
-  { xml: 'Isa', id: 'Isaiah' },
-  { xml: 'Jer', id: 'Jeremiah' },
-  { xml: 'Lam', id: 'Lamentations' },
-  { xml: 'Ezek', id: 'Ezekiel' },
-  { xml: 'Dan', id: 'Daniel' },
-  { xml: 'Hos', id: 'Hosea' },
-  { xml: 'Joel', id: 'Joel' },
-  { xml: 'Amos', id: 'Amos' },
-  { xml: 'Obad', id: 'Obadiah' },
-  { xml: 'Jonah', id: 'Jonah' },
-  { xml: 'Mic', id: 'Micah' },
-  { xml: 'Nah', id: 'Nahum' },
-  { xml: 'Hab', id: 'Habakkuk' },
-  { xml: 'Zeph', id: 'Zephaniah' },
-  { xml: 'Hag', id: 'Haggai' },
-  { xml: 'Zech', id: 'Zechariah' },
-  { xml: 'Mal', id: 'Malachi' }
+  { xml: 'Gen', id: 'Genesis' }, { xml: 'Exod', id: 'Exodus' }, { xml: 'Lev', id: 'Leviticus' },
+  { xml: 'Num', id: 'Numbers' }, { xml: 'Deut', id: 'Deuteronomy' }, { xml: 'Josh', id: 'Joshua' },
+  { xml: 'Judg', id: 'Judges' }, { xml: 'Ruth', id: 'Ruth' }, { xml: '1Sam', id: '1Samuel' },
+  { xml: '2Sam', id: '2Samuel' }, { xml: '1Kgs', id: '1Kings' }, { xml: '2Kgs', id: '2Kings' },
+  { xml: '1Chr', id: '1Chronicles' }, { xml: '2Chr', id: '2Chronicles' }, { xml: 'Ezra', id: 'Ezra' },
+  { xml: 'Neh', id: 'Nehemiah' }, { xml: 'Esth', id: 'Esther' }, { xml: 'Job', id: 'Job' },
+  { xml: 'Ps', id: 'Psalms' }, { xml: 'Prov', id: 'Proverbs' }, { xml: 'Eccl', id: 'Ecclesiastes' },
+  { xml: 'Song', id: 'SongOfSolomon' }, { xml: 'Isa', id: 'Isaiah' }, { xml: 'Jer', id: 'Jeremiah' },
+  { xml: 'Lam', id: 'Lamentations' }, { xml: 'Ezek', id: 'Ezekiel' }, { xml: 'Dan', id: 'Daniel' },
+  { xml: 'Hos', id: 'Hosea' }, { xml: 'Joel', id: 'Joel' }, { xml: 'Amos', id: 'Amos' },
+  { xml: 'Obad', id: 'Obadiah' }, { xml: 'Jonah', id: 'Jonah' }, { xml: 'Mic', id: 'Micah' },
+  { xml: 'Nah', id: 'Nahum' }, { xml: 'Hab', id: 'Habakkuk' }, { xml: 'Zeph', id: 'Zephaniah' },
+  { xml: 'Hag', id: 'Haggai' }, { xml: 'Zech', id: 'Zechariah' }, { xml: 'Mal', id: 'Malachi' }
 ];
-
-// En grundläggande Strongs-ordlista för de vanligaste orden
-const STRONGS_GLOSSARY = {
-  'H430': 'Gud (Elohim)',
-  'H776': 'jord',
-  'H8064': 'himlar',
-  'H7225': 'begynnelse',
-  'H1254': 'skapade',
-  'H1961': 'vara / blev',
-  'H216': 'ljus',
-  'H2896': 'god',
-  'H3588': 'att / ty / när',
-  'H3068': 'YHWH (Herren)',
-  'H376': 'man',
-  'H802': 'kvinna',
-  'H559': 'sade',
-  'H7200': 'såg',
-  'H1931': 'han / den',
-  'H853': '[direkt objekt]',
-  'H8478': 'under / ställe',
-  'H4428': 'kung',
-  'H1004': 'hus'
-};
 
 const BASE_URL = 'https://raw.githubusercontent.com/openscriptures/morphhb/master/wlc';
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'hebrew');
 
 async function buildHebrewData() {
-  console.log('Startar generering med Strongs-baserade glosor...');
+  console.log('Startar generering av hebreiska grundtexter med rena glosor...');
 
   for (const book of BOOKS) {
     const url = `${BASE_URL}/${book.xml}.xml`;
@@ -116,14 +67,18 @@ async function buildHebrewData() {
             }
           }
 
-          // Hämta glosa från vår ordlista, annars använd lemma eller strongs-nummer
+          // Extrahera en snygg glosa från lemmat utan koder och siffror
           let gloss = '';
-          if (strongs && STRONGS_GLOSSARY[strongs]) {
-            gloss = STRONGS_GLOSSARY[strongs];
-          } else if (lemmaMatch) {
-            gloss = lemmaMatch[1].replace(/[^a-zA-Z]/g, '').toLowerCase();
+          if (lemmaMatch) {
+            // Rensa bort rot-streck, siffror och prefix
+            const cleanLemma = lemmaMatch[1].replace(/[\/\d]/g, '').trim();
+            if (cleanLemma.length > 1) {
+              gloss = cleanLemma;
+            }
           }
-          if (!gloss || gloss === strongs) {
+
+          // Om lemmat saknas eller blir för korta tecken, använd Strongs-numret eller "ord"
+          if (!gloss || gloss.length <= 1) {
             gloss = strongs || 'ord';
           }
 
@@ -142,9 +97,9 @@ async function buildHebrewData() {
       const filePath = path.join(bookDir, `${chapterNum}.json`);
       fs.writeFileSync(filePath, JSON.stringify(versesData));
     }
-    console.log(`✓ ${book.id} klart med glosor.`);
+    console.log(`✓ ${book.id} klart.`);
   }
-  console.log('\nAlla filer klara!');
+  console.log('\nAlla hebreiska filer har genererats!');
 }
 
 buildHebrewData();
