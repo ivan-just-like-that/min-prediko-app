@@ -218,19 +218,37 @@ function HebrewAnalysContent() {
     async function loadChapterWords() {
       setLoading(true);
       try {
-        const prefixShort = `${currentBookObj.id}.${selectedChapter}.`;
-        const prefixFull = `${currentBookObj.fullName}.${selectedChapter}.`;
-
+        // Hämta alla rader för den valda boken (t.ex. Gen% eller Genesis%)
         let { data, error } = await supabase
           .from('hebrew_verses')
           .select('*')
-          .or(`reference.ilike.${prefixShort}%,reference.ilike.${prefixFull}%`)
+          .ilike('reference', `${selectedBookId}%`)
           .order('id', { ascending: true });
 
+        // Om det inte gav något, prova det fullständiga namnet
+        if (!data || data.length === 0) {
+          const res2 = await supabase
+            .from('hebrew_verses')
+            .select('*')
+            .ilike('reference', `${currentBookObj.fullName}%`)
+            .order('id', { ascending: true });
+          data = res2.data;
+          error = res2.error;
+        }
+
         if (error) throw error;
+
+        // Filtrera ut rätt kapitel i JavaScript (t.ex. "Gen.1." eller "Genesis.1.")
+        const chapterPrefix1 = `${selectedBookId}.${selectedChapter}.`;
+        const chapterPrefix2 = `${currentBookObj.fullName}.${selectedChapter}.`;
+
+        const filtered = (data || []).filter(w => {
+          const ref = w.reference || '';
+          return ref.startsWith(chapterPrefix1) || ref.startsWith(chapterPrefix2);
+        });
         
-        console.log("Laddade hebreiska ord från Supabase:", data?.length || 0, "st.");
-        setChapterWords(data || []);
+        console.log("Laddade hebreiska ord från Supabase:", filtered.length, "st för kapitel", selectedChapter);
+        setChapterWords(filtered);
       } catch (err) {
         console.error('Kunde inte hämta kapiteldata från Supabase:', err);
         setChapterWords([]);
