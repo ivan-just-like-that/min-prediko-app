@@ -136,8 +136,6 @@ function HebrewAnalysContent() {
 
   // Klick & Sidopanel (Lexikon)
   const [selectedWord, setSelectedWord] = useState(null);
-  const [wordDetails, setWordDetails] = useState(null);
-  const [isLoadingWord, setIsLoadingWord] = useState(false);
 
   // Auth-states från Predika
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -244,25 +242,6 @@ function HebrewAnalysContent() {
 
     loadStaticChapter();
   }, [selectedBookId, selectedChapter]);
-
-  // Hantera klick på ord för lexikonuppslag och Strongs
-  const handleWordClick = async (wordObj) => {
-    setSelectedWord(wordObj);
-    setWordDetails(null);
-    setIsLoadingWord(true);
-
-    try {
-      const res = await fetch(`/api/hebrew-word?word=${encodeURIComponent(wordObj.hebrew)}&strongs=${encodeURIComponent(wordObj.strongs || '')}`);
-      if (res.ok) {
-        const data = await res.json();
-        setWordDetails(data);
-      }
-    } catch (err) {
-      console.error('Kunde inte hämta extra orddata:', err);
-    } finally {
-      setIsLoadingWord(false);
-    }
-  };
 
   const currentWords = chapterData[selectedVerse] || [];
   const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId);
@@ -521,20 +500,28 @@ function HebrewAnalysContent() {
               <div className="py-12 text-center text-xs text-[#8c918d]">Laddar hebreisk grundtext...</div>
             ) : currentWords.length > 0 ? (
               <div>
-                {/* HEBREISK TEXT (RTL) */}
-                <div dir="rtl" className="py-6 flex flex-wrap gap-x-6 gap-y-8 items-end justify-start">
+                {/* HEBREISK TEXT (RTL) MED ORD-FÖR-ORD-ÖVERSÄTTNING */}
+                <div dir="rtl" className="py-6 flex flex-wrap gap-x-6 gap-y-10 items-end justify-start">
                   {currentWords.map((word) => (
                     <div 
                       key={word.id} 
-                      className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors relative group"
-                      onClick={() => handleWordClick(word)}
+                      className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
+                      onClick={() => setSelectedWord(word)}
                     >
-                      <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-600 transition-colors">
+                      {/* Hebreiskt ord */}
+                      <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors">
                         {word.hebrew}
                       </span>
-                      <div className="flex items-center gap-1.5 mt-1.5" dir="ltr">
+                      
+                      {/* Ord-för-ord glosa (Engelska/Svenska) direkt under */}
+                      <span className="text-xs font-semibold text-blue-800 mt-1" dir="ltr">
+                        {word.gloss || '—'}
+                      </span>
+
+                      {/* Strongs & Morfologi */}
+                      <div className="flex items-center gap-1.5 mt-1" dir="ltr">
                         {word.strongs && (
-                          <span className="text-[10px] font-mono text-blue-600 font-medium">
+                          <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
                             {word.strongs}
                           </span>
                         )}
@@ -568,19 +555,17 @@ function HebrewAnalysContent() {
         <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
           <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <h3 className="text-3xl font-serif text-[#1a1d1b] font-medium">{selectedWord.hebrew}</h3>
                 {selectedWord?.strongs && (
-                  <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
+                  <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200 font-semibold">
                     {selectedWord.strongs}
                   </span>
                 )}
               </div>
-              {selectedWord?.morph && (
-                <p className="text-xs text-[#575c58] font-mono mt-1.5">
-                  Morfologi (OSHB): <span className="font-semibold text-[#1a1d1b]">{selectedWord.morph}</span>
-                </p>
-              )}
+              <p className="text-xs text-[#575c58] mt-2">
+                Ordagrant ordval i kontexten: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
+              </p>
             </div>
             <button 
               type="button" 
@@ -591,28 +576,31 @@ function HebrewAnalysContent() {
             </button>
           </div>
 
-          <div className="py-4 space-y-3 border-b border-[#e8e4df] text-xs">
-            <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8e4df] space-y-2">
+          <div className="py-6 space-y-4 flex-1 overflow-y-auto text-xs text-[#575c58]">
+            <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8e4df] space-y-3">
               <div>
-                <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-0.5">Lexikal betydelse (Glosa)</span>
-                <span className="text-sm font-semibold text-blue-700">
-                  {isLoadingWord ? 'Hämtar data...' : (wordDetails?.gloss || '—')}
-                </span>
+                <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Lexikal översikt & Definition</span>
+                <p className="text-sm text-[#1a1d1b] leading-relaxed font-medium">
+                  Detta är grundtextordet &quot;<span className="font-serif text-base">{selectedWord.hebrew}</span>&quot; med tillhörande Strongs-nummer {selectedWord.strongs || 'saknas'}.
+                </p>
               </div>
-              {wordDetails?.lemma && (
-                <div className="pt-1 border-t border-[#e8e4df]/60">
-                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-0.5">Grundform / Rot</span>
-                  <span className="text-base font-serif text-[#1a1d1b]">{wordDetails.lemma}</span>
+
+              {selectedWord?.morph && (
+                <div className="pt-3 border-t border-[#e8e4df]">
+                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Grammatisk morfologi (OSHB)</span>
+                  <span className="font-mono text-xs text-[#1a1d1b] bg-white px-2 py-1 rounded border border-[#e8e4df] inline-block">
+                    {selectedWord.morph}
+                  </span>
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto py-4 space-y-3 text-xs text-[#575c58]">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#8c918d]">Lexikal översikt & Definition</h4>
-            <p className="leading-relaxed">
-              {isLoadingWord ? 'Laddar definition...' : (wordDetails?.definition || 'Klicka på ett ord för att se grammatik och Strongs-kod. Koppla gärna /api/hebrew-word mot en Strongs-tabell för full definition.')}
-            </p>
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#8c918d]">Teologisk betydelse</h4>
+              <p className="leading-relaxed bg-white p-4 rounded-xl border border-[#e8e4df]">
+                Genom att studera ordet i sin hebreiska kontext får du fram dess ursprungliga nyanser. Strongs-nummer {selectedWord.strongs} används genom hela Gamla testamentet för att spåra hur ordet översätts i olika böcker.
+              </p>
+            </div>
           </div>
         </div>
       )}
