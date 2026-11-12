@@ -83,7 +83,7 @@ function HebrewAnalysContent() {
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
 
-  // Gamla testamentets böcker anpassade för Bolls Life API (inga understreck)
+  // Alla 39 böcker i Gamla testamentet
   const hebrewBooks = [
     { id: 'Genesis', name_sv: 'Första Moseboken', chapters: 50 },
     { id: 'Exodus', name_sv: 'Andra Moseboken', chapters: 40 },
@@ -92,25 +92,46 @@ function HebrewAnalysContent() {
     { id: 'Deuteronomy', name_sv: 'Femte Moseboken', chapters: 34 },
     { id: 'Joshua', name_sv: 'Josua', chapters: 24 },
     { id: 'Judges', name_sv: 'Domarboken', chapters: 21 },
+    { id: 'Ruth', name_sv: 'Rut', chapters: 4 },
     { id: '1Samuel', name_sv: '1 Samuelsboken', chapters: 31 },
     { id: '2Samuel', name_sv: '2 Samuelsboken', chapters: 24 },
     { id: '1Kings', name_sv: '1 Kungaboken', chapters: 22 },
     { id: '2Kings', name_sv: '2 Kungaboken', chapters: 25 },
-    { id: 'Isaiah', name_sv: 'Jesaja', chapters: 66 },
-    { id: 'Jeremiah', name_sv: 'Jeremia', chapters: 52 },
-    { id: 'Ezekiel', name_sv: 'Hesekiel', chapters: 48 },
+    { id: '1Chronicles', name_sv: '1 Krönikeboken', chapters: 29 },
+    { id: '2Chronicles', name_sv: '2 Krönikeboken', chapters: 36 },
+    { id: 'Ezra', name_sv: 'Esra', chapters: 10 },
+    { id: 'Nehemiah', name_sv: 'Nehemja', chapters: 13 },
+    { id: 'Esther', name_sv: 'Ester', chapters: 10 },
+    { id: 'Job', name_sv: 'Job', chapters: 42 },
     { id: 'Psalms', name_sv: 'Psaltaren', chapters: 150 },
     { id: 'Proverbs', name_sv: 'Ordspråksboken', chapters: 31 },
-    { id: 'Job', name_sv: 'Job', chapters: 42 }
+    { id: 'Ecclesiastes', name_sv: 'Predikaren', chapters: 12 },
+    { id: 'SongOfSolomon', name_sv: 'Höga Visan', chapters: 8 },
+    { id: 'Isaiah', name_sv: 'Jesaja', chapters: 66 },
+    { id: 'Jeremiah', name_sv: 'Jeremia', chapters: 52 },
+    { id: 'Lamentations', name_sv: 'Klagovisorna', chapters: 5 },
+    { id: 'Ezekiel', name_sv: 'Hesekiel', chapters: 48 },
+    { id: 'Daniel', name_sv: 'Daniel', chapters: 12 },
+    { id: 'Hosea', name_sv: 'Hosea', chapters: 14 },
+    { id: 'Joel', name_sv: 'Joel', chapters: 3 },
+    { id: 'Amos', name_sv: 'Amos', chapters: 9 },
+    { id: 'Obadiah', name_sv: 'Obadja', chapters: 1 },
+    { id: 'Jonah', name_sv: 'Jona', chapters: 4 },
+    { id: 'Micah', name_sv: 'Mika', chapters: 7 },
+    { id: 'Nahum', name_sv: 'Nahum', chapters: 3 },
+    { id: 'Habakkuk', name_sv: 'Habackuk', chapters: 3 },
+    { id: 'Zephaniah', name_sv: 'Sefanja', chapters: 3 },
+    { id: 'Haggai', name_sv: 'Haggai', chapters: 2 },
+    { id: 'Zechariah', name_sv: 'Sakarja', chapters: 14 },
+    { id: 'Malachi', name_sv: 'Malaki', chapters: 4 }
   ];
 
   const [selectedBookId, setSelectedBookId] = useState('Genesis');
   const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(1);
+  const [chapterData, setChapterData] = useState({});
   const [verses, setVerses] = useState([]);
   const [selectedVerse, setSelectedVerse] = useState(1);
-  
-  const [currentWords, setCurrentWords] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Klick & Sidopanel (Lexikon)
@@ -197,79 +218,53 @@ function HebrewAnalysContent() {
     }
   }, [selectedBookId]);
 
-  // Generera en rimlig verslista (t.ex. 60 verser som standard eller beroende på kapitel)
+  // Hämta statisk JSON-fil för valt kapitel från /public/data/hebrew/
   useEffect(() => {
-    const verseList = Array.from({ length: 60 }, (_, i) => i + 1);
-    setVerses(verseList);
-  }, [selectedBookId, selectedChapter]);
-
-
-// Hämta vers via din egna server-route (löser CORS)
-  useEffect(() => {
-    async function fetchVerse() {
+    async function loadStaticChapter() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/hebrew-verse?book=${selectedBookId}&chapter=${selectedChapter}&verse=${selectedVerse}`);
+        const res = await fetch(`/data/hebrew/${selectedBookId}/${selectedChapter}.json`);
+        if (!res.ok) throw new Error('Kapitelfil saknas');
         const data = await res.json();
+        setChapterData(data);
 
-        const verseObj = Array.isArray(data) ? data[0] : data;
-
-        if (verseObj && verseObj.text) {
-          const rawText = verseObj.text;
-          
-          const regex = /<w\s+strong="([^"]+)">([^<]+)<\/w>/g;
-          let match;
-          let wordsArray = [];
-          let idx = 0;
-
-          while ((match = regex.exec(rawText)) !== null) {
-            wordsArray.push({
-              id: idx++,
-              strongs: match[1],
-              hebrew: match[2].trim()
-            });
-          }
-
-          if (wordsArray.length === 0) {
-            const cleanText = rawText.replace(/<[^>]*>/g, '');
-            wordsArray = cleanText.trim().split(/\s+/).filter(Boolean).map((w, i) => ({
-              id: i,
-              hebrew: w,
-              strongs: ''
-            }));
-          }
-
-          setCurrentWords(wordsArray);
-        } else {
-          setCurrentWords([]);
+        const verseNumbers = Object.keys(data).map(Number).sort((a, b) => a - b);
+        setVerses(verseNumbers);
+        if (!verseNumbers.includes(selectedVerse)) {
+          setSelectedVerse(verseNumbers[0] || 1);
         }
       } catch (err) {
-        console.error('Kunde inte hämta vers:', err);
-        setCurrentWords([]);
+        console.error('Kunde inte läsa statisk hebreisk text:', err);
+        setChapterData({});
+        setVerses([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchVerse();
-  }, [selectedBookId, selectedChapter, selectedVerse]);
+    loadStaticChapter();
+  }, [selectedBookId, selectedChapter]);
 
   // Hantera klick på ord för lexikonuppslag och Strongs
   const handleWordClick = async (wordObj) => {
     setSelectedWord(wordObj);
+    setWordDetails(null);
     setIsLoadingWord(true);
 
     try {
       const res = await fetch(`/api/hebrew-word?word=${encodeURIComponent(wordObj.hebrew)}&strongs=${encodeURIComponent(wordObj.strongs || '')}`);
-      const data = await res.json();
-      setWordDetails(data);
+      if (res.ok) {
+        const data = await res.json();
+        setWordDetails(data);
+      }
     } catch (err) {
-      console.error('Kunde inte hämta orddata:', err);
+      console.error('Kunde inte hämta extra orddata:', err);
     } finally {
       setIsLoadingWord(false);
     }
   };
 
+  const currentWords = chapterData[selectedVerse] || [];
   const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId);
   const currentVerseIndex = verses.indexOf(selectedVerse);
 
@@ -401,7 +396,7 @@ function HebrewAnalysContent() {
                   </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-                  Studera Gamla testamentets grundtext med ord-för-ord-översättning och Strongs-nummer via Bolls Life API (WLC).
+                  Studera Gamla testamentets grundtext (Westminster Leningrad Codex) med Strongs-nummer och morfologi.
                 </p>
               </div>
 
@@ -509,7 +504,7 @@ function HebrewAnalysContent() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-[11px] font-semibold text-[#575c58] px-2">
-                  {currentVerseIndex + 1} / {verses.length}
+                  {verses.length > 0 ? `${currentVerseIndex + 1} / ${verses.length}` : '0 / 0'}
                 </span>
                 <button
                   type="button"
@@ -523,7 +518,7 @@ function HebrewAnalysContent() {
             </div>
 
             {loading ? (
-              <div className="py-12 text-center text-xs text-[#8c918d]">Hämtar hebreisk text från Bolls Life API (WLC)...</div>
+              <div className="py-12 text-center text-xs text-[#8c918d]">Laddar hebreisk grundtext...</div>
             ) : currentWords.length > 0 ? (
               <div>
                 {/* HEBREISK TEXT (RTL) */}
@@ -531,17 +526,24 @@ function HebrewAnalysContent() {
                   {currentWords.map((word) => (
                     <div 
                       key={word.id} 
-                      className="flex flex-col items-center cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors relative group"
+                      className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors relative group"
                       onClick={() => handleWordClick(word)}
                     >
                       <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-600 transition-colors">
                         {word.hebrew}
                       </span>
-                      {word.strongs && (
-                        <span className="text-[10px] font-mono text-blue-600 mt-1">
-                          {word.strongs}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 mt-1.5" dir="ltr">
+                        {word.strongs && (
+                          <span className="text-[10px] font-mono text-blue-600 font-medium">
+                            {word.strongs}
+                          </span>
+                        )}
+                        {word.morph && (
+                          <span className="text-[9px] font-mono text-[#8c918d] bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
+                            {word.morph}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -561,7 +563,7 @@ function HebrewAnalysContent() {
         </main>
       </div>
 
-      {/* KLICK-SIDOPANEL FÖR LEXIKON (DRAWER) */}
+      {/* KLICK-SIDOPANEL FÖR LEXIKON & MORFOLOGI (DRAWER) */}
       {selectedWord && (
         <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
           <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
@@ -574,9 +576,11 @@ function HebrewAnalysContent() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#575c58] font-serif mt-1">
-                Rot: <span className="font-medium text-[#1a1d1b]">{wordDetails?.lemma || '—'}</span>
-              </p>
+              {selectedWord?.morph && (
+                <p className="text-xs text-[#575c58] font-mono mt-1.5">
+                  Morfologi (OSHB): <span className="font-semibold text-[#1a1d1b]">{selectedWord.morph}</span>
+                </p>
+              )}
             </div>
             <button 
               type="button" 
@@ -595,13 +599,19 @@ function HebrewAnalysContent() {
                   {isLoadingWord ? 'Hämtar data...' : (wordDetails?.gloss || '—')}
                 </span>
               </div>
+              {wordDetails?.lemma && (
+                <div className="pt-1 border-t border-[#e8e4df]/60">
+                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-0.5">Grundform / Rot</span>
+                  <span className="text-base font-serif text-[#1a1d1b]">{wordDetails.lemma}</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 space-y-3 text-xs text-[#575c58]">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#8c918d]">Lexikal översikt & Definition</h4>
             <p className="leading-relaxed">
-              {isLoadingWord ? 'Laddar definition...' : (wordDetails?.definition || 'Ingen extra information tillgänglig för detta ord.')}
+              {isLoadingWord ? 'Laddar definition...' : (wordDetails?.definition || 'Klicka på ett ord för att se grammatik och Strongs-kod. Koppla gärna /api/hebrew-word mot en Strongs-tabell för full definition.')}
             </p>
           </div>
         </div>
@@ -632,10 +642,10 @@ function HebrewAnalysContent() {
               <div className="space-y-2 pt-1">
                 <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
                   <strong className="text-[#1a1d1b] block mb-1">
-                    Grundtext & Strongs (Bolls Life API)
+                    Grundtext & Morfologi (Open Scriptures Hebrew Bible)
                   </strong>
                   <span>
-                    Den hebreiska grundtexten (WLC) med tillhörande Strongs-nummer hämtas dynamiskt via Bolls Life API.
+                    Den hebreiska grundtexten (Westminster Leningrad Codex) med tillhörande Strongs-nummer och morfologiska koder kommer från Open Scriptures Hebrew Bible (CC BY 4.0) och laddas lokalt för maximal hastighet.
                   </span>
                 </div>
 
