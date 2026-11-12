@@ -6,13 +6,30 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// Mappning mellan förkortningar och fullständiga engelska namn i TAHOT/Supabase
+const bookNameMap = {
+  'Gen': 'Genesis', 'Exo': 'Exodus', 'Lev': 'Leviticus', 'Num': 'Numbers', 'Deu': 'Deuteronomy',
+  'Jos': 'Joshua', 'Jdg': 'Judges', 'Rut': 'Ruth', '1Sa': '1Samuel', '2Sa': '2Samuel',
+  '1Ki': '1Kings', '2Ki': '2Kings', '1Ch': '1Chronicles', '2Ch': '2Chronicles',
+  'Ezr': 'Ezra', 'Neh': 'Nehemja', 'Est': 'Esther', 'Job': 'Job', 'Psa': 'Psalms',
+  'Pro': 'Proverbs', 'Ecc': 'Ecclesiastes', 'Sng': 'SongofSongs', 'Isa': 'Isaiah',
+  'Jer': 'Jeremiah', 'Lam': 'Lamentations', 'Eze': 'Ezekiel', 'Dan': 'Daniel',
+  'Hos': 'Hosea', 'Joe': 'Joel', 'Amo': 'Amos', 'Oba': 'Obadiah', 'Jon': 'Jonah',
+  'Mic': 'Micah', 'Nah': 'Nahum', 'Hab': 'Habakkuk', 'Zep': 'Zephaniah',
+  'Hag': 'Haggai', 'Zec': 'Zechariah', 'Mal': 'Malachi'
+};
+
 async function getChapterWords(book, chapter) {
-  const prefix = `${book}.${chapter}.`;
+  const shortName = book;
+  const fullName = bookNameMap[book] || book;
+  
+  const prefixShort = `${shortName}.${chapter}.`;
+  const prefixFull = `${fullName}.${chapter}.`;
   
   const { data, error } = await supabase
     .from('hebrew_verses')
     .select('*')
-    .ilike('reference', `${prefix}%`)
+    .or(`reference.ilike.${prefixShort}%,reference.ilike.${prefixFull}%`)
     .order('id', { ascending: true });
 
   if (error) {
@@ -24,8 +41,9 @@ async function getChapterWords(book, chapter) {
 }
 
 export default async function HebrewReaderPage({ params }) {
-  // Pakera upp params direkt (fungerar i Next.js)
-  const { book, chapter } = params;
+  const resolvedParams = await params;
+  const book = resolvedParams.book;
+  const chapter = resolvedParams.chapter;
 
   const words = await getChapterWords(book, chapter);
 

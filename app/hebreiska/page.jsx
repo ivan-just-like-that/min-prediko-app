@@ -109,45 +109,45 @@ function HebrewAnalysContent() {
   const [showSourceInfo, setShowSourceInfo] = useState(false);
 
   const hebrewBooks = [
-    { id: 'Gen', name_sv: 'Första Moseboken', chapters: 50 },
-    { id: 'Exo', name_sv: 'Andra Moseboken', chapters: 40 },
-    { id: 'Lev', name_sv: 'Tredje Moseboken', chapters: 27 },
-    { id: 'Num', name_sv: 'Fjärde Moseboken', chapters: 36 },
-    { id: 'Deu', name_sv: 'Femte Moseboken', chapters: 34 },
-    { id: 'Jos', name_sv: 'Josua', chapters: 24 },
-    { id: 'Jdg', name_sv: 'Domarboken', chapters: 21 },
-    { id: 'Rut', name_sv: 'Rut', chapters: 4 },
-    { id: '1Sa', name_sv: '1 Samuelsboken', chapters: 31 },
-    { id: '2Sa', name_sv: '2 Samuelsboken', chapters: 24 },
-    { id: '1Ki', name_sv: '1 Kungaboken', chapters: 22 },
-    { id: '2Ki', name_sv: '2 Kungaboken', chapters: 25 },
-    { id: '1Ch', name_sv: '1 Krönikeboken', chapters: 29 },
-    { id: '2Ch', name_sv: '2 Krönikeboken', chapters: 36 },
-    { id: 'Ezr', name_sv: 'Esra', chapters: 10 },
-    { id: 'Neh', name_sv: 'Nehemja', chapters: 13 },
-    { id: 'Est', name_sv: 'Ester', chapters: 10 },
-    { id: 'Job', name_sv: 'Job', chapters: 42 },
-    { id: 'Psa', name_sv: 'Psaltaren', chapters: 150 },
-    { id: 'Pro', name_sv: 'Ordspråksboken', chapters: 31 },
-    { id: 'Ecc', name_sv: 'Predikaren', chapters: 12 },
-    { id: 'Sng', name_sv: 'Höga Visan', chapters: 8 },
-    { id: 'Isa', name_sv: 'Jesaja', chapters: 66 },
-    { id: 'Jer', name_sv: 'Jeremia', chapters: 52 },
-    { id: 'Lam', name_sv: 'Klagovisorna', chapters: 5 },
-    { id: 'Eze', name_sv: 'Hesekiel', chapters: 48 },
-    { id: 'Dan', name_sv: 'Daniel', chapters: 12 },
-    { id: 'Hos', name_sv: 'Hosea', chapters: 14 },
-    { id: 'Joe', name_sv: 'Joel', chapters: 3 },
-    { id: 'Amo', name_sv: 'Amos', chapters: 9 },
-    { id: 'Oba', name_sv: 'Obadja', chapters: 1 },
-    { id: 'Jon', name_sv: 'Jona', chapters: 4 },
-    { id: 'Mic', name_sv: 'Mika', chapters: 7 },
-    { id: 'Nah', name_sv: 'Nahum', chapters: 3 },
-    { id: 'Hab', name_sv: 'Habackuk', chapters: 3 },
-    { id: 'Zep', name_sv: 'Sefanja', chapters: 3 },
-    { id: 'Hag', name_sv: 'Haggai', chapters: 2 },
-    { id: 'Zec', name_sv: 'Sakarja', chapters: 14 },
-    { id: 'Mal', name_sv: 'Malaki', chapters: 4 }
+    { id: 'Gen', fullName: 'Genesis', name_sv: 'Första Moseboken', chapters: 50 },
+    { id: 'Exo', fullName: 'Exodus', name_sv: 'Andra Moseboken', chapters: 40 },
+    { id: 'Lev', fullName: 'Leviticus', name_sv: 'Tredje Moseboken', chapters: 27 },
+    { id: 'Num', fullName: 'Numbers', name_sv: 'Fjärde Moseboken', chapters: 36 },
+    { id: 'Deu', fullName: 'Deuteronomy', name_sv: 'Femte Moseboken', chapters: 34 },
+    { id: 'Jos', fullName: 'Joshua', name_sv: 'Josua', chapters: 24 },
+    { id: 'Jdg', fullName: 'Judges', name_sv: 'Domarboken', chapters: 21 },
+    { id: 'Rut', fullName: 'Ruth', name_sv: 'Rut', chapters: 4 },
+    { id: '1Sa', fullName: '1Samuel', name_sv: '1 Samuelsboken', chapters: 31 },
+    { id: '2Sa', fullName: '2Samuel', name_sv: '2 Samuelsboken', chapters: 24 },
+    { id: '1Ki', fullName: '1Kings', name_sv: '1 Kungaboken', chapters: 22 },
+    { id: '2Ki', fullName: '2Kings', name_sv: '2 Kungaboken', chapters: 25 },
+    { id: '1Ch', fullName: '1Chronicles', name_sv: '1 Krönikeboken', chapters: 29 },
+    { id: '2Ch', fullName: '2Chronicles', name_sv: '2 Krönikeboken', chapters: 36 },
+    { id: 'Ezr', fullName: 'Ezra', name_sv: 'Esra', chapters: 10 },
+    { id: 'Neh', fullName: 'Nehemja', name_sv: 'Nehemja', chapters: 13 },
+    { id: 'Est', fullName: 'Esther', name_sv: 'Ester', chapters: 10 },
+    { id: 'Job', fullName: 'Job', name_sv: 'Job', chapters: 42 },
+    { id: 'Psa', fullName: 'Psalms', name_sv: 'Psaltaren', chapters: 150 },
+    { id: 'Pro', fullName: 'Proverbs', name_sv: 'Ordspråksboken', chapters: 31 },
+    { id: 'Ecc', fullName: 'Ecclesiastes', name_sv: 'Predikaren', chapters: 12 },
+    { id: 'Sng', fullName: 'SongofSongs', name_sv: 'Höga Visan', chapters: 8 },
+    { id: 'Isa', fullName: 'Isaiah', name_sv: 'Jesaja', chapters: 66 },
+    { id: 'Jer', fullName: 'Jeremiah', name_sv: 'Jeremia', chapters: 52 },
+    { id: 'Lam', fullName: 'Lamentations', name_sv: 'Klagovisorna', chapters: 5 },
+    { id: 'Eze', fullName: 'Ezekiel', name_sv: 'Hesekiel', chapters: 48 },
+    { id: 'Dan', fullName: 'Daniel', name_sv: 'Daniel', chapters: 12 },
+    { id: 'Hos', fullName: 'Hosea', name_sv: 'Hosea', chapters: 14 },
+    { id: 'Joe', fullName: 'Joel', name_sv: 'Joel', chapters: 3 },
+    { id: 'Amo', fullName: 'Amos', name_sv: 'Amos', chapters: 9 },
+    { id: 'Oba', fullName: 'Obadiah', name_sv: 'Obadja', chapters: 1 },
+    { id: 'Jon', fullName: 'Jonah', name_sv: 'Jona', chapters: 4 },
+    { id: 'Mic', fullName: 'Micah', name_sv: 'Mika', chapters: 7 },
+    { id: 'Nah', fullName: 'Nahum', name_sv: 'Nahum', chapters: 3 },
+    { id: 'Hab', fullName: 'Habakkuk', name_sv: 'Habackuk', chapters: 3 },
+    { id: 'Zep', fullName: 'Zephaniah', name_sv: 'Sefanja', chapters: 3 },
+    { id: 'Hag', fullName: 'Haggai', name_sv: 'Haggai', chapters: 2 },
+    { id: 'Zec', fullName: 'Zechariah', name_sv: 'Sakarja', chapters: 14 },
+    { id: 'Mal', fullName: 'Malachi', name_sv: 'Malaki', chapters: 4 }
   ];
 
   const [selectedBookId, setSelectedBookId] = useState('Gen');
@@ -218,14 +218,19 @@ function HebrewAnalysContent() {
     async function loadChapterWords() {
       setLoading(true);
       try {
-        const prefix = `${selectedBookId}.${selectedChapter}.`;
-        const { data, error } = await supabase
+        // Testa både förkortning (Gen) och fullständigt namn (Genesis) för att matcha databasen oavsett hur den fylldes i
+        const prefixShort = `${currentBookObj.id}.${selectedChapter}.`;
+        const prefixFull = `${currentBookObj.fullName}.${selectedChapter}.`;
+
+        let { data, error } = await supabase
           .from('hebrew_verses')
           .select('*')
-          .ilike('reference', `${prefix}%`)
+          .or(`reference.ilike.${prefixShort}%,reference.ilike.${prefixFull}%`)
           .order('id', { ascending: true });
 
         if (error) throw error;
+        
+        console.l("Laddade hebreiska ord från Supabase:", data?.length || 0, "st.");
         setChapterWords(data || []);
       } catch (err) {
         console.error('Kunde inte hämta kapiteldata från Supabase:', err);
@@ -400,9 +405,9 @@ function HebrewAnalysContent() {
                   <span>Om översättningskällorna</span>
                   <button onClick={() => setShowSourceInfo(false)} className="text-[10px] text-[#8c918d] hover:text-[#1a1d1b]">Stäng ✕</button>
                 </div>
-                <p>• <strong>SFB 2015:</strong> Svenska Folkbibeln 2015, utgiven av Svenska Bibelsällskapet / Bibeltrogna Vänner.</p>
-                <p>• <strong>ESV (English Standard Version):</strong> En ordagrann och pålitlig engelsk bibelöversättning som balanserar bokstavstrogenhet med god läsbarhet.</p>
-                <p>• <strong>Reina-Valera 1960:</strong> En av de mest spridda och historiska spanska bibelöversättningarna.</p>
+                <p><strong>SFB 2015:</strong> Svenska Folkbibeln 2015, utgiven av Svenska Bibelsällskapet / Bibeltrogna Vänner.</p>
+                <p><strong>ESV (English Standard Version):</strong> En ordagrann och pålitlig engelsk bibelöversättning som balanserar bokstavstrogenhet med god läsbarhet.</p>
+                <p><strong>Reina-Valera 1960:</strong> En av de mest spridda och historiska spanska bibelöversättningarna.</p>
               </div>
             )}
 
@@ -452,7 +457,7 @@ function HebrewAnalysContent() {
                 <RunningVerseTranslation book={selectedBookId} chapter={selectedChapter} verse={selectedVerse} lang={runningTranslationLang} />
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-[#8c918d]">Ingen hebreisk text hittades för denna vers.</div>
+              <div className="py-12 text-center text-xs text-[#8c918d]">Ingen hebreisk text hittades för denna vers. (Kontrollera att databasen innehåller data för {currentBookObj.name_sv} kapitel {selectedChapter}).</div>
             )}
           </section>
         </main>
