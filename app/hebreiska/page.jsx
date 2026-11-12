@@ -25,27 +25,22 @@ import {
   Info
 } from 'lucide-react';
 
-// ---------------------------------------------------------
-// HJÄLPFUNKTION: ÖVERSÄTT OSHB MORFOLOGI-KOD TILL SVENSKA
-// ---------------------------------------------------------
 function parseHebrewMorphology(code) {
   if (!code) return 'Ingen morfologisk data tillgänglig';
   
   let result = [];
   const firstChar = code.charAt(0);
 
-  // Ordklass
   if (firstChar === 'H') result.push('Substantiv / Egennamn');
   else if (firstChar === 'V') result.push('Verb');
   else if (firstChar === 'A') result.push('Adjektiv');
-  else if (firstChar === 'R')result.push('Preposition');
+  else if (firstChar === 'R') result.push('Preposition');
   else if (firstChar === 'C') result.push('Konjunktion');
   else if (firstChar === 'D') result.push('Adverb');
   else if (firstChar === 'P') result.push('Pronomen');
   else if (firstChar === 'T') result.push('Partikel');
   else result.push(`Kod: ${code}`);
 
-  // Verb-stammar (Stem)
   if (code.includes('q')) result.push('Qal (enkel aktiv)');
   if (code.includes('N')) result.push('Nifal (passiv/reflexiv)');
   if (code.includes('p')) result.push('Piel (intensiv aktiv)');
@@ -54,15 +49,12 @@ function parseHebrewMorphology(code) {
   if (code.includes('H')) result.push('Hofal (kausativ passiv)');
   if (code.includes('t')) result.push('Hitpael (reflexiv)');
 
-  // Verb-tempus / aspekt
   if (code.includes('pf')) result.push('Perfekt (avslutad handling)');
   if (code.includes('im')) result.push('Imperfekt (pågående handling)');
-  if (code.includes('im')) result.push('Imperfekt');
   if (code.includes('iv')) result.push('Imperativ (befallning)');
   if (code.includes('in')) result.push('Infinitiv');
   if (code.includes('pt')) result.push('Particip');
 
-  // Person, genus, numerus
   if (code.includes('1s')) result.push('1:a personen singular (jag)');
   if (code.includes('1p')) result.push('1:a personen plural (vi)');
   if (code.includes('2ms')) result.push('2:a personen maskulin singular (du)');
@@ -75,9 +67,6 @@ function parseHebrewMorphology(code) {
   return result.length > 0 ? result.join(' • ') : code;
 }
 
-// ---------------------------------------------------------
-// LÖPANDE VERSÖVERSÄTTNING (SERVER API PROXY)
-// ---------------------------------------------------------
 function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
   const [runningText, setRunningText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -443,7 +432,7 @@ function HebrewAnalysContent() {
         </main>
       </div>
 
-      {/* KLICK-SIDOPANEL (DRAWER) MED UTRÄKNAD MORFOLOGI */}
+      {/* KLICK-SIDOPANEL (DRAWER) */}
       {selectedWord && (
         <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
           <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
@@ -457,7 +446,7 @@ function HebrewAnalysContent() {
                 )}
               </div>
               <p className="text-xs text-[#575c58] mt-2">
-                Ordagrant val: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
+                Översättning: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
               </p>
             </div>
             <button type="button" onClick={() => setSelectedWord(null)} className="w-8 h-8 rounded-full bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#575c58] hover:text-[#1a1d1b]">✕</button>

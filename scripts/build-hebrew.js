@@ -21,7 +21,7 @@ const BOOKS = [
   { xml: 'Esth', id: 'Esther' },
   { xml: 'Job', id: 'Job' },
   { xml: 'Ps', id: 'Psalms' },
-  { xml: 'Prov', id: 'Proverbs' },
+  { xml: 'Prov', id: 'Ordspråksboken' },
   { xml: 'Eccl', id: 'Ecclesiastes' },
   { xml: 'Song', id: 'SongOfSolomon' },
   { xml: 'Isa', id: 'Isaiah' },
@@ -43,11 +43,34 @@ const BOOKS = [
   { xml: 'Mal', id: 'Malachi' }
 ];
 
+// En grundläggande Strongs-ordlista för de vanligaste orden
+const STRONGS_GLOSSARY = {
+  'H430': 'Gud (Elohim)',
+  'H776': 'jord',
+  'H8064': 'himlar',
+  'H7225': 'begynnelse',
+  'H1254': 'skapade',
+  'H1961': 'vara / blev',
+  'H216': 'ljus',
+  'H2896': 'god',
+  'H3588': 'att / ty / när',
+  'H3068': 'YHWH (Herren)',
+  'H376': 'man',
+  'H802': 'kvinna',
+  'H559': 'sade',
+  'H7200': 'såg',
+  'H1931': 'han / den',
+  'H853': '[direkt objekt]',
+  'H8478': 'under / ställe',
+  'H4428': 'kung',
+  'H1004': 'hus'
+};
+
 const BASE_URL = 'https://raw.githubusercontent.com/openscriptures/morphhb/master/wlc';
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'hebrew');
 
 async function buildHebrewData() {
-  console.log('Startar fullständig generering av alla kapitel och glosor...');
+  console.log('Startar generering med Strongs-baserade glosor...');
 
   for (const book of BOOKS) {
     const url = `${BASE_URL}/${book.xml}.xml`;
@@ -93,14 +116,15 @@ async function buildHebrewData() {
             }
           }
 
-          // Fallback-glosa baserat på Strongs eller ren rensning om saknas
+          // Hämta glosa från vår ordlista, annars använd lemma eller strongs-nummer
           let gloss = '';
-          if (lemmaMatch) {
-            // Använd lemmat som grund om det finns
+          if (strongs && STRONGS_GLOSSARY[strongs]) {
+            gloss = STRONGS_GLOSSARY[strongs];
+          } else if (lemmaMatch) {
             gloss = lemmaMatch[1].replace(/[^a-zA-Z]/g, '').toLowerCase();
           }
-          if (!gloss || gloss.length <= 1) {
-            gloss = strongs || 'word';
+          if (!gloss || gloss === strongs) {
+            gloss = strongs || 'ord';
           }
 
           words.push({
@@ -118,9 +142,9 @@ async function buildHebrewData() {
       const filePath = path.join(bookDir, `${chapterNum}.json`);
       fs.writeFileSync(filePath, JSON.stringify(versesData));
     }
-    console.log(`✓ ${book.id} genererat.`);
+    console.log(`✓ ${book.id} klart med glosor.`);
   }
-  console.log('\nKlart! Alla 929 kapitel har nu komplett data.');
+  console.log('\nAlla filer klara!');
 }
 
 buildHebrewData();
