@@ -18,10 +18,41 @@ const BOOKS = [
 ];
 
 const BASE_URL = 'https://raw.githubusercontent.com/openscriptures/morphhb/master/wlc';
+// Officiell öppen Strongs-lexikonfil för hebreiska (Open Scriptures / STEPBible)
+const STRONGS_DICT_URL = 'https://raw.githubusercontent.com/openscriptures/strongs/master/hebrew/strongs-hebrew-dictionary.json';
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'hebrew');
 
 async function buildHebrewData() {
-  console.log('Startar generering av hebreiska grundtexter med rena glosor...');
+  console.log('Laddar ner komplett Strongs-lexikon...');
+  let strongsDict = {};
+
+  try {
+    const dictRes = await fetch(STRONGS_DICT_URL);
+    if (dictRes.ok) {
+      const rawDict = await dictRes.json();
+      // Bygg ett rent uppslagslexikon { H1: "father", H2: "perish", ... }
+      for (const [key, val] of Object.entries(rawDict)) {
+        // Rensa fram själva sifferdelen, ex "H0776" -> "H776"
+        const cleanNum = key.replace(/[^0-9]/g, '');
+        const strongsKey = `H${Number(cleanNum)}`;
+        
+        // Plocka ut bästa möjliga glosa (t.ex. 'lemma' eller 'definition')
+        let glossText = val.gloss || val.definition || val.kjv_def || '';
+        if (glossText) {
+          // Ta bort onödig HTML eller långa utläggningar, behåll det kärnfulla
+          glossText = glossText.replace(/<[^>]*>?/gm, '').split(';')[0].trim();
+        }
+        strongsDict[strongsKey] = glossText || strongsKey;
+      }
+      console.log(`✓ Hämtade ${Object.keys(strongsDict).length} Strongs-definitioner.`);
+    } else {
+      console.warn('Kunde inte hämta externa Strongs-lexikonet, använder fallback.');
+    }
+  } catch (err) {
+    console.error('Fel vid hämtning av Strongs-lexikon:', err);
+  }
+
+  console.log('Startar generering av alla kapitel med inbakade glosor...');
 
   for (const book of BOOKS) {
     const url = `${BASE_URL}/${book.xml}.xml`;
@@ -67,17 +98,14 @@ async function buildHebrewData() {
             }
           }
 
-          // Extrahera en snygg glosa från lemmat utan koder och siffror
+          // Hämta exakt glosa från vårt lexikon, annars lemma eller strongs-nummer
           let gloss = '';
-          if (lemmaMatch) {
-            // Rensa bort rot-streck, siffror och prefix
-            const cleanLemma = lemmaMatch[1].replace(/[\/\d]/g, '').trim();
-            if (cleanLemma.length > 1) {
-              gloss = cleanLemma;
-            }
+          if (strongs && strongsDict[strongs]) {
+            gloss = strongsDict[strongs];
+          } else if (lemmaMatch) {
+            gloss = lemmaMatch[1].replace(/[\/\d]/g, '').trim();
           }
 
-          // Om lemmat saknas eller blir för korta tecken, använd Strongs-numret eller "ord"
           if (!gloss || gloss.length <= 1) {
             gloss = strongs || 'ord';
           }
@@ -99,7 +127,7 @@ async function buildHebrewData() {
     }
     console.log(`✓ ${book.id} klart.`);
   }
-  console.log('\nAlla hebreiska filer har genererats!');
+  console.log('\nAlla kapitelfiler har genererats med inbakade Strongs-glosor!');
 }
 
 buildHebrewData();
