@@ -386,31 +386,36 @@ function HebrewAnalysContent() {
               <div>
                 <div dir="rtl" className="py-6 flex flex-wrap gap-x-6 gap-y-10 items-end justify-start">
                   {currentWords.map((word) => (
-                    <div 
-                      key={word.id} 
-                      className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
-                      onClick={() => setSelectedWord(word)}
-                    >
-                      <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors">
-                        {word.hebrew}
-                      </span>
-                      <span className="text-xs font-semibold text-blue-800 mt-1" dir="ltr">
-                        {word.gloss || '—'}
-                      </span>
-                      <div className="flex items-center gap-1.5 mt-1" dir="ltr">
-                        {word.strongs && (
-                          <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
-                            {word.strongs}
-                          </span>
-                        )}
-                        {word.morph && (
-                          <span className="text-[9px] font-mono text-[#8c918d] bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
-                            {word.morph}
-                          </span>
-                        )}
-                      </div>
+                  <div 
+                    key={word.id} 
+                    className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
+                    onClick={() => setSelectedWord(word)}
+                  >
+                    {/* Hebrew text */}
+                    <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors" dir="rtl">
+                      {word.hebrew}
+                    </span>
+                    
+                    {/* Glosan här - vi säkerställer att word.gloss visas */}
+                    <span className="text-xs font-semibold text-blue-800 mt-1" dir="ltr">
+                      {word.gloss || word.strongs || '—'}
+                    </span>
+
+                    {/* Strongs och morfologi */}
+                    <div className="flex items-center gap-1.5 mt-1" dir="ltr">
+                      {word.strongs && (
+                        <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
+                          {word.strongs}
+                        </span>
+                      )}
+                      {word.morph && (
+                        <span className="text-[9px] font-mono text-[#8c918d] bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
+                          {word.morph}
+                        </span>
+                      )}
                     </div>
-                  ))}
+                  </div>
+                ))}
                 </div>
 
                 <RunningVerseTranslation book={selectedBookId} chapter={selectedChapter} verse={selectedVerse} lang={runningTranslationLang} />
