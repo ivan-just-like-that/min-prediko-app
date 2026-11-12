@@ -218,7 +218,6 @@ function HebrewAnalysContent() {
     async function loadChapterWords() {
       setLoading(true);
       try {
-        // Testa både förkortning (Gen) och fullständigt namn (Genesis) för att matcha databasen oavsett hur den fylldes i
         const prefixShort = `${currentBookObj.id}.${selectedChapter}.`;
         const prefixFull = `${currentBookObj.fullName}.${selectedChapter}.`;
 
@@ -230,7 +229,7 @@ function HebrewAnalysContent() {
 
         if (error) throw error;
         
-        console.l("Laddade hebreiska ord från Supabase:", data?.length || 0, "st.");
+        console.log("Laddade hebreiska ord från Supabase:", data?.length || 0, "st.");
         setChapterWords(data || []);
       } catch (err) {
         console.error('Kunde inte hämta kapiteldata från Supabase:', err);
