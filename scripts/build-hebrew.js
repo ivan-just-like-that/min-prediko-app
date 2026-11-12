@@ -47,7 +47,7 @@ const BASE_URL = 'https://raw.githubusercontent.com/openscriptures/morphhb/maste
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'hebrew');
 
 async function buildHebrewData() {
-  console.log('Startar ombyggnation med ord-för-ord-glosor...');
+  console.log('Startar fullständig generering av alla kapitel och glosor...');
 
   for (const book of BOOKS) {
     const url = `${BASE_URL}/${book.xml}.xml`;
@@ -93,23 +93,22 @@ async function buildHebrewData() {
             }
           }
 
-          // En enkel generering av glosa baserat på Strongs eller lemma för att få ord-för-ord-stöd
+          // Fallback-glosa baserat på Strongs eller ren rensning om saknas
           let gloss = '';
-          if (strongs === 'H7225') gloss = 'beginning';
-          else if (strongs === 'H430') gloss = 'God';
-          else if (strongs === 'H1254') gloss = 'created';
-          else if (strongs === 'H8064') gloss = 'heavens';
-          else if (strongs === 'H776') gloss = 'earth';
-          else if (strongs === 'H853') gloss = '[obj]';
-          else if (strongs === 'H853' || hebrewText.startsWith('ב')) gloss = strongs ? `[strong: ${strongs}]` : 'word';
-          else gloss = strongs;
+          if (lemmaMatch) {
+            // Använd lemmat som grund om det finns
+            gloss = lemmaMatch[1].replace(/[^a-zA-Z]/g, '').toLowerCase();
+          }
+          if (!gloss || gloss.length <= 1) {
+            gloss = strongs || 'word';
+          }
 
           words.push({
             id: wordIndex++,
             hebrew: hebrewText,
             strongs: strongs,
             morph: morphMatch ? morphMatch[1] : '',
-            gloss: gloss || strongs
+            gloss: gloss
           });
         }
 
@@ -119,9 +118,9 @@ async function buildHebrewData() {
       const filePath = path.join(bookDir, `${chapterNum}.json`);
       fs.writeFileSync(filePath, JSON.stringify(versesData));
     }
-    console.log(`✓ ${book.id} klart.`);
+    console.log(`✓ ${book.id} genererat.`);
   }
-  console.log('\nAlla filer uppdaterade med ord-för-ord-struktur!');
+  console.log('\nKlart! Alla 929 kapitel har nu komplett data.');
 }
 
 buildHebrewData();

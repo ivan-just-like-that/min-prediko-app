@@ -26,6 +26,56 @@ import {
 } from 'lucide-react';
 
 // ---------------------------------------------------------
+// HJÄLPFUNKTION: ÖVERSÄTT OSHB MORFOLOGI-KOD TILL SVENSKA
+// ---------------------------------------------------------
+function parseHebrewMorphology(code) {
+  if (!code) return 'Ingen morfologisk data tillgänglig';
+  
+  let result = [];
+  const firstChar = code.charAt(0);
+
+  // Ordklass
+  if (firstChar === 'H') result.push('Substantiv / Egennamn');
+  else if (firstChar === 'V') result.push('Verb');
+  else if (firstChar === 'A') result.push('Adjektiv');
+  else if (firstChar === 'R')result.push('Preposition');
+  else if (firstChar === 'C') result.push('Konjunktion');
+  else if (firstChar === 'D') result.push('Adverb');
+  else if (firstChar === 'P') result.push('Pronomen');
+  else if (firstChar === 'T') result.push('Partikel');
+  else result.push(`Kod: ${code}`);
+
+  // Verb-stammar (Stem)
+  if (code.includes('q')) result.push('Qal (enkel aktiv)');
+  if (code.includes('N')) result.push('Nifal (passiv/reflexiv)');
+  if (code.includes('p')) result.push('Piel (intensiv aktiv)');
+  if (code.includes('P')) result.push('Pual (intensiv passiv)');
+  if (code.includes('h')) result.push('Hifil (kausativ aktiv)');
+  if (code.includes('H')) result.push('Hofal (kausativ passiv)');
+  if (code.includes('t')) result.push('Hitpael (reflexiv)');
+
+  // Verb-tempus / aspekt
+  if (code.includes('pf')) result.push('Perfekt (avslutad handling)');
+  if (code.includes('im')) result.push('Imperfekt (pågående handling)');
+  if (code.includes('im')) result.push('Imperfekt');
+  if (code.includes('iv')) result.push('Imperativ (befallning)');
+  if (code.includes('in')) result.push('Infinitiv');
+  if (code.includes('pt')) result.push('Particip');
+
+  // Person, genus, numerus
+  if (code.includes('1s')) result.push('1:a personen singular (jag)');
+  if (code.includes('1p')) result.push('1:a personen plural (vi)');
+  if (code.includes('2ms')) result.push('2:a personen maskulin singular (du)');
+  if (code.includes('2fs')) result.push('2:a personen feminin singular (du)');
+  if (code.includes('3ms')) result.push('3:e personen maskulin singular (han/den)');
+  if (code.includes('3fs')) result.push('3:e personen feminin singular (hon/den)');
+  if (code.includes('3mp')) result.push('3:e personen maskulin plural (de)');
+  if (code.includes('3fp')) result.push('3:e personen feminin plural (de)');
+
+  return result.length > 0 ? result.join(' • ') : code;
+}
+
+// ---------------------------------------------------------
 // LÖPANDE VERSÖVERSÄTTNING (SERVER API PROXY)
 // ---------------------------------------------------------
 function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
@@ -83,7 +133,6 @@ function HebrewAnalysContent() {
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
 
-  // Alla 39 böcker i Gamla testamentet
   const hebrewBooks = [
     { id: 'Genesis', name_sv: 'Första Moseboken', chapters: 50 },
     { id: 'Exodus', name_sv: 'Andra Moseboken', chapters: 40 },
@@ -134,10 +183,8 @@ function HebrewAnalysContent() {
   const [selectedVerse, setSelectedVerse] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Klick & Sidopanel (Lexikon)
   const [selectedWord, setSelectedWord] = useState(null);
 
-  // Auth-states från Predika
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [user, setUser] = useState(null);
@@ -193,7 +240,6 @@ function HebrewAnalysContent() {
     setAuthLoading(false);
   };
 
-  // URL-parametrar
   useEffect(() => {
     const bookParam = searchParams.get('book');
     const chapterParam = searchParams.get('chapter');
@@ -204,7 +250,6 @@ function HebrewAnalysContent() {
     if (verseParam) setSelectedVerse(Number(verseParam) || 1);
   }, [searchParams]);
 
-  // Uppdatera kapitel när bok ändras
   useEffect(() => {
     const currentBook = hebrewBooks.find(b => b.id === selectedBookId);
     if (currentBook) {
@@ -216,7 +261,6 @@ function HebrewAnalysContent() {
     }
   }, [selectedBookId]);
 
-  // Hämta statisk JSON-fil för valt kapitel från /public/data/hebrew/
   useEffect(() => {
     async function loadStaticChapter() {
       setLoading(true);
@@ -262,7 +306,6 @@ function HebrewAnalysContent() {
         {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight text-[#1a1d1b]">PREDIKA</span>
@@ -270,94 +313,8 @@ function HebrewAnalysContent() {
                   beta
                 </span>
               </Link>
-
-              <nav className="hidden md:flex items-center gap-1">
-                <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
-                  <button 
-                    onMouseEnter={() => setToolsOpen(true)}
-                    onClick={() => setToolsOpen(!toolsOpen)}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
-                  >
-                    Verktyg
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {toolsOpen && (
-                    <div 
-                      onMouseEnter={() => setToolsOpen(true)}
-                      className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1"
-                    >
-                      {verktygLista.map((v) => {
-                        const Icon = v.icon;
-                        return (
-                          <Link key={v.href} href={v.href} className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#faf8f5] transition-colors group">
-                            <div className="p-2 bg-[#faf8f5] border border-[#e8e4df] rounded-lg text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors shrink-0 mt-0.5">
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="text-xs font-bold text-[#1a1d1b]">{v.name}</div>
-                              <div className="text-[11px] text-[#8c918d]">{v.desc}</div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <Link href="/om" className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors">
-                  Om
-                </Link>
-              </nav>
             </div>
-
-            <div className="hidden md:flex items-center gap-3">
-              {!authLoading && user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#575c58]">{isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}</span>
-                  <button
-                    onClick={() => supabase.auth.signOut()}
-                    className="px-3 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Logga ut
-                  </button>
-                </div>
-              ) : !authLoading && (
-                <button
-                  onClick={() => {
-                    setModalMessage('Skapa ett konto för att få tillgång!');
-                    setShowAuthModal(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Logga in
-                </button>
-              )}
-            </div>
-
-            <button 
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-              className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden bg-white border-b border-[#e8e4df] px-6 py-4 space-y-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
-              <div className="grid grid-cols-1 gap-2">
-                {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </header>
 
         {/* HUVUDINNEHÅLL */}
@@ -388,9 +345,7 @@ function HebrewAnalysContent() {
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
                     {hebrewBooks.map(book => (
-                      <option key={book.id} value={book.id}>
-                        {book.name_sv}
-                      </option>
+                      <option key={book.id} value={book.id}>{book.name_sv}</option>
                     ))}
                   </select>
                   <ChevronDown className="w-4 h-4 text-[#575c58] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -425,74 +380,24 @@ function HebrewAnalysContent() {
             </div>
           </div>
 
-          {/* AKTIV VERSVISNING (HEBREISKA / RTL) */}
+          {/* AKTIV VERSVISNING */}
           <section className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[#e8e4df] pb-3">
               <div className="flex items-center gap-4">
                 <div className="text-xs font-bold text-[#8c918d] uppercase tracking-wider">
-                  <span>
-                    {currentBookObj ? currentBookObj.name_sv : ''} {selectedChapter}:{selectedVerse}
-                  </span>
+                  <span>{currentBookObj ? currentBookObj.name_sv : ''} {selectedChapter}:{selectedVerse}</span>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-0.5 text-[11px] font-medium">
-                    <button
-                      type="button"
-                      onClick={() => setRunningTranslationLang('sv')}
-                      className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}
-                    >
-                      SFB 2015
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRunningTranslationLang('en')}
-                      className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'en' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}
-                    >
-                      ESV
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRunningTranslationLang('es')}
-                      className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'es' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}
-                    >
-                      Reina-Valera
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setInfoModalOpen(true)}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-[#575c58] hover:text-[#1a1d1b] bg-[#faf8f5] hover:bg-[#f0ece6] border border-[#e8e4df] px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                    title="Om källor"
-                  >
-                    <Info className="w-3.5 h-3.5 text-[#2d3732]" />
-                    <span className="hidden sm:inline">Om källorna</span>
-                  </button>
+                <div className="flex items-center bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-0.5 text-[11px] font-medium">
+                  <button type="button" onClick={() => setRunningTranslationLang('sv')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>SFB 2015</button>
+                  <button type="button" onClick={() => setRunningTranslationLang('en')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'en' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>ESV</button>
+                  <button type="button" onClick={() => setRunningTranslationLang('es')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'es' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>Reina-Valera</button>
                 </div>
               </div>
 
-              {/* BLÄDDRINGSPILAR */}
               <div className="flex items-center gap-1 bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-1">
-                <button
-                  type="button"
-                  onClick={handlePrevVerse}
-                  disabled={currentVerseIndex <= 0}
-                  className="p-1.5 rounded-md text-[#2d3732] hover:bg-white disabled:opacity-25"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-[11px] font-semibold text-[#575c58] px-2">
-                  {verses.length > 0 ? `${currentVerseIndex + 1} / ${verses.length}` : '0 / 0'}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextVerse}
-                  disabled={currentVerseIndex >= verses.length - 1}
-                  className="p-1.5 rounded-md text-[#2d3732] hover:bg-white disabled:opacity-25"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                <button type="button" onClick={handlePrevVerse} disabled={currentVerseIndex <= 0} className="p-1.5 rounded-md text-[#2d3732] hover:bg-white disabled:opacity-25"><ChevronLeft className="w-4 h-4" /></button>
+                <span className="text-[11px] font-semibold text-[#575c58] px-2">{verses.length > 0 ? `${currentVerseIndex + 1} / ${verses.length}` : '0 / 0'}</span>
+                <button type="button" onClick={handleNextVerse} disabled={currentVerseIndex >= verses.length - 1} className="p-1.5 rounded-md text-[#2d3732] hover:bg-white disabled:opacity-25"><ChevronRight className="w-4 h-4" /></button>
               </div>
             </div>
 
@@ -500,7 +405,6 @@ function HebrewAnalysContent() {
               <div className="py-12 text-center text-xs text-[#8c918d]">Laddar hebreisk grundtext...</div>
             ) : currentWords.length > 0 ? (
               <div>
-                {/* HEBREISK TEXT (RTL) MED ORD-FÖR-ORD-ÖVERSÄTTNING */}
                 <div dir="rtl" className="py-6 flex flex-wrap gap-x-6 gap-y-10 items-end justify-start">
                   {currentWords.map((word) => (
                     <div 
@@ -508,17 +412,12 @@ function HebrewAnalysContent() {
                       className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
                       onClick={() => setSelectedWord(word)}
                     >
-                      {/* Hebreiskt ord */}
                       <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors">
                         {word.hebrew}
                       </span>
-                      
-                      {/* Ord-för-ord glosa (Engelska/Svenska) direkt under */}
                       <span className="text-xs font-semibold text-blue-800 mt-1" dir="ltr">
                         {word.gloss || '—'}
                       </span>
-
-                      {/* Strongs & Morfologi */}
                       <div className="flex items-center gap-1.5 mt-1" dir="ltr">
                         {word.strongs && (
                           <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
@@ -535,22 +434,16 @@ function HebrewAnalysContent() {
                   ))}
                 </div>
 
-                <RunningVerseTranslation 
-                  book={selectedBookId} 
-                  chapter={selectedChapter} 
-                  verse={selectedVerse} 
-                  lang={runningTranslationLang} 
-                />
+                <RunningVerseTranslation book={selectedBookId} chapter={selectedChapter} verse={selectedVerse} lang={runningTranslationLang} />
               </div>
             ) : (
               <div className="py-12 text-center text-xs text-[#8c918d]">Ingen hebreisk text hittades för denna vers.</div>
             )}
           </section>
-
         </main>
       </div>
 
-      {/* KLICK-SIDOPANEL FÖR LEXIKON & MORFOLOGI (DRAWER) */}
+      {/* KLICK-SIDOPANEL (DRAWER) MED UTRÄKNAD MORFOLOGI */}
       {selectedWord && (
         <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
           <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
@@ -564,137 +457,35 @@ function HebrewAnalysContent() {
                 )}
               </div>
               <p className="text-xs text-[#575c58] mt-2">
-                Ordagrant ordval i kontexten: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
+                Ordagrant val: <span className="font-semibold text-blue-800">{selectedWord.gloss || '—'}</span>
               </p>
             </div>
-            <button 
-              type="button" 
-              onClick={() => setSelectedWord(null)} 
-              className="w-8 h-8 rounded-full bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#575c58] hover:text-[#1a1d1b]"
-            >
-              ✕
-            </button>
+            <button type="button" onClick={() => setSelectedWord(null)} className="w-8 h-8 rounded-full bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#575c58] hover:text-[#1a1d1b]">✕</button>
           </div>
 
           <div className="py-6 space-y-4 flex-1 overflow-y-auto text-xs text-[#575c58]">
             <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8e4df] space-y-3">
               <div>
-                <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Lexikal översikt & Definition</span>
+                <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Grammatisk analys</span>
                 <p className="text-sm text-[#1a1d1b] leading-relaxed font-medium">
-                  Detta är grundtextordet &quot;<span className="font-serif text-base">{selectedWord.hebrew}</span>&quot; med tillhörande Strongs-nummer {selectedWord.strongs || 'saknas'}.
+                  {parseHebrewMorphology(selectedWord.morph)}
                 </p>
               </div>
 
               {selectedWord?.morph && (
                 <div className="pt-3 border-t border-[#e8e4df]">
-                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Grammatisk morfologi (OSHB)</span>
+                  <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Original morfologikod (OSHB)</span>
                   <span className="font-mono text-xs text-[#1a1d1b] bg-white px-2 py-1 rounded border border-[#e8e4df] inline-block">
                     {selectedWord.morph}
                   </span>
                 </div>
               )}
             </div>
-
-            <div className="space-y-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#8c918d]">Teologisk betydelse</h4>
-              <p className="leading-relaxed bg-white p-4 rounded-xl border border-[#e8e4df]">
-                Genom att studera ordet i sin hebreiska kontext får du fram dess ursprungliga nyanser. Strongs-nummer {selectedWord.strongs} används genom hela Gamla testamentet för att spåra hur ordet översätts i olika böcker.
-              </p>
-            </div>
           </div>
         </div>
       )}
 
-      {/* MODAL / INFO-RUTA OM ÖVERSÄTTNINGAR */}
-      {infoModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#e8e4df] space-y-4 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-[#e8e4df] pb-3">
-              <h3 className="text-lg font-bold text-[#1a1d1b]">
-                Om bibelöversättningar och källor
-              </h3>
-              <button 
-                type="button"
-                onClick={() => setInfoModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#575c58] hover:text-[#1a1d1b] transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-[#575c58] leading-relaxed">
-              <p>
-                Denna plattform är utformad för djupstudier av Gamla testamentets hebreiska grundtext.
-              </p>
-
-              <div className="space-y-2 pt-1">
-                <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
-                  <strong className="text-[#1a1d1b] block mb-1">
-                    Grundtext & Morfologi (Open Scriptures Hebrew Bible)
-                  </strong>
-                  <span>
-                    Den hebreiska grundtexten (Westminster Leningrad Codex) med tillhörande Strongs-nummer och morfologiska koder kommer från Open Scriptures Hebrew Bible (CC BY 4.0) och laddas lokalt för maximal hastighet.
-                  </span>
-                </div>
-
-                <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
-                  <strong className="text-[#1a1d1b] block mb-1">
-                    Löpande översättningar & copyright
-                  </strong>
-                  <p className="mb-2">
-                    Av upphovsrättsskäl används dessa etablerade bibelöversättningar för den löpande texten:
-                  </p>
-                  <ul className="list-disc pl-4 space-y-1">
-                    <li><strong>Svenska:</strong> Svenska Folkbibeln 2015 (SFB 2015)</li>
-                    <li><strong>Engelska:</strong> English Standard Version (ESV)</li>
-                    <li><strong>Spanska:</strong> Reina-Valera 1960 (RV1960)</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setInfoModalOpen(false)}
-                className="px-4 py-2 bg-[#2d3732] text-white text-xs font-semibold rounded-xl hover:bg-[#1f2723] transition-colors"
-              >
-                Stäng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FOOTER */}
-      <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="col-span-2 space-y-3">
-            <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
-            <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
-              En modern plattform för teologisk fördjupning, predikoförberedelse och undervisning.
-            </p>
-            <p className="text-[11px] text-[#8c918d]">© 2026 Patric Ivan</p>
-          </div>
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Verktyg</h4>
-            <ul className="space-y-2 text-xs text-[#575c58]">
-              {verktygLista.map((v) => (
-                <li key={v.href}>
-                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </footer>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        message={modalMessage}
-        onAuthSuccess={() => fetchProfile()} 
-      />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} message={modalMessage} onAuthSuccess={() => fetchProfile()} />
     </div>
   );
 }
