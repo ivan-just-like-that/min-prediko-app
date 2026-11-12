@@ -108,7 +108,6 @@ function HebrewAnalysContent() {
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
   const [showSourceInfo, setShowSourceInfo] = useState(false);
 
-  // Boklista med korrekta engelska ID:n som matchar TAHOT i databasen (t.ex. Gen, Exo, Lev...)
   const hebrewBooks = [
     { id: 'Gen', name_sv: 'Första Moseboken', chapters: 50 },
     { id: 'Exo', name_sv: 'Andra Moseboken', chapters: 40 },
@@ -167,7 +166,6 @@ function HebrewAnalysContent() {
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Hämta användarprofil
   useEffect(() => {
     fetchProfile();
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -203,7 +201,6 @@ function HebrewAnalysContent() {
     setAuthLoading(false);
   };
 
-  // URL-parametrar
   useEffect(() => {
     const bookParam = searchParams.get('book');
     const chapterParam = searchParams.get('chapter');
@@ -215,11 +212,8 @@ function HebrewAnalysContent() {
   }, [searchParams]);
 
   const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId) || hebrewBooks[0];
-  
-  // Skapa listor för kapitel och verser baserat på nuvarande bok
   const chapters = Array.from({ length: currentBookObj.chapters }, (_, i) => i + 1);
 
-  // Hämta alla ord för det valda kapitlet från Supabase
   useEffect(() => {
     async function loadChapterWords() {
       setLoading(true);
@@ -244,11 +238,9 @@ function HebrewAnalysContent() {
     loadChapterWords();
   }, [selectedBookId, selectedChapter]);
 
-  // Hämta unika versnummer som finns i detta kapitel
   const verses = Array.from(
     new Set(
       chapterWords.map(w => {
-        // Exempel på referens: "Gen.1.2#01" -> plocka ut versdelen "2"
         const parts = w.reference.split('.');
         if (parts.length >= 2) {
           const versePart = parts[1].split('#')[0];
@@ -259,7 +251,6 @@ function HebrewAnalysContent() {
     )
   ).sort((a, b) => a - b);
 
-  // Filtrera ut orden som hör till den valda versen
   const currentWords = chapterWords.filter(w => {
     const parts = w.reference.split('.');
     if (parts.length >= 2) {
@@ -402,14 +393,14 @@ function HebrewAnalysContent() {
               </div>
             </div>
 
-            {/* INFO-BOX OM KÄLLOR (VISAS VID KLICK PÅ INFO) */}
+            {/* INFO-BOX OM KÄLLOR */}
             {showSourceInfo && (
               <div className="mb-6 p-4 bg-[#faf8f5] rounded-xl border border-[#e8e4df] text-xs text-[#575c58] space-y-2">
                 <div className="font-bold text-[#1a1d1b] flex items-center justify-between">
                   <span>Om översättningskällorna</span>
                   <button onClick={() => setShowSourceInfo(false)} className="text-[10px] text-[#8c918d] hover:text-[#1a1d1b]">Stäng ✕</button>
                 </div>
-                <p>• <strong>SFB 2015:</strong> Svenska Folkbilden 2015, utgiven av Svenska Bibelbibeln / Bibeltrogna Vänner.</p>
+                <p>• <strong>SFB 2015:</strong> Svenska Folkbibeln 2015, utgiven av Svenska Bibelsällskapet / Bibeltrogna Vänner.</p>
                 <p>• <strong>ESV (English Standard Version):</strong> En ordagrann och pålitlig engelsk bibelöversättning som balanserar bokstavstrogenhet med god läsbarhet.</p>
                 <p>• <strong>Reina-Valera 1960:</strong> En av de mest spridda och historiska spanska bibelöversättningarna.</p>
               </div>
@@ -426,22 +417,22 @@ function HebrewAnalysContent() {
                       className="flex flex-col items-center cursor-pointer p-2 rounded-xl hover:bg-[#f5f2ed] transition-colors relative group border border-transparent hover:border-[#e8e4df]"
                       onClick={() => setSelectedWord(word)}
                     >
-                      {/* Hebrew text */}
+                      {/* 1. Originalhebreiska */}
                       <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors" dir="rtl">
                         {word.hebrew}
                       </span>
                       
-                      {/* Transliteration */}
-                      <span className="text-[11px] font-mono text-[#8c918d] mt-0.5" dir="ltr">
+                      {/* 2. Transliteration (uttal direkt under hebreiskan) */}
+                      <span className="text-[11px] font-mono text-amber-700 mt-1" dir="ltr">
                         {word.transliteration}
                       </span>
 
-                      {/* Engelsk glosa direkt under */}
+                      {/* 3. Engelsk glosa (från kolumnen "translation") */}
                       <span className="text-xs font-semibold text-blue-800 mt-1 max-w-[120px] text-center truncate" dir="ltr">
                         {word.translation || '—'}
                       </span>
 
-                      {/* Strongs och grammatik */}
+                      {/* 4. Strongs och grammatik */}
                       <div className="flex items-center gap-1.5 mt-1" dir="ltr">
                         {word.strongs && (
                           <span className="text-[10px] font-mono text-slate-500 bg-[#faf8f5] px-1 rounded border border-[#e8e4df]">
@@ -481,7 +472,7 @@ function HebrewAnalysContent() {
                 )}
               </div>
               <p className="text-xs text-[#575c58] mt-2">
-                Transliteration: <span className="font-mono">{selectedWord.transliteration}</span>
+                Transliteration: <span className="font-mono text-amber-700 font-semibold">{selectedWord.transliteration}</span>
               </p>
               <p className="text-xs text-[#575c58] mt-1">
                 Glosa: <span className="font-semibold text-blue-800">{selectedWord.translation || '—'}</span>
@@ -512,7 +503,7 @@ function HebrewAnalysContent() {
                 <div className="pt-3 border-t border-[#e8e4df]">
                   <span className="text-[10px] font-bold uppercase text-[#8c918d] block mb-1">Lexikoninformation & Rot</span>
                   <div className="font-mono text-[11px] text-[#1a1d1b] bg-white p-2.5 rounded border border-[#e8e4df] whitespace-pre-wrap leading-relaxed">
-                    {selectedWord.expanded_tags}
+                    {selectedWord.expanded_json || selectedWord.expanded_tags}
                   </div>
                 </div>
               )}
