@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
+import DailyFigureCard from '@/components/DailyFigureCard';
 import { 
   Compass,
   ChevronDown, 
@@ -18,8 +19,7 @@ import {
   LogOut,
   KeyRound,
   Menu,
-  X,
-  Lightbulb
+  X
 } from 'lucide-react';
 
 const heroPhrases = [
@@ -115,11 +115,9 @@ export default function PredikaLandingPage() {
     setFeedbackError('');
 
     try {
-      // Hämta inloggnings-token från Supabase-sessionen
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      // Skicka med inloggad användares mail om fältet lämnas tomt
       const userEmail = feedbackEmail.trim() || user?.email || null;
 
       const res = await fetch('/api/feedback', {
@@ -151,15 +149,17 @@ export default function PredikaLandingPage() {
   };
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Lightbulb },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Latinsk interlinjär läsare', desc: 'Kyrklatin & Biblia Sacra Vulgata', href: '/latin', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   return (
@@ -171,7 +171,7 @@ export default function PredikaLandingPage() {
           
           {/* LOGOTYP */}
           <div className="flex items-center gap-8">
-            <Link href="/test-layout-2" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <span className="font-bold text-xl tracking-tight text-[#1a1d1b]">PREDIKA</span>
               <span className="text-[10px] font-semibold uppercase tracking-wider bg-[#f0ece6] text-[#2d3732] px-2 py-0.5 rounded-full border border-[#e8e4df]">
                 beta
@@ -210,8 +210,13 @@ export default function PredikaLandingPage() {
                             <Icon className="w-4 h-4" />
                           </div>
                           <div>
-                            <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                            <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1.5">
                               {v.name}
+                              {v.isAi && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                  AI
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                           </div>
@@ -272,8 +277,13 @@ export default function PredikaLandingPage() {
             <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
             <div className="grid grid-cols-1 gap-2">
               {verktygLista.map((v) => (
-                <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                  {v.name}
+                <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                  <span>{v.name}</span>
+                  {v.isAi && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                      AI
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -293,56 +303,50 @@ export default function PredikaLandingPage() {
         )}
       </header>
 
-{/* 2. HERO SEKTION (REN & TIGHT) */}
-<section className="pt-20 pb-16 max-w-3xl mx-auto px-6 text-center">
-  
-  {/* 1. BADGE */}
-  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-[#e8e4df] rounded-full text-xs font-semibold text-[#575c58] mb-8 shadow-sm">
-    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-    Utvecklad för präster & teologer
-  </div>
+      {/* 2. HERO SEKTION */}
+      <section className="pt-20 pb-16 max-w-3xl mx-auto px-6 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-[#e8e4df] rounded-full text-xs font-semibold text-[#575c58] mb-8 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          Utvecklad för präster & teologer
+        </div>
 
-  {/* 2. ROTERANDE RUBRIK */}
-  <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#1a1d1b] leading-[1.1] mb-6 min-h-[2.2em] sm:min-h-[1.2em] flex items-center justify-center">
-    <span 
-      className={`transition-opacity duration-1000 ease-in-out ${
-        heroVisible ? 'opacity-100' : 'opacity-0'
-      }`}
-    >
-      {heroPhrases[heroIndex]}
-    </span>
-  </h1>
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#1a1d1b] leading-[1.1] mb-6 min-h-[2.2em] sm:min-h-[1.2em] flex items-center justify-center">
+          <span 
+            className={`transition-opacity duration-1000 ease-in-out ${
+              heroVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {heroPhrases[heroIndex]}
+          </span>
+        </h1>
 
-  {/* 3. REN & ENKEL UNDERTEXT */}
-  <p className="text-base sm:text-lg text-[#575c58] leading-relaxed font-normal max-w-xl mx-auto mb-10">
-    Teologiska byggstenar och inspiration till församlingsarbetet.
-  </p>
+        <p className="text-base sm:text-lg text-[#575c58] leading-relaxed font-normal max-w-xl mx-auto mb-10">
+          Teologiska byggstenar och inspiration till församlingsarbetet.
+        </p>
 
-  {/* 4. CALL TO ACTION */}
-  {!user ? (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-      <button
-        onClick={() => {
-          setModalMessage('Skapa ett konto och få 10 gratis sökningar direkt!');
-          setShowAuthModal(true);
-        }}
-        className="px-6 py-3.5 text-xs font-bold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-2xl transition-all shadow-sm hover:shadow flex items-center gap-2 active:scale-95"
-      >
-        <Sparkles className="w-4 h-4 text-amber-400" />
-        Påbörja testperiod
-      </button>
-      <span className="text-[11px] text-[#8c918d]">10 gratis anrop &bull; Inget kort krävs</span>
-    </div>
-  ) : (
-    <div className="inline-block bg-white border border-[#e8e4df] px-4 py-2.5 rounded-2xl text-xs text-[#575c58] shadow-sm">
-      Inloggad som <strong className="text-[#1a1d1b]">{user.email}</strong> &bull; {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} sökningar kvar`}
-    </div>
-  )}
-
-</section>
+        {!user ? (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => {
+                setModalMessage('Skapa ett konto och få 10 gratis sökningar direkt!');
+                setShowAuthModal(true);
+              }}
+              className="px-6 py-3.5 text-xs font-bold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-2xl transition-all shadow-sm hover:shadow flex items-center gap-2 active:scale-95"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Påbörja testperiod
+            </button>
+            <span className="text-[11px] text-[#8c918d]">10 gratis anrop &bull; Inget kort krävs</span>
+          </div>
+        ) : (
+          <div className="inline-block bg-white border border-[#e8e4df] px-4 py-2.5 rounded-2xl text-xs text-[#575c58] shadow-sm">
+            Inloggad som <strong className="text-[#1a1d1b]">{user.email}</strong> &bull; {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} sökningar kvar`}
+          </div>
+        )}
+      </section>
 
       {/* 3. VERKTYGSGRID (ATTIO CARD-DESIGN) */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="mb-8 border-b border-[#e8e4df] pb-4">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#8c918d]">
             Utvalda verktyg
@@ -360,7 +364,15 @@ export default function PredikaLandingPage() {
                       <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                         <Icon className="w-5 h-5" />
                       </div>
-                      <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      
+                      <div className="flex items-center gap-2">
+                        {v.isAi && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                            AI
+                          </span>
+                        )}
+                        <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
                     </div>
 
                     <h3 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
@@ -377,7 +389,12 @@ export default function PredikaLandingPage() {
         </div>
       </section>
 
-      {/* 4. FEEDBACK & BETATEXT */}
+      {/* 4. DAGENS GESTALT */}
+      <div className="max-w-3xl mx-auto px-6 pb-20">
+        <DailyFigureCard />
+      </div>
+
+      {/* 5. FEEDBACK & BETATEXT */}
       <section className="max-w-3xl mx-auto px-6 pb-24">
         <div className="bg-white rounded-3xl p-8 border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h3 className="text-lg font-bold text-[#1a1d1b] mb-2">Återkoppling</h3>
@@ -424,11 +441,9 @@ export default function PredikaLandingPage() {
         </div>
       </section>
 
-      {/* 5. ATTIO-STYLE FOOTER NAVIGATION */}
+      {/* 6. FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          
-          {/* KOLUMN 1: BRAND */}
           <div className="col-span-2 space-y-3">
             <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
@@ -437,23 +452,17 @@ export default function PredikaLandingPage() {
             <p className="text-[11px] text-[#8c918d]">© 2026 Patric Ivan</p>
           </div>
 
-          {/* KOLUMN 2: ALLA VERKTYG */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Verktyg</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              <li><Link href="/predikoideer" className="hover:text-[#1a1d1b] transition-colors">Predikoidéer</Link></li>
-              <li><Link href="/historik" className="hover:text-[#1a1d1b] transition-colors">Historiska kommentarer</Link></li>
-              <li><Link href="/grekiska" className="hover:text-[#1a1d1b] transition-colors">Rena grekiskan</Link></li>
-              <li><Link href="/karta" className="hover:text-[#1a1d1b] transition-colors">Bibelatlas</Link></li>
-              <li><Link href="/barn-och-unga" className="hover:text-[#1a1d1b] transition-colors">Barn & unga</Link></li>
-              <li><Link href="/kasualtal" className="hover:text-[#1a1d1b] transition-colors">Kasualtal</Link></li>
-              <li><Link href="/bibelstudium" className="hover:text-[#1a1d1b] transition-colors">Bibelstudieguiden</Link></li>
-              <li><Link href="/predikantpepp" className="hover:text-[#1a1d1b] transition-colors">Predikantpepp</Link></li>
-              <li><Link href="/populart" className="hover:text-[#1a1d1b] transition-colors">Populärt</Link></li>
+              {verktygLista.map((v) => (
+                <li key={v.href}>
+                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* KOLUMN 3: INFORMATION */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Information</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
@@ -463,11 +472,9 @@ export default function PredikaLandingPage() {
               <li><Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">Användarvillkor</Link></li>
             </ul>
           </div>
-
         </div>
       </footer>
 
-      {/* AUTH MODAL */}
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
