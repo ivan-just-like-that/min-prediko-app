@@ -45,6 +45,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -686,6 +687,7 @@ export const HELGDAGAR = [
     argang3: { gt: 'Jos 1:10-11', epistel: 'Heb 11:13-16', evangelium: 'Luk 20:37-38' }
   },
 ];
+
 function KasualtalInnehall() {
   const searchParams = useSearchParams();
 
@@ -721,15 +723,16 @@ function KasualtalInnehall() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
@@ -884,22 +887,22 @@ function KasualtalInnehall() {
     ${textAttSkicka}
 
     TONLÄGE OCH SJÄLAVÅRDANDE KÄNSLA:
-    - Svara varmt, personligt, teologiskt genomtänkt och med djup respekt för den mänskliga situationen.
-    - Anpassa karaktären efter tillfället:
-      * Griftetal: Bärs av tröst, hopp, respekterande av sorgen och tillit till Guds nåd.
-      * Doptal: Bärs av glädje, förväntan, tacksamhet för livet och Guds skydd.
-      * Vigseltal: Bärs av kärlek, gemenskap, trofasthet och livets möjligheter.
+- Svara varmt, personligt, teologiskt genomtänkt och med djup respekt för den mänskliga situationen.
+- Anpassa karaktären efter tillfället:
+- Griftetal: Bärs av tröst, hopp, respekterande av sorgen och tillit till Guds nåd.
+- Doptal: Bärs av glädje, förväntan, tacksamhet för livet och Guds skydd.
+- Vigseltal: Bärs av kärlek, gemenskap, trofasthet och livets möjligheter.
 
     RÅD FÖR UTFORMNINGEN:
-    1. **Talbarhet:** Skriv i en muntlig rytm med naturliga pauser, anpassat för att tala direkt till de anhöriga/församlingen.
+1. **Talbarhet:** Skriv i en muntlig rytm med naturliga pauser, anpassat för att tala direkt till de anhöriga/församlingen.
     2. **Hantering av personliga detaljer:** Väv samman den personliga bakgrunden med den teologiska kärnan på ett varsamt och smakfullt sätt. 
     Undvik att göra det för privat eller mekaniskt.
     3. **Konkreta byggstenar:** Ge strukturerade uppslag och ingångar som prästen enkelt kan bearbeta vidare i sitt eget personliga hantverk.
 
     FORMATERING:
-    - Använd inte Markdown-stjärnor (* eller **).
-    - Dela upp texten med dubbla radbrytningar.
-    - Använd rena VERSALER för eventuella rubriker (t.ex. INLEDNING, TEOLOGISK BRYGGA, AVSLUTANDE ORD).
+- Använd inte Markdown-stjärnor (* eller **).
+- Dela upp texten med dubbla radbrytningar.
+- Använd rena VERSALER för eventuella rubriker (t.ex. INLEDNING, TEOLOGISK BRYGGA, AVSLUTANDE ORD).
     `.trim();
 
     try {
@@ -931,11 +934,11 @@ function KasualtalInnehall() {
         svar: nyttSvar,
         helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
         tid: new Date().toLocaleDateString('sv-SE', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -987,6 +990,7 @@ function KasualtalInnehall() {
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
@@ -1012,8 +1016,13 @@ function KasualtalInnehall() {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -1038,6 +1047,7 @@ function KasualtalInnehall() {
                     {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -1047,6 +1057,7 @@ function KasualtalInnehall() {
                 </div>
               ) : !authLoading && (
                 <button
+                  type="button"
                   onClick={() => {
                     setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
                     setShowAuthModal(true);
@@ -1061,6 +1072,7 @@ function KasualtalInnehall() {
 
             {/* MOBIL MENY-KNAPP */}
             <button 
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -1074,19 +1086,49 @@ function KasualtalInnehall() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link 
+                    key={v.href} 
+                    href={v.href} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link 
+                  href="/om" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-[#1a1d1b] mb-4"
+                >
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      supabase.auth.signOut();
+                    }} 
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold text-[#1a1d1b]"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }} 
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -1100,7 +1142,6 @@ function KasualtalInnehall() {
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -1130,7 +1171,7 @@ function KasualtalInnehall() {
             {/* VÄNSTER SPALT: Val av tillfälle, text & bakgrund */}
             <section className="space-y-6">
               
-             {/* 1. VÄLJ KASUALTILLFÄLLE */}
+              {/* 1. VÄLJ KASUALTILLFÄLLE */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-4 border-b border-[#e8e4df] pb-3">
                   1. Välj tillfälle
@@ -1145,6 +1186,7 @@ function KasualtalInnehall() {
                     const IconComponent = item.icon;
                     return (
                       <button
+                        type="button"
                         key={item.id}
                         onClick={() => setKasualTyp(item.id)}
                         className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
@@ -1169,6 +1211,7 @@ function KasualtalInnehall() {
 
                 <div className="flex gap-2 mb-5">
                   <button
+                    type="button"
                     onClick={() => setTextKalla('evangelieboken')}
                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                       textKalla === 'evangelieboken'
@@ -1179,6 +1222,7 @@ function KasualtalInnehall() {
                     Kyrkoårets texter
                   </button>
                   <button
+                    type="button"
                     onClick={() => setTextKalla('egen')}
                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                       textKalla === 'egen'
@@ -1219,6 +1263,7 @@ function KasualtalInnehall() {
                           { id: 'argang3', label: 'Årgång 3' },
                         ].map((arg) => (
                           <button
+                            type="button"
                             key={arg.id}
                             onClick={() => setValdArgang(arg.id)}
                             className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all ${
@@ -1345,6 +1390,7 @@ function KasualtalInnehall() {
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
+                      type="button"
                       onClick={() => hanteraAiAnrop(
                         `Ge 2–3 olika förslag på disposition och strukturellt upplägg för talet. För varje del, ge korta köranvisningar för hur den personliga bakgrunden och teologin vävs samman.`,
                         'Disposition'
@@ -1356,6 +1402,7 @@ function KasualtalInnehall() {
                     </button>
                     
                     <button
+                      type="button"
                       onClick={() => hanteraAiAnrop(
                         `Ge 3 förslag på faktiska inledningsord (hälsningsord enligt kyrkohandbokens stil) att säga direkt när handlingen inleds. Formulera dem varmt, värdigt och anpassat efter tillfället och den personliga kontexten.`,
                         'Inledningsord'
@@ -1367,16 +1414,17 @@ function KasualtalInnehall() {
                     </button>
                   </div>
 
-                    <button
-                      onClick={() => hanteraAiAnrop(
-                        `Ge 4–5 tematiskt passande psalmförslag ur Den svenska psalmboken eller tillägg som lämpar sig för detta tillfälle. Motivera kort varför varje psalm passar.`,
-                        'Psalmförslag'
-                      )}
-                      disabled={laddarAi}
-                      className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
-                    >
-                      Psalmförslag för tillfället
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => hanteraAiAnrop(
+                      `Ge 4–5 tematiskt passande psalmförslag ur Den svenska psalmboken eller tillägg som lämpar sig för detta tillfälle. Motivera kort varför varje psalm passar.`,
+                      'Psalmförslag'
+                    )}
+                    disabled={laddarAi}
+                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                  >
+                    Psalmförslag för tillfället
+                  </button>
                 </div>
 
                 <div>
@@ -1388,6 +1436,7 @@ function KasualtalInnehall() {
                     className="w-full px-4 py-3 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732] mb-3"
                   />
                   <button
+                    type="button"
                     onClick={() => hanteraAiAnrop(null, null, { inkluderaFraga: false })}
                     disabled={laddarAi}
                     className="w-full py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
@@ -1408,6 +1457,7 @@ function KasualtalInnehall() {
               </h2>
               {aiHistorik.length > 0 && (
                 <button
+                  type="button"
                   onClick={rensaHistorik}
                   className="bg-white hover:bg-[#faf8f5] text-[#575c58] hover:text-[#1a1d1b] border border-[#e8e4df] rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
@@ -1468,7 +1518,14 @@ function KasualtalInnehall() {
                           <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                             <Icon className="w-4 h-4" />
                           </div>
-                          <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
                           {v.name}

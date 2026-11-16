@@ -84,15 +84,16 @@ export default function BibelstudieGuide() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
@@ -216,11 +217,11 @@ export default function BibelstudieGuide() {
         bibelstalle: bibelstalle,
         svar: nyttSvar,
         tid: new Date().toLocaleDateString('sv-SE', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) + ' min'
       };
 
       const uppdaterad = [nyPost, ...historik];
@@ -287,8 +288,13 @@ export default function BibelstudieGuide() {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -349,8 +355,13 @@ export default function BibelstudieGuide() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -375,7 +386,6 @@ export default function BibelstudieGuide() {
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -385,18 +395,24 @@ export default function BibelstudieGuide() {
           
           {/* INTRO OCH SÖKFORMULÄR */}
           <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-                <BookMarked className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+                  <BookMarked className="w-5 h-5 text-[#2d3732]" />
+                </div>
+                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+                  Bibelstudieguiden
+                </h1>
               </div>
-              <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                Bibelstudieguiden
-              </h1>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                AI
+              </span>
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed mb-6">
-              Skriv in ett kapitel eller ett bibelställe så genereras 10 förslag på samtalsfrågor, anpassade för en bibelstudiegrupp. 
-              Frågorna täcker in textens innehåll, historiska mottagare och vardaglig tillämpning.
+                Skapa samtalsfrågor och vägledning för smågrupper och bibelstudier.
+                Skriv in en bibeltext för att generera en kort introduktion för samtalets ledare, tio genomarbetade samtalsfrågor som täcker in 
+                textens innehåll, kontext och vardagstillämpning, samt ett utkast till en avslutande bön.
             </p>
 
             <form onSubmit={hanteraGenerering} className="flex flex-col sm:flex-row gap-3">
@@ -496,7 +512,15 @@ export default function BibelstudieGuide() {
                           <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                             <Icon className="w-4 h-4" />
                           </div>
-                          <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
                           {v.name}

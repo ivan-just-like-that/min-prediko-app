@@ -226,15 +226,16 @@ export default function KyrkoarketyperQuizSida() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   useEffect(() => {
@@ -329,6 +330,7 @@ export default function KyrkoarketyperQuizSida() {
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
@@ -354,8 +356,13 @@ export default function KyrkoarketyperQuizSida() {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -379,6 +386,7 @@ export default function KyrkoarketyperQuizSida() {
                     {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -388,6 +396,7 @@ export default function KyrkoarketyperQuizSida() {
                 </div>
               ) : !authLoading && (
                 <button
+                  type="button"
                   onClick={() => {
                     setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
                     setShowAuthModal(true);
@@ -401,6 +410,7 @@ export default function KyrkoarketyperQuizSida() {
             </div>
 
             <button 
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -413,19 +423,49 @@ export default function KyrkoarketyperQuizSida() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link 
+                    key={v.href} 
+                    href={v.href} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link 
+                  href="/om" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-[#1a1d1b] mb-4"
+                >
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      supabase.auth.signOut();
+                    }} 
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold text-[#1a1d1b]"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }} 
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -439,7 +479,6 @@ export default function KyrkoarketyperQuizSida() {
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -489,6 +528,7 @@ export default function KyrkoarketyperQuizSida() {
               <div className="space-y-3">
                 {FRAGOR[aktivFragaIndex].alternativ.map((alt, idx) => (
                   <button
+                    type="button"
                     key={idx}
                     onClick={() => hanteraSvar(alt.poang)}
                     className="w-full text-left p-4 rounded-xl border border-[#e8e4df] bg-[#faf8f5]/50 hover:bg-[#faf8f5] hover:border-[#2d3732] text-xs sm:text-sm font-medium text-[#2d312e] transition-all duration-150 flex items-center justify-between group"
@@ -537,7 +577,7 @@ export default function KyrkoarketyperQuizSida() {
                 <div className="grid grid-cols-1 gap-2">
                   {resultatKaraktar.styrkor.map((styrka, i) => (
                     <div key={i} className="px-3 py-2 bg-[#faf8f5] border border-[#e8e4df] rounded-xl text-xs font-medium text-[#2d3732]">
-                      • {styrka}
+                      - {styrka}
                     </div>
                   ))}
                 </div>
@@ -545,6 +585,7 @@ export default function KyrkoarketyperQuizSida() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
+                  type="button"
                   onClick={startaOmQuiz}
                   className="px-5 py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold hover:bg-[#1f2723] transition-all flex items-center justify-center gap-2"
                 >

@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -42,6 +43,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -65,7 +67,8 @@ function KopieraKnapp({ text }) {
   );
 }
 
-export default function HistoriskKontext() {
+function HistoriskKontextInnehall() {
+  const searchParams = useSearchParams();
   const [bibelstalle, setBibelstalle] = useState('');
   const [kommentarSvar, setKommentarSvar] = useState('');
   const [laddar, setLaddar] = useState(false);
@@ -84,15 +87,16 @@ export default function HistoriskKontext() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
@@ -134,6 +138,16 @@ export default function HistoriskKontext() {
     }
     setAuthLoading(false);
   };
+
+  // Läs av URL-parameter ?text= och fyll i sökrutan automatiskt
+  useEffect(() => {
+    const urlText = searchParams.get('text');
+    if (urlText) {
+      // Om det t.ex. står "Evangelium: Matt 21:1-9", rensa bort prefixet så bara referensen blir kvar
+      const rensadText = urlText.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '').trim();
+      setBibelstalle(rensadText);
+    }
+  }, [searchParams]);
 
   // Läs in sparad historik från localStorage
   useEffect(() => {
@@ -201,11 +215,11 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
         bibelstalle: bibelstalle,
         svar: nyttSvar,
         tid: new Date().toLocaleDateString('sv-SE', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
       };
 
       const uppdaterad = [nyPost, ...historik];
@@ -230,7 +244,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
       
       <div>
-        {/* HEADER (ATTIO-STYLE NAVIGATION) */}
+        {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             
@@ -247,6 +261,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
@@ -272,8 +287,13 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -298,6 +318,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
                     {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -307,6 +328,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
                 </div>
               ) : !authLoading && (
                 <button
+                  type="button"
                   onClick={() => {
                     setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
                     setShowAuthModal(true);
@@ -321,6 +343,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
 
             {/* MOBIL MENY-KNAPP */}
             <button 
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -334,19 +357,49 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link 
+                    key={v.href} 
+                    href={v.href} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link 
+                  href="/om" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-[#1a1d1b] mb-4"
+                >
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      supabase.auth.signOut();
+                    }} 
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold text-[#1a1d1b]"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }} 
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -360,7 +413,6 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -380,7 +432,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed mb-6">
-              Skriv in ett bibelställe ur Gamla eller Nya testamentet för att få en historisk, kulturell och vetenskaplig analys samt litteraturförslag.
+              Ett verktyg för exegetisk fördjupning, historisk kontext och teologisk analys.
             </p>
 
             <form onSubmit={hanteraAnalys} className="flex flex-col sm:flex-row gap-3">
@@ -424,6 +476,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
               </h2>
               {historik.length > 0 && (
                 <button
+                  type="button"
                   onClick={rensaHistorik}
                   className="bg-white hover:bg-[#faf8f5] text-[#575c58] hover:text-[#1a1d1b] border border-[#e8e4df] rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
@@ -480,7 +533,14 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
                           <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                             <Icon className="w-4 h-4" />
                           </div>
-                          <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
                           {v.name}
@@ -499,7 +559,7 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
         </main>
       </div>
 
-      {/* ATTIO-STYLE FOOTER */}
+      {/* FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           
@@ -547,5 +607,13 @@ Svaret SKALL struktureras och delas upp i exakt följande punkter och underrubri
       />
 
     </div>
+  );
+}
+
+export default function HistoriskKontext() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-xs text-[#575c58]">Laddar historiska kommentarer...</div>}>
+      <HistoriskKontextInnehall />
+    </Suspense>
   );
 }

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
-import DailyFigureCard from '@/components/DailyFigureCard';
 import { 
   Compass,
   ChevronDown, 
@@ -153,7 +152,6 @@ export default function PredikaLandingPage() {
     { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
     { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
     { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
-    { name: 'Latinsk interlinjär läsare', desc: 'Kyrklatin & Biblia Sacra Vulgata', href: '/latin', icon: Languages, isAi: false },
     { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
     { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
     { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
@@ -346,7 +344,7 @@ export default function PredikaLandingPage() {
       </section>
 
       {/* 3. VERKTYGSGRID (ATTIO CARD-DESIGN) */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="mb-8 border-b border-[#e8e4df] pb-4">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#8c918d]">
             Utvalda verktyg
@@ -389,12 +387,7 @@ export default function PredikaLandingPage() {
         </div>
       </section>
 
-      {/* 4. DAGENS GESTALT */}
-      <div className="max-w-3xl mx-auto px-6 pb-20">
-        <DailyFigureCard />
-      </div>
-
-      {/* 5. FEEDBACK & BETATEXT */}
+      {/* 4. FEEDBACK & BETATEXT */}
       <section className="max-w-3xl mx-auto px-6 pb-24">
         <div className="bg-white rounded-3xl p-8 border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h3 className="text-lg font-bold text-[#1a1d1b] mb-2">Återkoppling</h3>
@@ -441,7 +434,7 @@ export default function PredikaLandingPage() {
         </div>
       </section>
 
-      {/* 6. FOOTER */}
+      {/* 5. FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 space-y-3">

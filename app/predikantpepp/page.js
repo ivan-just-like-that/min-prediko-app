@@ -45,6 +45,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -93,15 +94,16 @@ export default function PredikantpeppPage() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
@@ -149,30 +151,25 @@ export default function PredikantpeppPage() {
     setLoadingPepp(true);
     setPeppSvar('');
 
-const vinklar = [
-  // Mänsklighet & sårbarhet
-  'att det är helt okej att själv känna sig lite vilsen eller trött ibland',
-  'en påminnelse om att din egen mänsklighet och dina sprickor är din största tillgång i mötet med andra',
-  'att du inte behöver ha svar på alla svåra frågor som folk bär med sig',
-  'att det räcker med att bara vara närvarande i rummet, du behöver inte lösa någons liv',
+    const vinklar = [
+      'att det är helt okej att själv känna sig lite vilsen eller trött ibland',
+      'en påminnelse om att din egen mänsklighet och dina sprickor är din största tillgång i mötet med andra',
+      'att du inte behöver ha svar på alla svåra frågor som folk bär med sig',
+      'att det räcker med att bara vara närvarande i rummet, du behöver inte lösa någons liv',
+      'en påminnelse om att dina egna gränser också är heliga och behöver skyddas',
+      'att du har rätt att ta plats som bara dig själv, inte bara i din yrkesroll',
+      'en kollegial påminnelse om att världen inte står och faller med din insats idag',
+      'att det är helt ordning att lämna jobbet bakom sig när dagen är slut och bara få vara ledig',
+      'att de små, obetydliga stunderna vid kaffebryggaren ofta betyder mer för folk än vi tror',
+      'en varm tanke om att du gör skillnad bara genom att lyssna utan att döma',
+      'att nåden och omsorgen gäller dig i ditt eget liv lika mycket som dem du möter',
+      'att du är värdefull för den du är, helt oberoende av vad du uträttar eller levererar'
+    ];
 
-  // Gränser & återhämtning
-  'en påminnelse om att dina egna gränser också är heliga och behöver skyddas',
-  'att du har rätt att ta plats som bara dig själv, inte bara i din yrkesroll',
-  'en kollegial påminnelse om att världen inte står och faller med din insats idag',
-  'att det är helt ordning att lämna jobbet bakom sig när dagen är slut och bara få vara ledig',
+    const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
+    const slumpId = Math.random().toString(36).substring(7);
 
-  // Relationer & vardagsnåd
-  'att de små, obetydliga stunderna vid kaffebryggaren ofta betyder mer för folk än vi tror',
-  'en varm tanke om att du gör skillnad bara genom att lyssna utan att döma',
-  'att nåden och omsorgen gäller dig i ditt eget liv lika mycket som dem du möter',
-  'att du är värdefull för den du är, helt oberoende av vad du uträttar eller levererar'
-];
-
-const slumpVinkel = vinklar[Math.floor(Math.random() * vinklar.length)];
-const slumpId = Math.random().toString(36).substring(7);
-
-const promptText = `Du är en varm, avspänd och klok kollega i Svenska kyrkan. Du ger en kort, genuint stöttande och mänsklig hälsning till din kollega i vardagen.
+    const promptText = `Du är en varm, avspänd och klok kollega i Svenska kyrkan. Du ger en kort, genuint stöttande och mänsklig hälsning till din kollega i vardagen.
 
 TEMA ATT UTGÅ FRÅN: ${slumpVinkel}
 UNIK REF: ${slumpId}
@@ -182,19 +179,18 @@ INSTRUKTIONER:
 - Fokusera på att vara människa, inte på prestation eller teologisk analys.
 - Det ska kännas avdramatiserande, äkta och stöttande på ett helt naturligt sätt.
 - INGA klyschor om att "andas ut", "släppa axlarna", "mottaga nåden" eller "luta dig tillbaka".
-- Inga citationstecken, rubriker eller stjärnor (*). Skriv bara texten rakt av.`;
+- Inga citationstecken, rubriker eller stjärnor (*). Skriv bara texten rakt av.`.trim();
 
     try {
-// NYTT (korrigerat):
-const payload = {
-  prompt: promptText,
-  sida: 'predikantpepp',
-  verktyg: 'Pepp-o-mat',
-  helgdag: 'Uppmuntran',
-  tema: slumpVinkel,
-  inkluderaFraga: false,
-  temperature: 0.85,
-};
+      const payload = {
+        prompt: promptText,
+        sida: 'predikantpepp',
+        verktyg: 'Pepp-o-mat',
+        helgdag: 'Uppmuntran',
+        tema: slumpVinkel,
+        inkluderaFraga: false,
+        temperature: 0.85,
+      };
 
       const data = await generateContent(payload, () => {
         setModalMessage('Du måste vara inloggad för att använda verktyget.');
@@ -311,6 +307,7 @@ const payload = {
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
@@ -336,8 +333,13 @@ const payload = {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -362,6 +364,7 @@ const payload = {
                     {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -371,6 +374,7 @@ const payload = {
                 </div>
               ) : !authLoading && (
                 <button
+                  type="button"
                   onClick={() => {
                     setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
                     setShowAuthModal(true);
@@ -385,6 +389,7 @@ const payload = {
 
             {/* MOBIL MENY-KNAPP */}
             <button 
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -398,19 +403,49 @@ const payload = {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link 
+                    key={v.href} 
+                    href={v.href} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link 
+                  href="/om" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-[#1a1d1b] mb-4"
+                >
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      supabase.auth.signOut();
+                    }} 
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold text-[#1a1d1b]"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }} 
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -424,7 +459,6 @@ const payload = {
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -444,15 +478,17 @@ const payload = {
             </div>
             
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-              Uppmuntran, quiz, poesi och kanske ett leende? På denna sida dras inga krediter.
+              Att leda andra, förbereda predikningar och möta människor i livets alla skeden kräver som vi vet ett stort mått av både hjärta och engagemang. 
+              Men för att kunna vara ett redskap för andra behöver du som bär uppgiften också få stanna upp, hämta andan och fylla på med ny glädje. 
+              Denna sidan får vara lite av en frizon i förberedelserna.
             </p>
           </div>
 
           {/* MODUL 1: Själavårdande pepp till prästen */}
           <section className="bg-white rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 text-center space-y-4 mb-8">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] mb-2">
-            <HandHeart className="w-6 h-6 text-rose-700" />
-          </div>
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] mb-2">
+              <HandHeart className="w-6 h-6 text-rose-700" />
+            </div>
             <h2 className="text-lg font-bold text-[#1a1d1b]">
               Pepp-o-mat
             </h2>
@@ -461,6 +497,7 @@ const payload = {
             </p>
             <div>
               <button
+                type="button"
                 onClick={genereraPepp}
                 disabled={loadingPepp}
                 className="bg-[#2d3732] hover:bg-[#1f2723] text-white px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-colors disabled:opacity-50 shadow-sm"
@@ -647,7 +684,14 @@ const payload = {
                           <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                             <Icon className="w-4 h-4" />
                           </div>
-                          <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
                           {v.name}

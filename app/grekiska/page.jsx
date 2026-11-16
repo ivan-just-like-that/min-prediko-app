@@ -23,8 +23,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Info,
-  Library
+  Info
 } from 'lucide-react';
 
 // ---------------------------------------------------------
@@ -210,15 +209,16 @@ function GrekiskAnalysContent() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   useEffect(() => {
@@ -261,12 +261,13 @@ function GrekiskAnalysContent() {
   };
 
   // URL-parametrar
+// URL-parametrar (stöd för både direkta parametrar och ?text=...)
   useEffect(() => {
     const bookParam = searchParams.get('book');
     const chapterParam = searchParams.get('chapter');
     const verseParam = searchParams.get('verse');
 
-    if (bookParam) setSelectedBookId(bookParam);
+    if (bookParam) setSelectedBookId(bookParam.toLowerCase());
     if (chapterParam) {
       const parsedChap = Number(chapterParam);
       if (!isNaN(parsedChap)) setSelectedChapter(parsedChap);
@@ -394,13 +395,11 @@ function GrekiskAnalysContent() {
     }
   };
 
-  // Nollställ visibleLimit till 50 när användaren klickar på ett nytt ord
   useEffect(() => {
     if (!selectedWord || !selectedWord.strong_code) return;
     setVisibleLimit(50);
   }, [selectedWord?.strong_code]);
 
-  // Hämta förekomster med stöd för pagination via visibleLimit
   useEffect(() => {
     if (!selectedWord || !selectedWord.strong_code) return;
 
@@ -509,7 +508,14 @@ function GrekiskAnalysContent() {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b]">{v.name}</div>
+                              <div className="text-xs font-bold text-[#1a1d1b] flex items-center gap-1.5">
+                                {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[11px] text-[#8c918d]">{v.desc}</div>
                             </div>
                           </Link>
@@ -572,9 +578,14 @@ function GrekiskAnalysContent() {
                     key={v.href} 
                     href={v.href} 
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm font-medium text-[#1a1d1b] py-1"
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
                   >
-                    {v.name}
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -628,16 +639,20 @@ function GrekiskAnalysContent() {
           <div className="mb-8">
             <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-                    <Languages className="w-5 h-5" />
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+                      <Languages className="w-5 h-5" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+                      Grekisk interlinjär läsare
+                    </h1>
                   </div>
-                  <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                    Rena grekiskan
-                  </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-                  Studera grundtexten med ord för ord-översättning, hovra över orden för morfologisk analys och klicka för konkordans.
+                  Studera Nya testamentets ursprungliga grekiska grundtext ord för ord. Texten baseras på SBL Greek New Testament (SBLGNT), 
+                  komplett med glosa, grammatisk analys och löpande bibelöversättningar. Klicka på ett ord i texten och en fullständig
+                  konkordans visas i sidopanelen.
                 </p>
               </div>
 
@@ -730,7 +745,7 @@ function GrekiskAnalysContent() {
                     title="Om källor"
                   >
                     <Info className="w-3.5 h-3.5 text-[#2d3732]" />
-                    <span className="hidden sm:inline">Om källorna</span>
+                    <span className="hidden sm:inline">Info</span>
                   </button>
                 </div>
               </div>
@@ -806,6 +821,46 @@ function GrekiskAnalysContent() {
             ) : (
               <div className="py-12 text-center text-xs text-[#8c918d]">Ingen text hittades för denna vers.</div>
             )}
+          </section>
+
+          {/* NAVIGERA TILL ANDRA VERKTYG */}
+          <section className="mt-16 pt-8 border-t border-[#e8e4df]">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-[#8c918d] mb-6 text-center">
+              Utforska fler verktyg
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {verktygLista.filter(v => v.href !== '/grekiska').map((v) => {
+                const Icon = v.icon;
+                return (
+                  <Link key={v.href} href={v.href} className="group block">
+                    <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
+                          {v.name}
+                        </h4>
+                        <p className="text-xs text-[#575c58] leading-relaxed">
+                          {v.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </section>
 
         </main>

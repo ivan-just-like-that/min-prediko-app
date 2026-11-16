@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -692,7 +693,6 @@ function PredikoideerInnehall() {
   const [valdArgang, setValdArgang] = useState('argang1');
   const [valdTextTyp, setValdTextTyp] = useState('evangelium');
 
-  const [anteckningar, setAnteckningar] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
@@ -700,7 +700,7 @@ function PredikoideerInnehall() {
   // States för menyer
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   // --- STATE FÖR ANVÄNDARE OCH MODAL ---
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
@@ -710,15 +710,16 @@ function PredikoideerInnehall() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles },
-    { name: 'Historiska kommentarer', desc: 'Teologisk kontext & bakgrund', href: '/historik', icon: BookOpen },
-    { name: 'Rena grekiskan', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp },
+    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
@@ -829,13 +830,6 @@ function PredikoideerInnehall() {
     }
   }, []);
 
-  useEffect(() => {
-    if (valdHelgdagNamn) {
-      const sparadText = localStorage.getItem(`anteckningar_${valdHelgdagNamn}`);
-      setAnteckningar(sparadText || '');
-    }
-  }, [valdHelgdagNamn]);
-
   const valdHelgdag = HELGDAGAR.find((h) => h.namn === valdHelgdagNamn);
   const valdaTexter = valdHelgdag ? valdHelgdag[valdArgang] : null;
   const valdPredikotext = valdaTexter ? valdaTexter[valdTextTyp] : '';
@@ -884,11 +878,11 @@ function PredikoideerInnehall() {
         svar: nyttSvar,
         helgdag: valdHelgdag?.namn || 'Allmänt',
         tid: new Date().toLocaleDateString('sv-SE', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' min' // Resulterar i t.ex. "24 okt. 14:57"
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) + ' min'
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -912,19 +906,11 @@ function PredikoideerInnehall() {
     }
   };
 
-  const hanteraAnteckningsÄndring = (e) => {
-    const nyText = e.target.value;
-    setAnteckningar(nyText);
-    if (valdHelgdagNamn) {
-      localStorage.setItem(`anteckningar_${valdHelgdagNamn}`, nyText);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
       
       <div>
-        {/* HEADER (ATTIO-STYLE NAVIGATION) */}
+        {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             
@@ -966,8 +952,13 @@ function PredikoideerInnehall() {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1">
+                              <div className="text-xs font-bold text-[#1a1d1b] group-hover:text-[#2d3732] transition-colors flex items-center gap-1.5">
                                 {v.name}
+                                {v.isAi && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                    AI
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-[#8c918d] leading-snug">{v.desc}</div>
                             </div>
@@ -1028,8 +1019,13 @@ function PredikoideerInnehall() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1">
-                    {v.name}
+                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                    <span>{v.name}</span>
+                    {v.isAi && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        AI
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -1054,7 +1050,6 @@ function PredikoideerInnehall() {
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
               <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
-              
             </div>
           </div>
         )}
@@ -1062,40 +1057,46 @@ function PredikoideerInnehall() {
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
 
-        {/* INTRO-RUTA */}
-        <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-              <Lightbulb className="w-5 h-5 text-[#2d3732]" />
+          {/* INTRO-RUTA */}
+          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+                  <Lightbulb className="w-5 h-5 text-[#2d3732]" />
+                </div>
+                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+                  Predikoidéer
+                </h1>
+              </div>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                AI
+              </span>
             </div>
-            <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-              Predikoidéer
-            </h1>
-          </div>
-          
-          <div className="text-xs sm:text-sm text-[#575c58] leading-relaxed space-y-3">
-            <p>
-              Få nya ingångar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
-            </p>
-            <div className="space-y-2">
+            
+            <div className="text-xs sm:text-sm text-[#575c58] leading-relaxed space-y-3">
               <p>
-                <span className="font-semibold text-[#2d3732]">Generera disposition:</span> Ger förslag på dispositioner och pedagogiska upplägg för 
-                predikans struktur – från inledning till trygg landning.
+                Få nya ingångar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
               </p>
-              <p>
-                <span className="font-semibold text-[#2d3732]">Predikobilder & liknelser:</span> Genererar nyskapande metaforer, vardagsnära liknelser 
-                och illustrationer från natur, kultur och tradition som hjälper till att göra teologin levande.
-              </p>
-              <p>
-                <span className="font-semibold text-[#2d3732]">Psalmförslag:</span> Ger tematiskt passande psalmer ur Den svenska psalmboken för mässans 
-                och gudstjänstens olika delar. (Tänk på att psalmval ska ske i samråd med tjänstgörande kyrkomusiker.)
-              </p>
+              <div className="space-y-2">
+                <p>
+                  <span className="font-semibold text-[#2d3732]">Generera disposition:</span> Ger förslag på dispositioner och pedagogiska upplägg för 
+                  predikans struktur – från inledning till trygg landning.
+                </p>
+                <p>
+                  <span className="font-semibold text-[#2d3732]">Predikobilder & liknelser:</span> Genererar nyskapande metaforer, vardagsnära liknelser 
+                  och illustrationer från natur, kultur och tradition som hjälper till att göra teologin levande.
+                </p>
+                <p>
+                  <span className="font-semibold text-[#2d3732]">Psalmförslag:</span> Ger tematiskt passande psalmer ur Den svenska psalmboken för mässans 
+                  och gudstjänstens olika delar. (Tänk på att psalmval ska ske i samråd med tjänstgörande kyrkomusiker.)
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
+            {/* KOLUMN 1: VÄLJ HELGDAG & TEXT */}
             <section className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-5 border-b border-[#e8e4df] pb-3">
                 1. Välj helgdag, årgång & predikotext
@@ -1189,24 +1190,105 @@ function PredikoideerInnehall() {
               )}
             </section>
 
+            {/* KOLUMN 2: FÖRDJUPNING & AI-ASSISTENT */}
             <section className="space-y-6">
+              
+              {/* RUTA 2: FÖRDJUPNING & GRUNDTEXT */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
-                    2. Mina predikoanteckningar
+                    2. Fördjupning & grundtext
                   </h2>
-                  <KopieraKnapp text={anteckningar} />
+                  <span className="text-[10px] font-semibold text-[#575c58] bg-[#faf8f5] px-2.5 py-0.5 rounded-full border border-[#e8e4df]">
+                    Öppnas i nytt fönster
+                  </span>
                 </div>
 
-                <textarea
-                  value={anteckningar}
-                  onChange={hanteraAnteckningsÄndring}
-                  placeholder="Skriv dina egna tankar, idéer och utkast här..."
-                  rows={8}
-                  className="w-full p-4 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs sm:text-sm text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732] leading-relaxed resize-none"
-                />
+                <p className="text-xs text-[#575c58] mb-4 leading-relaxed">
+                  Öppna <strong className="text-[#1a1d1b]">{valdPredikotext}</strong> i ett fördjupningsverktyg. Textstället fylls i automatiskt i sökrutan på nästa sida.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Historiska kommentarer */}
+                  <a
+                    href={`/historik?text=${encodeURIComponent(valdPredikotext)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732] transition-all group flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <BookOpen className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                        Historiska kommentarer
+                      </div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">
+                        Kontext & bakgrund
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Grekisk interlinjär läsare */}
+                  <a
+                    href={`/grekiska?text=${encodeURIComponent(valdPredikotext)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                      valdTextTyp !== 'gt'
+                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <Languages className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                        Grekisk läsare
+                      </div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">
+                        NT grundtext
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Hebreisk interlinjär läsare */}
+                  <a
+                    href={`/hebreiska?text=${encodeURIComponent(valdPredikotext)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                      valdTextTyp === 'gt'
+                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <Languages className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                        Hebreisk läsare
+                      </div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">
+                        GT grundtext
+                      </div>
+                    </div>
+                  </a>
+                </div>
               </div>
 
+              {/* RUTA 3: AI-ASSISTENT */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2">
                   3. AI-assistent
@@ -1218,63 +1300,57 @@ function PredikoideerInnehall() {
 
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => hanteraAiAnrop(`
-                    Du är en mycket god retoriker och teologisk pedagog som vet hur man bygger upp ett tal för att både fånga åhörarna och få fram 
-                    kärnan i budskapet.
+                    <button
+                      onClick={() => hanteraAiAnrop(`
+                      Du är en mycket god retoriker och teologisk pedagog som vet hur man bygger upp ett tal för att både fånga åhörarna och få fram 
+                      kärnan i budskapet.
 
-                    Ge 4 olika förslag på disposition för predikan. Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att 
-                    det i kyrkbänken sitter människor som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på 
-                    tacksamhet och är nöjda med livet. Åtminstone ett förslag ska ge ett tydligt svar på frågan "Vad spelar dagens budskap för roll i mitt liv?", 
-                    men utan att ställa frågan rakt ut. Väva gärna in allmänna paralleller till samtiden, nyheter eller omvärlden där det passar.
+                      Ge 4 olika förslag på disposition för predikan. Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att 
+                      det i kyrkbänken sitter människor som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på 
+                      tacksamhet och är nöjda med livet. Åtminstone ett förslag ska ge ett tydligt svar på frågan "Vad spelar dagens budskap för roll i mitt liv?", 
+                      men utan att ställa frågan rakt ut. Väva gärna in allmänna paralleller till samtiden, nyheter eller omvärlden där det passar.
 
-                    FÖRDELNING AV UPPLÄGG:
-                    1. Modell 1 & 2 (Text- och versförankrade): Två förslag som är förankrade i bibeltexten, dess teologiska kärna eller kretsar kring en särskild 
-                    nyckelmening i texten.
-                    2. Modell 3 (Helgdagens tema): Ett förslag som utgår helt från dagens tema snarare än textens enskilda verser. Detta förslag ska innehålla 
-                    konkreta exempel ur verkligheten, visa hur man kan leva som kristen idag och vara djupt inkännande för människors liv i vår samtid.
-                    3. Modell 4 (Pedagogisk, narrativ eller induktiv): Ett förslag med en tydlig berättande eller induktiv linje som utgår från människans vardag och 
-                    tar församlingen med på en upptäcktsresa från anslag till landning.
+                      FÖRDELNING AV UPPLÄGG:
+                      1. Modell 1 & 2 (Text- och versförankrade): Två förslag som är förankrade i bibeltexten, dess teologiska kärna eller kretsar kring en särskild nyckelmening i texten.
+                      2. Modell 3 (Helgdagens tema): Ett förslag som utgår helt från dagens tema snarare än textens enskilda verser. Detta förslag ska innehålla konkreta exempel ur verkligheten, visa hur man kan leva som kristen idag och vara djupt inkännande för människors liv i vår samtid.
+                      3. Modell 4 (Pedagogisk, narrativ eller induktiv): Ett förslag med en tydlig berättande eller induktiv linje som utgår från människans vardag och tar församlingen med på en upptäcktsresa från anslag till landning.
 
-                    STRUKTUR PER DISPOSITION:
-                    - MODELLENS NAMN OCH KARAKTÄR
-                    - INLEDNING / ANSLAG (Hur predikan öppnas)
-                    - HUVUDDEL / RÖRELSE (2–3 tydliga steg med köranvisningar för vad predikanten gör)
-                    - AVSLUTNING / LANDNING (Hur predikan knyts ihop)
-                    `.trim(), 'Disposition')}
-                    disabled={laddarAi}
-                    className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
-                  >
-                    Generera disposition
-                  </button>
+                      STRUKTUR PER DISPOSITION:
+                      - MODELLENS NAMN OCH KARAKTÄR
+                      - INLEDNING / ANSLAG (Hur predikan öppnas)
+                      - HUVUDDEL / RÖRELSE (2–3 tydliga steg med köranvisningar för vad predikanten gör)
+                      - AVSLUTNING / LANDNING (Hur predikan knyts ihop)
+                      `.trim(), 'Disposition')}
+                      disabled={laddarAi}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                    >
+                      Generera predikodisposition
+                    </button>
                     
-                  <button
-                    onClick={() => hanteraAiAnrop(`
-                    Ge 4 varierade och tankeväckande predikobilder, metaforer eller liknelser baserade på dagens text och tema. 
-                    Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att det i kyrkbänken sitter människor 
-                    som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på tacksamhet och är nöjda med livet. 
-                    Bilderna ska hjälpa församlingen att förstå vad dagens budskap spelar för roll i deras faktiska liv. Väv gärna in konkreta paralleller 
-                    till samtiden, kulturen, nyheter eller vår tids omvärld där det passar.
+                    <button
+                      onClick={() => hanteraAiAnrop(`
+                      Ge 4 varierade och tankeväckande predikobilder, metaforer eller liknelser baserade på dagens text och tema. 
+                      Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att det i kyrkbänken sitter människor 
+                      som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på tacksamhet och är nöjda med livet. 
+                      Bilderna ska hjälpa församlingen att förstå vad dagens budskap spelar för roll i deras faktiska liv. Väv gärna in konkreta paralleller 
+                      till samtiden, kulturen, nyheter eller vår tids omvärld där det passar.
 
-                    FÖRDELNING AV BILDER OCH MÖJLIGA MÖNSTERSKAPANDE INGÅNGAR:
-                    1. Bild 1 & 2 (Text- och teologinära): Två förslag som fördjupar bibeltextens verser, teologiska nyckelord eller historia med 
-                    hjälp av överraskande paralleller (t.ex. från natur, vetenskap, konst eller kyrklig tradition).
-                    2. Bild 3 (Tematisk, nutidsnära & vardaglig): Ett förslag som utgår helt från dagens tema och hämtas direkt ur 2020-talets 
-                    vardagsrealism, arbetsliv, digitala samtid eller moderna relationer. Bilden ska innehålla konkreta exempel på hur det är att vara kristen idag och vara djupt inkännande för människors livssmärta.
-                    3. Bild 4 (Själavårdande & trösterik): En bild som särskilt möter den som bär på spruckna drömmar, oro, sorg eller en känsla av 
-                    otillräcklighet.
+                      FÖRDELNING AV BILDER OCH MÖJLIGA MÖNSTERSKAPANDE INGÅNGAR:
+                      1. Bild 1 & 2 (Text- och teologinära): Två förslag som fördjupar bibeltextens verser, teologiska nyckelord eller historia med hjälp av överraskande paralleller (t.ex. från natur, vetenskap, konst eller kyrklig tradition).
+                      2. Bild 3 (Tematisk, nutidsnära & vardaglig): Ett förslag som utgår helt från dagens tema och hämtas direkt ur 2020-talets vardagsrealism, arbetsliv, digitala samtid eller moderna relationer. Bilden ska innehålla konkreta exempel på hur det är att vara kristen idag och vara djupt inkännande för människors livssmärta.
+                      3. Bild 4 (Själavårdande & trösterik): En bild som särskilt möter den som bär på spruckna drömmar, oro, sorg eller en känsla av otillräcklighet.
 
-                    STRUKTUR PER FÖRSLAG:
-                    - TITEL OCH KATEGORI (T.ex. "Vardagsbild: Skärmtid och tystnad")
-                    - BESKRIVNING AV BILDEN (Det konkreta motivet, miljöbilden eller händelsen)
-                    - TEOLOGISK OCH SJÄLAVÅRDANDE BÄRIGHET (Vad bilden förklarar i temat/texten och hur den möter människors liv)
-                    - PREDIKOTIPS (Hur bilden kan introduceras och vävas in i predikan)
-                    `.trim(), 'Predikobilder & liknelser')}
-                    disabled={laddarAi}
-                    className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
-                  >
-                    Predikobilder & liknelser
-                  </button>
+                      STRUKTUR PER FÖRSLAG:
+                      - TITEL OCH KATEGORI (T.ex. "Vardagsbild: Skärmtid och tystnad")
+                      - BESKRIVNING AV BILDEN (Det konkreta motivet, miljöbilden eller händelsen)
+                      - TEOLOGISK OCH SJÄLAVÅRDANDE BÄRIGHET (Vad bilden förklarar i temat/texten och hur den möter människors liv)
+                      - PREDIKOTIPS (Hur bilden kan introduceras och vävas in i predikan)
+                      `.trim(), 'Predikobilder & liknelser')}
+                      disabled={laddarAi}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                    >
+                      Predikobilder & liknelser
+                    </button>
                   </div>
 
                   <button
@@ -1289,10 +1365,8 @@ function PredikoideerInnehall() {
 
                     **Krav på psalmförslagen:**
                     1. **Precision:** Ange exakt psalm nummer och korrekt titel ur Den svenska psalmboken (eller PSALMER i 2000-talet / tillägg).
-                    2. **Funktion i gudstjänsten:** Ge en varierad blandning som täcker olika delar av mässan/gudstjänsten (t.ex. ingång, psalm före 
-                    evangeliet, nattvard, utgång/avslutning).
-                    3. **Konkret motivering:** Ge en kort teologisk/tematisk motivering till varför psalmen passar just denna helgdag och predikotext. 
-                    Lyft gärna fram om någon specifik vers är extra bärande.
+                    2. **Funktion i gudstjänsten:** Ge en varierad blandning som täcker olika delar av mässan/gudstjänsten (t.ex. ingång, psalm före evangeliet, nattvard, utgång/avslutning).
+                    3. **Konkret motivering:** Ge en kort teologisk/tematisk motivering till varför psalmen passar just denna helgdag och predikotext. Lyft gärna fram om någon specifik vers är extra bärande.
 
                     **Struktur per psalm:**
                     - **Psalmnummer & Titel** (T.ex. "Psalmer 201: En vänlig grönskas rika dräkt")
@@ -1300,8 +1374,8 @@ function PredikoideerInnehall() {
                     - **Motivering & Versförslag** (Kort teologisk koppling till dagens tema och text)
 
                     FORMATERING:
-                  - Skriv i helt ren klartext utan stjärnor (* eller **), brädgårdar (#) eller understreck (_).
-                  - Använd dubbla radbrytningar mellan stycken.
+                    - Skriv i helt ren klartext utan stjärnor (* eller **), brädgårdar (#) eller understreck (_).
+                    - Använd dubbla radbrytningar mellan stycken.
                     `.trim(), 'Psalmförslag')}                    
                     disabled={laddarAi}
                     className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
@@ -1330,6 +1404,7 @@ function PredikoideerInnehall() {
             </section>
           </div>
 
+          {/* HISTORIKSEKTION */}
           <section className="mt-8 bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
             <div className="flex justify-between items-center mb-6 border-b border-[#e8e4df] pb-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
@@ -1397,7 +1472,15 @@ function PredikoideerInnehall() {
                           <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
                             <Icon className="w-4 h-4" />
                           </div>
-                          <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          
+                          <div className="flex items-center gap-2">
+                            {v.isAi && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                AI
+                              </span>
+                            )}
+                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
                           {v.name}
@@ -1416,7 +1499,7 @@ function PredikoideerInnehall() {
         </main>
       </div>
 
-      {/* ATTIO-STYLE FOOTER */}
+      {/* FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           
