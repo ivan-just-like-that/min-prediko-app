@@ -27,28 +27,74 @@ import {
 } from 'lucide-react';
 
 // ---------------------------------------------------------
-// LÖPANDE VERSÖVERSÄTTNING (SERVER API PROXY)
+// NYA TESTAMENTETS BÖCKER (STATISK LISTA FÖR STABIL LÄNKNING)
+// ---------------------------------------------------------
+const GREEK_BOOKS = [
+  { id: 'matthew', altId: 'matt', name_sv: 'Matteusevangeliet', chapters: 28 },
+  { id: 'mark', altId: 'mrk', name_sv: 'Markusevangeliet', chapters: 16 },
+  { id: 'luke', altId: 'luk', name_sv: 'Lukasevangeliet', chapters: 24 },
+  { id: 'john', altId: 'jhn', name_sv: 'Johannesevangeliet', chapters: 21 },
+  { id: 'acts', altId: 'act', name_sv: 'Apostlagärningarna', chapters: 28 },
+  { id: 'romans', altId: 'rom', name_sv: 'Romarbrevet', chapters: 16 },
+  { id: '1corinthians', altId: '1cor', name_sv: '1 Korinthierbrevet', chapters: 16 },
+  { id: '2corinthians', altId: '2cor', name_sv: '2 Korinthierbrevet', chapters: 13 },
+  { id: 'galatians', altId: 'gal', name_sv: 'Galaterbrevet', chapters: 6 },
+  { id: 'ephesians', altId: 'eph', name_sv: 'Efesierbrevet', chapters: 6 },
+  { id: 'philippians', altId: 'php', name_sv: 'Filipperbrevet', chapters: 4 },
+  { id: 'colossians', altId: 'col', name_sv: 'Kolosserbrevet', chapters: 4 },
+  { id: '1thessalonians', altId: '1thess', name_sv: '1 Thessalonikerbrevet', chapters: 5 },
+  { id: '2thessalonians', altId: '2thess', name_sv: '2 Thessalonikerbrevet', chapters: 3 },
+  { id: '1timothy', altId: '1tim', name_sv: '1 Timoteusbrevet', chapters: 6 },
+  { id: '2timothy', altId: '2tim', name_sv: '2 Timoteusbrevet', chapters: 4 },
+  { id: 'titus', altId: 'tit', name_sv: 'Titusbrevet', chapters: 3 },
+  { id: 'philemon', altId: 'phm', name_sv: 'Filemonbrevet', chapters: 1 },
+  { id: 'hebrews', altId: 'heb', name_sv: 'Hebreerbrevet', chapters: 13 },
+  { id: 'james', altId: 'jas', name_sv: 'Jakobs brev', chapters: 5 },
+  { id: '1peter', altId: '1pet', name_sv: '1 Petrusbrevet', chapters: 5 },
+  { id: '2peter', altId: '2pet', name_sv: '2 Petrusbrevet', chapters: 3 },
+  { id: '1john', altId: '1jhn', name_sv: '1 Johannesbrevet', chapters: 5 },
+  { id: '2john', altId: '2jhn', name_sv: '2 Johannesbrevet', chapters: 1 },
+  { id: '3john', altId: '3jhn', name_sv: '3 Johannesbrevet', chapters: 1 },
+  { id: 'jude', altId: 'jud', name_sv: 'Judas brev', chapters: 1 },
+  { id: 'revelation', altId: 'rev', name_sv: 'Uppenbarelseboken', chapters: 22 }
+];
+
+// Översätter ett bok-id/alias från URL:en till ett giltigt bok-id i listan ovan
+function resolveBook(param) {
+  if (!param) return 'matthew';
+  const clean = param.toLowerCase().trim();
+  const found = GREEK_BOOKS.find(
+    (b) => b.id.toLowerCase() === clean || b.altId?.toLowerCase() === clean
+  );
+  return found ? found.id : 'matthew';
+}
+
+// ---------------------------------------------------------
+// LÖPANDE VERSÖVERSÄTTNING (SERVER API PROXY - 1917 BIBLE)
 // ---------------------------------------------------------
 function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
   const [runningText, setRunningText] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadVerse() {
       if (!book || !chapter || !verse) return;
       setLoading(true);
       try {
         const res = await fetch(`/api/verse-translation?book=${encodeURIComponent(book)}&chapter=${chapter}&verse=${verse}&lang=${lang}`);
         const data = await res.json();
-        setRunningText(data.text || '');
+        if (!cancelled) setRunningText(data.text || '');
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadVerse();
+    return () => { cancelled = true; };
   }, [book, chapter, verse, lang]);
 
   if (loading) {
@@ -58,7 +104,7 @@ function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
   if (!runningText) return null;
 
   const labelMap = {
-    sv: 'SFB 2015',
+    sv: '1917 års kyrkobibel',
     en: 'English Standard Version (ESV)',
     es: 'Reina-Valera 1960'
   };
@@ -179,13 +225,11 @@ function GrekiskAnalysContent() {
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
 
-  // Databas-states
-  const [books, setBooks] = useState([]);
-  const [selectedBookId, setSelectedBookId] = useState('');
-  const [chapters, setChapters] = useState([]);
-  const [selectedChapter, setSelectedChapter] = useState(1);
+  // Databas-states (startvärden hämtas direkt från URL:en om de finns)
+  const [selectedBookId, setSelectedBookId] = useState(() => resolveBook(searchParams.get('book')));
+  const [selectedChapter, setSelectedChapter] = useState(() => Number(searchParams.get('chapter')) || 1);
   const [verses, setVerses] = useState([]);
-  const [selectedVerse, setSelectedVerse] = useState(1);
+  const [selectedVerse, setSelectedVerse] = useState(() => Number(searchParams.get('verse')) || 1);
   
   const [currentWords, setCurrentWords] = useState([]);
   const [currentVerseText, setCurrentVerseText] = useState(''); 
@@ -224,15 +268,8 @@ function GrekiskAnalysContent() {
   useEffect(() => {
     fetchProfile();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        fetchProfile();
-      } else {
-        setUser(null);
-        setCredits(null);
-        setIsTester(false);
-        setAuthLoading(false);
-      }
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      fetchProfile();
     });
 
     return () => authListener.subscription.unsubscribe();
@@ -253,112 +290,115 @@ function GrekiskAnalysContent() {
       .maybeSingle();
 
     if (profile) {
-      const startCredits = profile.credits ?? profile.tokens ?? 0;
-      setCredits(startCredits);
+      setCredits(profile.credits ?? profile.tokens ?? 0);
       setIsTester(profile.is_tester);
     }
     setAuthLoading(false);
   };
 
-  // URL-parametrar
-// URL-parametrar (stöd för både direkta parametrar och ?text=...)
+  // Synka från URL-parametrar endast när URL:en faktiskt ändras (t.ex. ny länk från Predikoidéer)
   useEffect(() => {
     const bookParam = searchParams.get('book');
-    const chapterParam = searchParams.get('chapter');
-    const verseParam = searchParams.get('verse');
+    if (!bookParam) return;
 
-    if (bookParam) setSelectedBookId(bookParam.toLowerCase());
-    if (chapterParam) {
-      const parsedChap = Number(chapterParam);
-      if (!isNaN(parsedChap)) setSelectedChapter(parsedChap);
-    }
-    if (verseParam) {
-      const parsedVerse = Number(verseParam);
-      if (!isNaN(parsedVerse)) setSelectedVerse(parsedVerse);
-    }
+    setSelectedBookId(resolveBook(bookParam));
+
+    const parsedChap = Number(searchParams.get('chapter'));
+    const parsedVerse = Number(searchParams.get('verse'));
+    if (parsedChap) setSelectedChapter(parsedChap);
+    if (parsedVerse) setSelectedVerse(parsedVerse);
   }, [searchParams]);
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
+  const currentBookObj = GREEK_BOOKS.find(b => b.id === selectedBookId) || GREEK_BOOKS[0];
 
-  const fetchBooks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .order('order_index', { ascending: true });
+  // Kapitellistan kommer direkt från den statiska boklistan
+  const chapters = Array.from({ length: currentBookObj.chapters || 1 }, (_, i) => i + 1);
 
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setBooks(data);
-        if (!searchParams.get('book')) {
-          setSelectedBookId(data[0].id);
-        }
-      }
-    } catch (err) {
-      console.error('Kunde inte hämta böcker:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (!selectedBookId) return;
-    fetchChapters(selectedBookId);
-  }, [selectedBookId]);
-
-  const fetchChapters = async (bookId) => {
-    try {
-      const { data, error } = await supabase
-        .from('verses')
-        .select('chapter')
-        .eq('book_id', bookId);
-
-      if (error) throw error;
-      if (data) {
-        const uniqueChapters = Array.from(new Set(data.map(item => item.chapter))).sort((a, b) => a - b);
-        setChapters(uniqueChapters);
-        if (uniqueChapters.length > 0 && !searchParams.get('chapter')) {
-          setSelectedChapter(uniqueChapters[0]);
-        }
-      }
-    } catch (err) {
-      console.error('Kunde inte hämta kapitel:', err);
-    }
-  };
-
+  // Hämta verser när bok eller kapitel ändras
   useEffect(() => {
     if (!selectedBookId || !selectedChapter) return;
-    fetchVerses(selectedBookId, selectedChapter);
-  }, [selectedBookId, selectedChapter]);
+    let cancelled = false;
 
-  const fetchVerses = async (bookId, chapterNum) => {
-    try {
-      const { data, error } = await supabase
-        .from('verses')
-        .select('verse')
-        .eq('book_id', bookId)
-        .eq('chapter', chapterNum)
-        .order('verse', { ascending: true });
+    async function loadVerses() {
+      try {
+        let verseList = [];
 
-      if (error) throw error;
-      if (data) {
-        const verseList = data.map(item => item.verse);
+        // 1. Primärt: första ordet i varje vers i interlinear_words (en rad per vers)
+        const { data: firstWords } = await supabase
+          .from('interlinear_words')
+          .select('verse')
+          .eq('book_id', selectedBookId)
+          .eq('chapter', selectedChapter)
+          .eq('word_order', 1)
+          .order('verse', { ascending: true });
+
+        if (cancelled) return;
+        if (firstWords && firstWords.length > 0) {
+          verseList = Array.from(new Set(firstWords.map(r => r.verse))).sort((a, b) => a - b);
+        }
+
+        // 2. Reserv: högsta versnumret i kapitlet i interlinear_words
+        if (verseList.length === 0) {
+          const { data: maxRow } = await supabase
+            .from('interlinear_words')
+            .select('verse')
+            .eq('book_id', selectedBookId)
+            .eq('chapter', selectedChapter)
+            .order('verse', { ascending: false })
+            .limit(1);
+
+          if (cancelled) return;
+          const maxVerse = maxRow?.[0]?.verse;
+          if (maxVerse) {
+            verseList = Array.from({ length: maxVerse }, (_, i) => i + 1);
+          }
+        }
+
+        // 3. Sista reserv: verses-tabellen
+        if (verseList.length === 0) {
+          const { data: vData } = await supabase
+            .from('verses')
+            .select('verse')
+            .eq('book_id', selectedBookId)
+            .eq('chapter', selectedChapter)
+            .order('verse', { ascending: true });
+
+          if (cancelled) return;
+          if (vData && vData.length > 0) {
+            verseList = Array.from(new Set(vData.map(r => r.verse))).sort((a, b) => a - b);
+          }
+        }
+
+        // Hittades inga verser alls: rör inte vald vers
+        if (verseList.length === 0) {
+          setVerses([]);
+          return;
+        }
+
         setVerses(verseList);
-        if (verseList.length > 0 && !searchParams.get('verse')) {
-          setSelectedVerse(verseList[0]);
+        // Behåll vald vers om den finns i kapitlet, annars hoppa till första
+        setSelectedVerse(prev => (verseList.includes(prev) ? prev : verseList[0]));
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Kunde inte hämta verser:', err);
+          setVerses([]);
         }
       }
-    } catch (err) {
-      console.error('Kunde inte hämta verser:', err);
     }
-  };
 
+    loadVerses();
+    return () => { cancelled = true; };
+  }, [selectedBookId, selectedChapter]);
+
+  // Hämta orddata för den valda versen
   useEffect(() => {
     if (!selectedBookId || !selectedChapter || !selectedVerse) return;
-    fetchVerseData(selectedBookId, selectedChapter, selectedVerse);
+    let cancelled = false;
+    fetchVerseData(selectedBookId, selectedChapter, selectedVerse, () => cancelled);
+    return () => { cancelled = true; };
   }, [selectedBookId, selectedChapter, selectedVerse]);
 
-  const fetchVerseData = async (bookId, chapterNum, verseNum) => {
+  const fetchVerseData = async (bookId, chapterNum, verseNum, isCancelled = () => false) => {
     setLoading(true);
     try {
       const { data: wordsData, error: wordsError } = await supabase
@@ -369,13 +409,13 @@ function GrekiskAnalysContent() {
         .eq('verse', verseNum)
         .order('word_order', { ascending: true });
 
+      if (isCancelled()) return;
       if (wordsError) throw wordsError;
 
       if (wordsData && wordsData.length > 0) {
         setCurrentWords(wordsData);
         setCurrentVerseText('');
       } else {
-        setCurrentWords([]);
         const { data: verseData } = await supabase
           .from('verses')
           .select('text')
@@ -384,14 +424,17 @@ function GrekiskAnalysContent() {
           .eq('verse', verseNum)
           .maybeSingle();
 
+        if (isCancelled()) return;
+        setCurrentWords([]);
         setCurrentVerseText(verseData?.text || '');
       }
     } catch (err) {
+      if (isCancelled()) return;
       console.error('Kunde inte hämta versdata:', err);
       setCurrentWords([]);
       setCurrentVerseText('');
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   };
 
@@ -402,6 +445,7 @@ function GrekiskAnalysContent() {
 
   useEffect(() => {
     if (!selectedWord || !selectedWord.strong_code) return;
+    let cancelled = false;
 
     async function fetchOccurrences() {
       setIsLoadingOccurrences(true);
@@ -412,6 +456,8 @@ function GrekiskAnalysContent() {
         .eq('strong_code', selectedWord.strong_code)
         .limit(visibleLimit);
 
+      if (cancelled) return;
+
       if (!error && data) {
         setOccurrences(data);
         setTotalCount(count || 0);
@@ -420,43 +466,15 @@ function GrekiskAnalysContent() {
     }
 
     fetchOccurrences();
+    return () => { cancelled = true; };
   }, [selectedWord, visibleLimit]);
 
   const getBookName = (bookId) => {
     if (!bookId) return '';
-    const cleanId = bookId.trim().toLowerCase();
-    const bookTranslations = {
-      'matthew': 'Matteusevangeliet',
-      'matt': 'Matteusevangeliet',
-      'mark': 'Markusevangeliet',
-      'mrk': 'Markusevangeliet',
-      'luke': 'Lukasevangeliet',
-      'luk': 'Lukasevangeliet',
-      'john': 'Johannesevangeliet',
-      'jhn': 'Johannesevangeliet',
-      'acts': 'Apostlagärningarna',
-      'romans': 'Romarbrevet',
-      '1corinthians': '1 Korinthierbrevet',
-      '1cor': '1 Korinthierbrevet',
-      'galatians': 'Galaterbrevet',
-      'ephesians': 'Efesierbrevet',
-      'philippians': 'Filipperbrevet',
-      'colossians': 'Kolosserbrevet',
-      '1thessalonians': '1 Thessalonikerbrevet',
-      '2thessalonians': '2 Thessalonikerbrevet',
-      '1timothy': '1 Timoteusbrevet',
-      '2timothy': '2 Timoteusbrevet',
-      'titus': 'Titusbrevet',
-      'hebrews': 'Hebreerbrevet',
-      'james': 'Jakobs brev',
-      '1peter': '1 Petrusbrevet',
-      '2peter': '2 Petrusbrevet',
-      'revelation': 'Uppenbarelseboken'
-    };
-    return bookTranslations[cleanId] || bookId;
+    const found = GREEK_BOOKS.find(b => b.id.toLowerCase() === bookId.trim().toLowerCase() || b.altId?.toLowerCase() === bookId.trim().toLowerCase());
+    return found ? found.name_sv : bookId;
   };
 
-  const currentBookObj = books.find(b => b.id.toLowerCase() === selectedBookId.toLowerCase());
   const currentVerseIndex = verses.indexOf(selectedVerse);
 
   const handlePrevVerse = () => {
@@ -470,8 +488,7 @@ function GrekiskAnalysContent() {
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
       <div>
-        
-       {/* HEADER (ATTIO-STYLE NAVIGATION) */}
+        {/* HEADER (ATTIO-STYLE NAVIGATION) */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             
@@ -487,6 +504,7 @@ function GrekiskAnalysContent() {
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
@@ -537,6 +555,7 @@ function GrekiskAnalysContent() {
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">{isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}</span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5"
                   >
@@ -546,6 +565,7 @@ function GrekiskAnalysContent() {
                 </div>
               ) : !authLoading && (
                 <button
+                  type="button"
                   onClick={() => {
                     setModalMessage('Skapa ett konto för att få tillgång!');
                     setShowAuthModal(true);
@@ -600,6 +620,7 @@ function GrekiskAnalysContent() {
                 </Link>
                 {user ? (
                   <button 
+                    type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       supabase.auth.signOut();
@@ -610,6 +631,7 @@ function GrekiskAnalysContent() {
                   </button>
                 ) : (
                   <button 
+                    type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       setShowAuthModal(true);
@@ -661,12 +683,16 @@ function GrekiskAnalysContent() {
                 <div className="relative">
                   <select
                     value={selectedBookId}
-                    onChange={(e) => setSelectedBookId(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedBookId(e.target.value);
+                      setSelectedChapter(1);
+                      setSelectedVerse(1);
+                    }}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
-                    {books.map(book => (
+                    {GREEK_BOOKS.map(book => (
                       <option key={book.id} value={book.id}>
-                        {book.name_sv || book.name_en}
+                        {book.name_sv}
                       </option>
                     ))}
                   </select>
@@ -676,7 +702,10 @@ function GrekiskAnalysContent() {
                 <div className="relative">
                   <select
                     value={selectedChapter || 1}
-                    onChange={(e) => setSelectedChapter(Number(e.target.value) || 1)}
+                    onChange={(e) => {
+                      setSelectedChapter(Number(e.target.value) || 1);
+                      setSelectedVerse(1);
+                    }}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
                     {chapters.map(chap => (
@@ -692,9 +721,9 @@ function GrekiskAnalysContent() {
                     onChange={(e) => setSelectedVerse(Number(e.target.value) || 1)}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
-                    {verses.map(v => (
+                    {verses.length > 0 ? verses.map(v => (
                       <option key={v} value={v}>Vers {v}</option>
-                    ))}
+                    )) : <option value={selectedVerse || 1}>Vers {selectedVerse || 1}</option>}
                   </select>
                   <ChevronDown className="w-4 h-4 text-[#575c58] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -719,7 +748,7 @@ function GrekiskAnalysContent() {
                       onClick={() => setRunningTranslationLang('sv')}
                       className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}
                     >
-                      SFB 2015
+                      1917
                     </button>
                     <button
                       type="button"
@@ -761,12 +790,12 @@ function GrekiskAnalysContent() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-[11px] font-semibold text-[#575c58] px-2">
-                  {currentVerseIndex + 1} / {verses.length}
+                  {verses.length > 0 && currentVerseIndex >= 0 ? `${currentVerseIndex + 1} / ${verses.length}` : '0 / 0'}
                 </span>
                 <button
                   type="button"
                   onClick={handleNextVerse}
-                  disabled={currentVerseIndex >= verses.length - 1}
+                  disabled={currentVerseIndex >= verses.length - 1 || currentVerseIndex < 0}
                   className="p-1.5 rounded-md text-[#2d3732] hover:bg-white disabled:opacity-25"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -928,7 +957,7 @@ function GrekiskAnalysContent() {
                 key={idx} 
                 onClick={() => {
                   if (occ.book_id) {
-                    setSelectedBookId(occ.book_id);
+                    setSelectedBookId(resolveBook(occ.book_id));
                     if (occ.chapter) setSelectedChapter(occ.chapter);
                     if (occ.verse) setSelectedVerse(occ.verse);
                     setSelectedWord(null);
@@ -1002,7 +1031,7 @@ function GrekiskAnalysContent() {
                     Av upphovsrättsskäl så används dessa etablerade bibelöversättningar för den löpande texten:
                   </p>
                   <ul className="list-disc pl-4 space-y-1">
-                    <li><strong>Svenska:</strong> Svenska Folkbibeln 2015 (SFB 2015)</li>
+                    <li><strong>Svenska:</strong> 1917 års kyrkobibel</li>
                     <li><strong>Engelska:</strong> English Standard Version (ESV)</li>
                     <li><strong>Spanska:</strong> Reina-Valera 1960 (RV1960)</li>
                   </ul>

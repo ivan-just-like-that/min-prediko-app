@@ -122,6 +122,68 @@ const POS = {
 
 const LANGUAGES = { H: "hebreiska", A: "arameiska" };
 
+const HEBREW_BOOKS = [
+  { id: 'Gen', altId: 'GEN', name_sv: 'Första Moseboken', chapters: 50 },
+  { id: 'Exo', altId: 'EXO', name_sv: 'Andra Moseboken', chapters: 40 },
+  { id: 'Lev', altId: 'LEV', name_sv: 'Tredje Moseboken', chapters: 27 },
+  { id: 'Num', altId: 'NUM', name_sv: 'Fjärde Moseboken', chapters: 36 },
+  { id: 'Deu', altId: 'DEU', name_sv: 'Femte Moseboken', chapters: 34 },
+  { id: 'Jos', altId: 'JOS', name_sv: 'Josua', chapters: 24 },
+  { id: 'Jdg', altId: 'JDG', name_sv: 'Domarboken', chapters: 21 },
+  { id: 'Rut', altId: 'RUT', name_sv: 'Rut', chapters: 4 },
+  { id: '1Sa', altId: '1SA', name_sv: '1 Samuelsboken', chapters: 31 },
+  { id: '2Sa', altId: '2SA', name_sv: '2 Samuelsboken', chapters: 24 },
+  { id: '1Ki', altId: '1KI', name_sv: '1 Kungaboken', chapters: 22 },
+  { id: '2Ki', altId: '2KI', name_sv: '2 Kungaboken', chapters: 25 },
+  { id: '1Ch', altId: '1CH', name_sv: '1 Krönikeboken', chapters: 29 },
+  { id: '2Ch', altId: '2CH', name_sv: '2 Krönikeboken', chapters: 36 },
+  { id: 'Ezr', altId: 'EZR', name_sv: 'Esra', chapters: 10 },
+  { id: 'Neh', altId: 'NEH', name_sv: 'Nehemja', chapters: 13 },
+  { id: 'Est', altId: 'EST', name_sv: 'Ester', chapters: 10 },
+  { id: 'Job', altId: 'JOB', name_sv: 'Job', chapters: 42 },
+  { id: 'Psa', altId: 'PSA', name_sv: 'Psaltaren', chapters: 150 },
+  { id: 'Pro', altId: 'PRO', name_sv: 'Ordspråksboken', chapters: 31 },
+  { id: 'Ecc', altId: 'ECC', name_sv: 'Predikaren', chapters: 12 },
+  { id: 'Sng', altId: 'SNG', name_sv: 'Höga Visan', chapters: 8 },
+  { id: 'Isa', altId: 'ISA', name_sv: 'Jesaja', chapters: 66 },
+  { id: 'Jer', altId: 'JER', name_sv: 'Jeremia', chapters: 52 },
+  { id: 'Lam', altId: 'LAM', name_sv: 'Klagovisorna', chapters: 5 },
+  { id: 'Eze', altId: 'EZK', name_sv: 'Hesekiel', chapters: 48 },
+  { id: 'Dan', altId: 'DAN', name_sv: 'Daniel', chapters: 12 },
+  { id: 'Hos', altId: 'HOS', name_sv: 'Hosea', chapters: 14 },
+  { id: 'Joe', altId: 'JOL', name_sv: 'Joel', chapters: 3 },
+  { id: 'Amo', altId: 'AMO', name_sv: 'Amos', chapters: 9 },
+  { id: 'Oba', altId: 'OBA', name_sv: 'Obadja', chapters: 1 },
+  { id: 'Jon', altId: 'JON', name_sv: 'Jona', chapters: 4 },
+  { id: 'Mic', altId: 'MIC', name_sv: 'Mika', chapters: 7 },
+  { id: 'Nah', altId: 'NAM', name_sv: 'Nahum', chapters: 3 },
+  { id: 'Hab', altId: 'HAB', name_sv: 'Habackuk', chapters: 3 },
+  { id: 'Zep', altId: 'ZEP', name_sv: 'Sefanja', chapters: 3 },
+  { id: 'Hag', altId: 'HAG', name_sv: 'Haggai', chapters: 2 },
+  { id: 'Zec', altId: 'ZEC', name_sv: 'Sakarja', chapters: 14 },
+  { id: 'Mal', altId: 'MAL', name_sv: 'Malaki', chapters: 4 },
+  { id: 'Zec', altId: 'ZEC', name_sv: 'Sakarja', chapters: 14 },
+  { id: 'Mal', altId: 'MAL', name_sv: 'Malaki', chapters: 4 },
+  // Apokryferna (Bibel 2000 / Evangelieboken)
+  { id: 'Wis', altId: 'WIS', name_sv: 'Salomos vishet (Apokryf)', chapters: 19, isApocrypha: true },
+  { id: 'Sir', altId: 'SIR', name_sv: 'Jesus Syraks vishet (Apokryf)', chapters: 51, isApocrypha: true },
+  { id: 'Tob', altId: 'TOB', name_sv: 'Tobit (Apokryf)', chapters: 14, isApocrypha: true },
+  { id: 'Man', altId: 'MAN', name_sv: 'Manasses bön (Apokryf)', chapters: 1, isApocrypha: true }
+];
+
+const VERKTYG_LISTA = [
+  { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
+  { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+  { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
+  { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
+  { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
+  { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
+  { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
+  { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
+  { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
+  { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
+];
+
 function lookup(table, ch, what, warnings, code) {
   if (ch === undefined || ch === "" || ch === "x") return null;
   const v = table[ch];
@@ -223,77 +285,53 @@ function parseHebrewGrammar(code) {
 }
 
 // ---------------------------------------------------------
-// LÖPANDE VERSÖVERSÄTTNING (MED UPPSTÄDAD BOKMAPPNING)
+// LÖPANDE VERSÖVERSÄTTNING
 // ---------------------------------------------------------
-function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
+function RunningVerseTranslation({ book, chapter, verse, lang = 'sv', hasVerseZero = false }) {
   const [runningText, setRunningText] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadVerse() {
       if (!book || !chapter || !verse) return;
       setLoading(true);
       try {
         const translationBookMap = {
-          gen: 'Genesis',
-          exo: 'Exodus',
-          lev: 'Leviticus',
-          num: 'Numbers',
-          deu: 'Deuteronomy',
-          jos: 'Joshua',
-          jdg: 'Judges',
-          rut: 'Ruth',
-          '1sa': '1 Samuel',
-          '2sa': '2 Samuel',
-          '1ki': '1 Kings',
-          '2ki': '2 Kings',
-          '1ch': '1 Chronicles',
-          '2ch': '2 Chronicles',
-          ezr: 'Ezra',
-          neh: 'Nehemiah',
-          est: 'Esther',
-          job: 'Job',
-          psa: 'Psalms',
-          pro: 'Proverbs',
-          ecc: 'Ecclesiastes',
-          sng: 'Song of Solomon',
-          isa: 'Isaiah',
-          jer: 'Jeremiah',
-          lam: 'Lamentations',
-          eze: 'Ezekiel',
-          ezk: 'Ezekiel',
-          dan: 'Daniel',
-          hos: 'Hosea',
-          joe: 'Joel',
-          jol: 'Joel',
-          amo: 'Amos',
-          oba: 'Obadiah',
-          jon: 'Jonah',
-          mic: 'Micah',
-          nah: 'Nahum',
-          nam: 'Nahum',
-          hab: 'Habakkuk',
-          zep: 'Zephaniah',
-          hag: 'Haggai',
-          zec: 'Zechariah',
-          mal: 'Malachi',
+          gen: 'Genesis', exo: 'Exodus', lev: 'Leviticus', num: 'Numbers',
+          deu: 'Deuteronomy', jos: 'Joshua', jdg: 'Judges', rut: 'Ruth',
+          '1sa': 'I Samuel', '2sa': 'II Samuel', '1ki': 'I Kings', '2ki': 'II Kings',
+          '1ch': 'I Chronicles', '2ch': 'II Chronicles', ezr: 'Ezra', neh: 'Nehemiah',
+          est: 'Esther', job: 'Job', psa: 'Psalms', pro: 'Proverbs',
+          ecc: 'Ecclesiastes', sng: 'Song of Solomon', isa: 'Isaiah',
+          jer: 'Jeremiah', lam: 'Lamentations', eze: 'Ezekiel', ezk: 'Ezekiel',
+          dan: 'Daniel', hos: 'Hosea', joe: 'Joel', jol: 'Joel',
+          amo: 'Amos', oba: 'Obadiah', jon: 'Jonah', mic: 'Micah',
+          nah: 'Nahum', nam: 'Nahum', hab: 'Habakkuk', zep: 'Zephaniah',
+          hag: 'Haggai', zec: 'Zechariah', mal: 'Malachi',
         };
 
         const cleanBook = String(book || '').trim().toLowerCase();
         const apiBookName = translationBookMap[cleanBook] || cleanBook;
 
-        const res = await fetch(`/api/verse-translation?book=${encodeURIComponent(apiBookName)}&chapter=${chapter}&verse=${verse}&lang=${lang}`);
+        const res = await fetch(`/api/verse-translation?book=${encodeURIComponent(apiBookName)}&chapter=${chapter}&verse=${verse}&lang=${lang}&hasVerseZero=${hasVerseZero}`);
         const data = await res.json();
-        setRunningText(data.text || '');
+        if (!isCancelled) {
+          setRunningText(data.text || '');
+        }
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadVerse();
-  }, [book, chapter, verse, lang]);
+    return () => { isCancelled = true; };
+  }, [book, chapter, verse, lang, hasVerseZero]);
 
   if (loading) {
     return <p className="text-xs text-slate-400 italic mt-3 animate-pulse">Laddar löpande översättning...</p>;
@@ -302,7 +340,7 @@ function RunningVerseTranslation({ book, chapter, verse, lang = 'sv' }) {
   if (!runningText) return null;
 
   const labelMap = {
-    sv: 'SFB 2015',
+    sv: '1917 års kyrkobibel',
     en: 'English Standard Version (ESV)',
     es: 'Reina-Valera 1960'
   };
@@ -326,64 +364,8 @@ function HebrewAnalysContent() {
   const [runningTranslationLang, setRunningTranslationLang] = useState('sv');
   const [showSourcesModal, setShowSourcesModal] = useState(false);
 
-  // States för menyer
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const verktygLista = [
-    { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
-    { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
-    { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
-    { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
-    { name: 'Bibelatlas', desc: 'Interaktiv karta & historisk tidslinje', href: '/karta', icon: Compass, isAi: false },
-    { name: 'Bibelstudieguiden', desc: 'Samtalsfrågor för grupper', href: '/bibelstudium', icon: BookMarked, isAi: true },
-    { name: 'Barn & unga', desc: 'Andakter, lektioner & konfa-material', href: '/barn-och-unga', icon: Smile, isAi: true },
-    { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
-    { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
-  ];
-
-  const hebrewBooks = [
-    { id: 'Gen', altId: 'GEN', name_sv: 'Första Moseboken', chapters: 50 },
-    { id: 'Exo', altId: 'EXO', name_sv: 'Andra Moseboken', chapters: 40 },
-    { id: 'Lev', altId: 'LEV', name_sv: 'Tredje Moseboken', chapters: 27 },
-    { id: 'Num', altId: 'NUM', name_sv: 'Fjärde Moseboken', chapters: 36 },
-    { id: 'Deu', altId: 'DEU', name_sv: 'Femte Moseboken', chapters: 34 },
-    { id: 'Jos', altId: 'JOS', name_sv: 'Josua', chapters: 24 },
-    { id: 'Jdg', altId: 'JDG', name_sv: 'Domarboken', chapters: 21 },
-    { id: 'Rut', altId: 'RUT', name_sv: 'Rut', chapters: 4 },
-    { id: '1Sa', altId: '1SA', name_sv: '1 Samuelsboken', chapters: 31 },
-    { id: '2Sa', altId: '2SA', name_sv: '2 Samuelsboken', chapters: 24 },
-    { id: '1Ki', altId: '1KI', name_sv: '1 Kungaboken', chapters: 22 },
-    { id: '2Ki', altId: '2KI', name_sv: '2 Kungaboken', chapters: 25 },
-    { id: '1Ch', altId: '1CH', name_sv: '1 Krönikeboken', chapters: 29 },
-    { id: '2Ch', altId: '2CH', name_sv: '2 Krönikeboken', chapters: 36 },
-    { id: 'Ezr', altId: 'EZR', name_sv: 'Esra', chapters: 10 },
-    { id: 'Neh', altId: 'NEH', name_sv: 'Nehemja', chapters: 13 },
-    { id: 'Est', altId: 'EST', name_sv: 'Ester', chapters: 10 },
-    { id: 'Job', altId: 'JOB', name_sv: 'Job', chapters: 42 },
-    { id: 'Psa', altId: 'PSA', name_sv: 'Psaltaren', chapters: 150 },
-    { id: 'Pro', altId: 'PRO', name_sv: 'Ordspråksboken', chapters: 31 },
-    { id: 'Ecc', altId: 'ECC', name_sv: 'Predikaren', chapters: 12 },
-    { id: 'Sng', altId: 'SNG', name_sv: 'Höga Visan', chapters: 8 },
-    { id: 'Isa', altId: 'ISA', name_sv: 'Jesaja', chapters: 66 },
-    { id: 'Jer', altId: 'JER', name_sv: 'Jeremia', chapters: 52 },
-    { id: 'Lam', altId: 'LAM', name_sv: 'Klagovisorna', chapters: 5 },
-    { id: 'Eze', altId: 'EZK', name_sv: 'Hesekiel', chapters: 48 },
-    { id: 'Dan', altId: 'DAN', name_sv: 'Daniel', chapters: 12 },
-    { id: 'Hos', altId: 'HOS', name_sv: 'Hosea', chapters: 14 },
-    { id: 'Joe', altId: 'JOL', name_sv: 'Joel', chapters: 3 },
-    { id: 'Amo', altId: 'AMO', name_sv: 'Amos', chapters: 9 },
-    { id: 'Oba', altId: 'OBA', name_sv: 'Obadja', chapters: 1 },
-    { id: 'Jon', altId: 'JON', name_sv: 'Jona', chapters: 4 },
-    { id: 'Mic', altId: 'MIC', name_sv: 'Mika', chapters: 7 },
-    { id: 'Nah', altId: 'NAM', name_sv: 'Nahum', chapters: 3 },
-    { id: 'Hab', altId: 'HAB', name_sv: 'Habackuk', chapters: 3 },
-    { id: 'Zep', altId: 'ZEP', name_sv: 'Sefanja', chapters: 3 },
-    { id: 'Hag', altId: 'HAG', name_sv: 'Haggai', chapters: 2 },
-    { id: 'Zec', altId: 'ZEC', name_sv: 'Sakarja', chapters: 14 },
-    { id: 'Mal', altId: 'MAL', name_sv: 'Malaki', chapters: 4 }
-  ];
 
   const [selectedBookId, setSelectedBookId] = useState('Gen');
   const [selectedChapter, setSelectedChapter] = useState(1);
@@ -392,14 +374,12 @@ function HebrewAnalysContent() {
   const [chapterWords, setChapterWords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // States för sidopanel / drawer vid klick
   const [selectedWord, setSelectedWord] = useState(null);
   const [occurrences, setOccurrences] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [visibleLimit, setVisibleLimit] = useState(50);
   const [isLoadingOccurrences, setIsLoadingOccurrences] = useState(false);
 
-  // States för hover tooltip
   const [hoveredWord, setHoveredWord] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -412,15 +392,8 @@ function HebrewAnalysContent() {
 
   useEffect(() => {
     fetchProfile();
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        fetchProfile();
-      } else {
-        setUser(null);
-        setCredits(null);
-        setIsTester(false);
-        setAuthLoading(false);
-      }
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      fetchProfile();
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
@@ -450,58 +423,75 @@ function HebrewAnalysContent() {
     const chapterParam = searchParams.get('chapter');
     const verseParam = searchParams.get('verse');
 
-    if (bookParam) setSelectedBookId(bookParam);
+    if (bookParam) {
+      const found = HEBREW_BOOKS.find(b => 
+        b.id.toLowerCase() === bookParam.toLowerCase() || 
+        b.altId.toLowerCase() === bookParam.toLowerCase()
+      );
+      setSelectedBookId(found ? found.id : bookParam);
+    }
     if (chapterParam) setSelectedChapter(Number(chapterParam) || 1);
     if (verseParam) setSelectedVerse(Number(verseParam) || 1);
   }, [searchParams]);
 
-  const currentBookObj = hebrewBooks.find(b => b.id === selectedBookId) || hebrewBooks[0];
+  const currentBookObj = HEBREW_BOOKS.find(b => b.id === selectedBookId) || HEBREW_BOOKS[0];
   const chapters = Array.from({ length: currentBookObj.chapters }, (_, i) => i + 1);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadChapterWords() {
+      const bookObj = HEBREW_BOOKS.find(b => b.id === selectedBookId) || HEBREW_BOOKS[0];
+
+      // Apokryfer finns inte i det masoretiska TAHOT-datasetet
+      if (bookObj.isApocrypha) {
+        if (!isCancelled) {
+          setChapterWords([]);
+          setLoading(false);
+        }
+        return;
+      }
+
       setLoading(true);
       try {
-        const targetCode = currentBookObj.altId || selectedBookId;
-        let { data, error } = await supabase
+        const id1 = bookObj.id;
+        const id2 = bookObj.altId;
+        const id3 = selectedBookId;
+        
+        const { data, error } = await supabase
           .from('hebrew_verses')
           .select('*')
-          .ilike('reference', `${targetCode}.${selectedChapter}.%`)
+          .or(`reference.ilike.${id1}.${selectedChapter}.%,reference.ilike.${id2}.${selectedChapter}.%,reference.ilike.${id3}.${selectedChapter}.%,reference.ilike.${id1.toLowerCase()}.${selectedChapter}.%`)
           .order('id', { ascending: true });
 
-        if ((!data || data.length === 0) && targetCode !== selectedBookId) {
-          const res2 = await supabase
-            .from('hebrew_verses')
-            .select('*')
-            .ilike('reference', `${selectedBookId}.${selectedChapter}.%`)
-            .order('id', { ascending: true });
-          data = res2.data;
-          error = res2.error;
-        }
-
         if (error) throw error;
-        
-        setChapterWords(data || []);
+        if (!isCancelled) {
+          setChapterWords(data || []);
+        }
       } catch (err) {
         console.error('Kunde inte hämta kapiteldata från Supabase:', err);
-        setChapterWords([]);
+        if (!isCancelled) {
+          setChapterWords([]);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadChapterWords();
+    return () => { isCancelled = true; };
   }, [selectedBookId, selectedChapter]);
 
-  // Återställ limit vid nytt valt ord
   useEffect(() => {
     if (!selectedWord || !selectedWord.strongs) return;
     setVisibleLimit(50);
   }, [selectedWord?.strongs]);
 
-  // Hämta förekomster (konkordans) med paginering
   useEffect(() => {
     if (!selectedWord || !selectedWord.strongs) return;
+    let isCancelled = false;
 
     async function fetchOccurrences() {
       setIsLoadingOccurrences(true);
@@ -511,25 +501,49 @@ function HebrewAnalysContent() {
         .eq('strongs', selectedWord.strongs)
         .limit(visibleLimit);
 
-      if (!error && data) {
+      if (!isCancelled && !error && data) {
         setOccurrences(data);
         setTotalCount(count || 0);
       }
-      setIsLoadingOccurrences(false);
+      if (!isCancelled) {
+        setIsLoadingOccurrences(false);
+      }
     }
 
     fetchOccurrences();
+    return () => { isCancelled = true; };
   }, [selectedWord, visibleLimit]);
 
+  const hasPsalmHeader = selectedBookId === 'Psa' && chapterWords.some(w => {
+    const cv = (w.chapter_verse || '').split('(')[0];
+    const ref = (w.reference || '').split('(')[0];
+    return cv.endsWith('.0') || ref.includes('.0#');
+  });
+
   const getVerseNumber = (word) => {
-    if (word.chapter_verse && word.chapter_verse.includes('.')) {
-      return Number(word.chapter_verse.split('.')[1]);
+    let rawVerse = 1;
+    let cv = word.chapter_verse || '';
+    if (cv.includes('(')) {
+      cv = cv.split('(')[0];
     }
-    const parts = (word.reference || '').split('.');
-    if (parts.length >= 3) {
-      return Number(parts[2].split('#')[0]);
+    if (cv && cv.includes('.')) {
+      const num = Number(cv.split('.')[1]);
+      rawVerse = isNaN(num) ? 1 : num;
+    } else {
+      const ref = word.reference || '';
+      const cleanRef = ref.split('(')[0];
+      const parts = cleanRef.split('.');
+      if (parts.length >= 3) {
+        const num = Number(parts[2].split('#')[0]);
+        rawVerse = isNaN(num) ? 1 : num;
+      }
     }
-    return 1;
+
+    if (hasPsalmHeader) {
+      return rawVerse + 1;
+    }
+
+    return rawVerse;
   };
 
   const getWordIndex = (word) => {
@@ -562,12 +576,9 @@ function HebrewAnalysContent() {
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
       <div>
-        
-        {/* HEADER (ATTIO-STYLE NAVIGATION) */}
+        {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
-            {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight text-[#1a1d1b]">PREDIKA</span>
@@ -576,7 +587,6 @@ function HebrewAnalysContent() {
                 </span>
               </Link>
 
-              {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
                   <button 
@@ -589,13 +599,12 @@ function HebrewAnalysContent() {
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* DROPDOWN MENYPANEL */}
                   {toolsOpen && (
                     <div 
                       onMouseEnter={() => setToolsOpen(true)}
                       className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
                     >
-                      {verktygLista.map((v) => {
+                      {VERKTYG_LISTA.map((v) => {
                         const Icon = v.icon;
                         return (
                           <Link 
@@ -630,7 +639,6 @@ function HebrewAnalysContent() {
               </nav>
             </div>
 
-            {/* HÖGER NAVIGATION (LOGIN / KONTO) */}
             <div className="hidden md:flex items-center gap-4">
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
@@ -661,7 +669,6 @@ function HebrewAnalysContent() {
               )}
             </div>
 
-            {/* MOBIL KNAPP */}
             <button 
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -671,12 +678,11 @@ function HebrewAnalysContent() {
             </button>
           </div>
 
-          {/* MOBIL MENY */}
           {mobileMenuOpen && (
             <div className="md:hidden bg-white border-b border-[#e8e4df] px-6 py-4 space-y-4">
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
-                {verktygLista.map((v) => (
+                {VERKTYG_LISTA.map((v) => (
                   <Link 
                     key={v.href} 
                     href={v.href} 
@@ -728,7 +734,6 @@ function HebrewAnalysContent() {
           )}
         </header>
 
-        {/* ANVÄNDARSTATUS */}
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
@@ -737,7 +742,6 @@ function HebrewAnalysContent() {
           </div>
         )}
 
-        {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
           
           <div className="mb-8">
@@ -756,7 +760,6 @@ function HebrewAnalysContent() {
                 </p>
               </div>
 
-              {/* RULLGARDINER */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
                   <select
@@ -768,7 +771,7 @@ function HebrewAnalysContent() {
                     }}
                     className="appearance-none bg-[#faf8f5] border border-[#e8e4df] text-[#1a1d1b] text-xs font-semibold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-[#2d3732] cursor-pointer"
                   >
-                    {hebrewBooks.map(book => (
+                    {HEBREW_BOOKS.map(book => (
                       <option key={book.id} value={book.id}>{book.name_sv}</option>
                     ))}
                   </select>
@@ -807,7 +810,29 @@ function HebrewAnalysContent() {
             </div>
           </div>
 
-          {/* AKTIV VERSVISNING */}
+          {/* VERSUS DISCLAIMERS (Job & Jonah) */}
+          {(() => {
+            const getVersificationNotice = () => {
+              if (selectedBookId === 'Job' && (selectedChapter === 38 || selectedChapter === 39 || selectedChapter === 40 || selectedChapter === 41)) {
+                return "Observera: Versindelningen i detta kapitel skiljer sig mellan den masoretiska grundtexten och västerländska översättningar (som 1917 och ESV). Jämför gärna med en tryckt bibel om textraderna förskjuts.";
+              }
+              if (selectedBookId === 'Jon' && (selectedChapter === 1 || selectedChapter === 2)) {
+                return "Observera: Jona 1:17 i grundtexten motsvarar ofta Jona 2:1 i svenska och engelska översättningar, vilket gör att verserna i kapitel 2 ligger ett steg förskjutna.";
+              }
+              return null;
+            };
+            const notice = getVersificationNotice();
+            return notice ? (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm flex items-start gap-3 shadow-sm">
+                <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-semibold block mb-0.5">Viktig notis om versindelning</span>
+                  {notice}
+                </div>
+              </div>
+            ) : null;
+          })()}
+
           <section className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[#e8e4df] pb-3">
               <div className="flex items-center gap-4 flex-wrap">
@@ -815,10 +840,9 @@ function HebrewAnalysContent() {
                   <span>{currentBookObj ? currentBookObj.name_sv : ''} {selectedChapter}:{selectedVerse}</span>
                 </div>
                 
-                {/* Val av löpande översättning + Info-knapp */}
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-[#faf8f5] border border-[#e8e4df] rounded-lg p-0.5 text-[11px] font-medium">
-                    <button type="button" onClick={() => setRunningTranslationLang('sv')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>SFB 2015</button>
+                    <button type="button" onClick={() => setRunningTranslationLang('sv')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'sv' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>1917</button>
                     <button type="button" onClick={() => setRunningTranslationLang('en')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'en' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>ESV</button>
                     <button type="button" onClick={() => setRunningTranslationLang('es')} className={`px-2 py-1 rounded-md transition-colors ${runningTranslationLang === 'es' ? 'bg-white text-[#1a1d1b] shadow-sm font-bold' : 'text-[#8c918d]'}`}>Reina-Valera</button>
                   </div>
@@ -842,7 +866,29 @@ function HebrewAnalysContent() {
               </div>
             </div>
 
-            {loading ? (
+            {/* PSALM DISCLAIMER FOR ESV / REINA-VALERA */}
+            {selectedBookId === 'Psa' && runningTranslationLang !== 'sv' && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-xs flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <div>
+                  Obs! Den {runningTranslationLang === 'es' ? 'spanska' : 'engelska'} översättningen i Psaltaren kan ligga i otakt med grundtexten på grund av olika hantering av psalmöverskrifter (vers 0/1). Svenska 1917 är fullt synkad.
+                </div>
+              </div>
+            )}
+
+            {currentBookObj.isApocrypha ? (
+              <div className="my-4 p-5 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-xs sm:text-sm flex items-start gap-3.5">
+                <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="space-y-1.5 leading-relaxed">
+                  <strong className="font-bold block text-amber-950">
+                    Apokryf skrift ({currentBookObj.name_sv.replace(' (Apokryf)', '')})
+                  </strong>
+                  <p>
+                    Den hebreiska grundtextläsaren täcker i nuläget inte apokryferna (tilläggen till Gamla testamentet i Bibel 2000 och den svenska evangelieboken), utan bygger på den masoretiska kanon (<em>Codex Leningradensis</em>).
+                  </p>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="py-12 text-center text-xs text-[#8c918d]">Laddar hebreisk grundtext...</div>
             ) : currentWords.length > 0 ? (
               <div>
@@ -861,36 +907,32 @@ function HebrewAnalysContent() {
                       }}
                       onMouseLeave={() => setHoveredWord(null)}
                     >
-                      {/* 1. Originalhebreiska */}
                       <span className="text-3xl font-serif text-[#1a1d1b] font-medium group-hover:text-blue-700 transition-colors" dir="rtl">
                         {word.hebrew}
                       </span>
                       
-                      {/* 2. Transliteration */}
                       <span className="text-[11px] font-mono text-amber-700 mt-1" dir="ltr">
                         {word.transliteration}
                       </span>
 
-                      {/* 3. Glosa */}
                       <span className="text-xs font-semibold text-blue-800 mt-1 max-w-[120px] text-center truncate" dir="ltr">
                         {word.translation || '—'}
                       </span>
 
-                      {/* 4. Strongs / Grammar */}
                       <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400" dir="ltr">
                         {word.strongs && <span>#{word.strongs}</span>}
-                        {word.grammar && <span>• {word.grammar}</span>}
+                        {word.grammar && <span>{word.grammar}</span>}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Löpande versöversättning */}
                 <RunningVerseTranslation 
                   book={selectedBookId} 
                   chapter={selectedChapter} 
                   verse={selectedVerse} 
-                  lang={runningTranslationLang} 
+                  lang={runningTranslationLang}
+                  hasVerseZero={verses.includes(0)}
                 />
               </div>
             ) : (
@@ -900,7 +942,6 @@ function HebrewAnalysContent() {
             )}
           </section>
 
-          {/* KÄLL- OCH INFO-MODAL (FÖR INFO-KNAPPEN) */}
           {showSourcesModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
               <div className="bg-white rounded-2xl border border-[#e8e4df] max-w-lg w-full p-6 shadow-2xl relative">
@@ -934,7 +975,7 @@ function HebrewAnalysContent() {
                       Av upphovsrättsskäl används dessa etablerade bibelöversättningar för den löpande texten:
                     </p>
                     <ul className="list-disc pl-4 space-y-1">
-                      <li><strong>Svenska:</strong> Svenska Folkbibeln 2015 (SFB 2015)</li>
+                      <li><strong>Svenska:</strong> 1917 års kyrkobibel</li>
                       <li><strong>Engelska:</strong> English Standard Version (ESV)</li>
                       <li><strong>Spanska:</strong> Reina-Valera 1960 (RV1960)</li>
                     </ul>
@@ -953,7 +994,6 @@ function HebrewAnalysContent() {
             </div>
           )}
 
-          {/* HOVER TOOLTIP */}
           {hoveredWord && (
             <div 
               className="fixed z-50 bg-[#1a1d1b] text-white text-xs p-3.5 rounded-xl shadow-2xl pointer-events-none max-w-xs space-y-1.5 border border-white/10"
@@ -977,7 +1017,6 @@ function HebrewAnalysContent() {
             </div>
           )}
 
-          {/* KLICK-SIDOPANEL (DRAWER) FÖR ORDANALYS & KONKORDANS */}
           {selectedWord && (
             <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white shadow-2xl border-l border-[#e8e4df] z-50 p-6 flex flex-col">
               <div className="flex justify-between items-start border-b border-[#e8e4df] pb-4">
@@ -1021,7 +1060,7 @@ function HebrewAnalysContent() {
                           const chapNum = Number(parts[1]);
                           const versePart = parts[2] ? Number(parts[2].split('#')[0]) : 1;
                           
-                          const matchedBook = hebrewBooks.find(b => 
+                          const matchedBook = HEBREW_BOOKS.find(b => 
                             b.id.toLowerCase() === bookRef.toLowerCase() || 
                             (b.altId && b.altId.toLowerCase() === bookRef.toLowerCase())
                           );
@@ -1049,7 +1088,6 @@ function HebrewAnalysContent() {
                   </div>
                 ))}
 
-                {/* "VISA FLER"-KNAPP FÖR PAGINERINGS-LIMIT */}
                 {occurrences.length < totalCount && (
                   <button 
                     type="button"
@@ -1067,7 +1105,6 @@ function HebrewAnalysContent() {
         </main>
       </div>
 
-      {/* FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 space-y-3">
@@ -1075,13 +1112,13 @@ function HebrewAnalysContent() {
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
               En modern plattform för teologisk fördjupning, predikoförberedelse och undervisning.
             </p>
-            <p className="text-[11px] text-[#8c918d]">© 2026 Patric Ivan</p>
+            <p className="text-[11px] text-[#8c918d]">© {new Date().getFullYear()} Patric Ivan</p>
           </div>
 
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Verktyg</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              {verktygLista.map((v) => (
+              {VERKTYG_LISTA.map((v) => (
                 <li key={v.href}>
                   <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
                 </li>
@@ -1101,7 +1138,6 @@ function HebrewAnalysContent() {
         </div>
       </footer>
 
-      {/* AUTH MODAL */}
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 

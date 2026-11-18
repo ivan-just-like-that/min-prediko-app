@@ -184,7 +184,7 @@ export const HELGDAGAR = [
     namn: '4:e söndagen e. trettondedagen',
     tema: 'Jesus är vårt hopp',
     psaltarpsalm: 'Ps 107:28-32',
-    argang1: { gt: 'Job:38:1-11', epistel: '2 Kor 1:8-11', evangelium: 'Mark 4:35-41' },
+    argang1: { gt: 'Job 38:1-11', epistel: '2 Kor 1:8-11', evangelium: 'Mark 4:35-41' },
     argang2: { gt: 'Jes 40:26-31', epistel: 'Jak 5:13-16', evangelium: 'Joh 5:1-9' },
     argang3: { gt: '1 Kung 17:1-6', epistel: '2 Tim 1:7-10', evangelium: 'Matt 14:22-33' }
   },
@@ -1194,99 +1194,207 @@ function PredikoideerInnehall() {
             <section className="space-y-6">
               
               {/* RUTA 2: FÖRDJUPNING & GRUNDTEXT */}
-              <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
-                    2. Fördjupning & grundtext
-                  </h2>
-                  <span className="text-[10px] font-semibold text-[#575c58] bg-[#faf8f5] px-2.5 py-0.5 rounded-full border border-[#e8e4df]">
-                    Öppnas i nytt fönster
-                  </span>
+                <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                  <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
+                      2. Fördjupning & grundtext
+                    </h2>
+                    <span className="text-[10px] font-semibold text-[#575c58] bg-[#faf8f5] px-2.5 py-0.5 rounded-full border border-[#e8e4df]">
+                      Öppnas i nytt fönster
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#575c58] mb-4 leading-relaxed">
+                    Öppna <strong className="text-[#1a1d1b]">{valdPredikotext}</strong> i ett fördjupningsverktyg.
+                  </p>
+
+                   {/* HJÄLPFUNKTION FÖR ATT PARSA UT BOK, KAPITEL OCH VERS */}
+                   {(() => {
+const parseBibleRef = (refStr) => {
+                      if (!refStr) return { book: 'Gen', chapter: 1, verse: 1 };
+                      
+                      const clean = refStr.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '').trim();
+                      const match = clean.match(/^([1-5]?\s*[A-Za-zåäöÅÄÖ]+(?:\s+[A-Za-zåäöÅÄÖ]+)?)\s+(\d+):(\d+)/);
+                      
+                      if (match) {
+                        const bookName = match[1].replace(/\s+/g, ' ').trim().toLowerCase();
+                        const chapterNum = Number(match[2]) || 1;
+                        const verseNum = Number(match[3]) || 1;
+                        
+                        const bibleBookMap = {
+                          // Gamla testamentet
+                          '1 mos': 'Gen', 'första moseboken': 'Gen', 'gen': 'Gen', 'genesis': 'Gen',
+                          '2 mos': 'Exo', 'andra moseboken': 'Exo', 'exo': 'Exo', 'exodus': 'Exo',
+                          '3 mos': 'Lev', 'tredje moseboken': 'Lev', 'lev': 'Lev', 'leviticus': 'Lev',
+                          '4 mos': 'Num', 'fjärde moseboken': 'Num', 'num': 'Num', 'numbers': 'Num',
+                          '5 mos': 'Deu', 'femte moseboken': 'Deu', 'deu': 'Deu', 'deuteronomy': 'Deu',
+                          'jos': 'Jos', 'josua': 'Jos', 'joshua': 'Jos',
+                          'dom': 'Jdg', 'domarboken': 'Jdg', 'jdg': 'Jdg', 'judges': 'Jdg',
+                          'rut': 'Rut', 'ruth': 'Ruth',
+                          '1 sam': '1Sa', '1 samuelsboken': '1Sa', '1sa': '1Sa',
+                          '2 sam': '2Sa', '2 samuelsboken': '2Sa', '2sa': '2Sa',
+                          '1 kung': '1Ki', '1 kungaboken': '1Ki', '1ki': '1Ki',
+                          '2 kung': '2Ki', '2 kungaboken': '2Ki', '2ki': '2Ki',
+                          '1 krön': '1Ch', '1 krönikeboken': '1Ch', '1ch': '1Ch',
+                          '2 krön': '2Ch', '2 krönikeboken': '2Ch', '2ch': '2Ch',
+                          'esr': 'Ezr', 'esra': 'Ezr', 'ezr': 'Ezr',
+                          'neh': 'Neh', 'nehemja': 'Neh', 'nehemiah': 'Neh',
+                          'est': 'Est', 'ester': 'Est', 'esther': 'Est',
+                          'job': 'Job',
+                          'ps': 'Psa', 'psaltaren': 'Psa', 'psa': 'Psa', 'psalms': 'Psa',
+                          'ords': 'Pro', 'ordsp': 'Pro', 'ordspråksboken': 'Pro', 'pro': 'Pro', 'proverbs': 'Pro',
+                          'pred': 'Ecc', 'predikaren': 'Ecc', 'ecc': 'Ecc', 'ecclesiastes': 'Ecc',
+                          'höga v': 'Sng', 'hög': 'Sng', 'höga visan': 'Sng', 'sng': 'Sng',
+                          'jes': 'Isa', 'jesaja': 'Isa', 'isa': 'Isa', 'isaiah': 'Isa',
+                          'jer': 'Jer', 'jeremia': 'Jer', 'jeremiah': 'Jer',
+                          'klag': 'Lam', 'klagovisorna': 'Lam', 'lam': 'Lam',
+                          'hes': 'Eze', 'hesekiel': 'Eze', 'eze': 'Eze', 'ezk': 'Eze',
+                          'dan': 'Dan', 'daniel': 'Dan',
+                          'hos': 'Hos', 'hosea': 'Hos',
+                          'joel': 'Joe', 'jol': 'Joe',
+                          'amos': 'Amo', 'amo': 'Amo',
+                          'obad': 'Oba', 'obadja': 'Oba', 'oba': 'Oba',
+                          'jona': 'Jon', 'jon': 'Jon', 'jonah': 'Jon',
+                          'mika': 'Mic', 'mik': 'Mic', 'micah': 'Mic',
+                          'nah': 'Nah', 'nahum': 'Nah', 'nam': 'Nah',
+                          'hab': 'Hab', 'habackuk': 'Hab',
+                          'sef': 'Zep', 'sefanja': 'Zep', 'zep': 'Zep',
+                          'hag': 'Hag', 'haggai': 'Hag',
+                          'sak': 'Zec', 'sakarja': 'Zec', 'zec': 'Zec',
+                          'mal': 'Mal', 'malaki': 'Mal',
+                          // Apokryfer
+                          'vish': 'Wis', 'visheten': 'Wis', 'wis': 'Wis',
+                          'syr': 'Sir', 'syrak': 'Sir', 'sir': 'Sir',
+                          'tob': 'Tob', 'tobit': 'Tob',
+                          'man': 'Man', 'manasses bön': 'Man',
+                          // Nya testamentet (mappade direkt till den grekiska läsarens ID:n)
+                          'matt': 'matthew', 'matteus': 'matthew', 'matthew': 'matthew',
+                          'mark': 'mark', 'markusevangeliet': 'mark', 'markus': 'mark', 'mrk': 'mark',
+                          'luk': 'luke', 'lukasevangeliet': 'luke', 'lukas': 'luke', 'luke': 'luke',
+                          'joh': 'john', 'johannesevangeliet': 'john', 'johannes': 'john', 'john': 'john', 'jhn': 'john',
+                          'apg': 'acts', 'apostlagärningarna': 'acts', 'acts': 'acts',
+                          'rom': 'romans', 'romarbrevet': 'romans', 'romans': 'romans',
+                          '1 kor': '1corinthians', '1kor': '1corinthians', '1co': '1corinthians', '1corinthians': '1corinthians',
+                          '2 kor': '2corinthians', '2kor': '2corinthians', '2co': '2corinthians', '2corinthians': '2corinthians',
+                          'gal': 'galatians', 'galaterbrevet': 'galatians', 'galatians': 'galatians',
+                          'ef': 'ephesians', 'efesierbrevet': 'ephesians', 'eph': 'ephesians', 'ephesians': 'ephesians',
+                          'fil': 'philippians', 'filipperbrevet': 'philippians', 'php': 'philippians', 'philippians': 'philippians',
+                          'kol': 'colossians', 'kolosserbrevet': 'colossians', 'col': 'colossians', 'colossians': 'colossians',
+                          '1 tess': '1thessalonians', '1tess': '1thessalonians', '1th': '1thessalonians', '1thessalonians': '1thessalonians', '1 thess': '1thessalonians',
+                          '2 tess': '2thessalonians', '2tess': '2thessalonians', '2th': '2thessalonians', '2thessalonians': '2thessalonians', '2 thess': '2thessalonians',
+                          '1 tim': '1timothy', '1tim': '1timothy', '1ti': '1timothy', '1timothy': '1timothy',
+                          '2 tim': '2timothy', '2tim': '2timothy', '2ti': '2timothy', '2timothy': '2timothy',
+                          'tit': 'titus', 'titusbrevet': 'titus', 'titus': 'titus',
+                          'filem': 'philemon', 'philemon': 'philemon', 'phm': 'philemon',
+                          'heb': 'hebrews', 'hebreerbrevet': 'hebrews', 'hebrews': 'hebrews', 'hebr': 'hebrews',
+                          'jak': 'james', 'jakobs brev': 'james', 'jakob': 'james', 'james': 'james',
+                          '1 pet': '1peter', '1pet': '1peter', '1pe': '1peter', '1peter': '1peter',
+                          '2 pet': '2peter', '2pet': '2peter', '2pe': '2peter', '2peter': '2peter',
+                          '1 joh': '1john', '1joh': '1john', '1jn': '1john', '1john': '1john',
+                          '2 joh': '2john', '2joh': '2john', '2jn': '2john', '2john': '2john',
+                          '3 joh': '3john', '3joh': '3john', '3jn': '3john', '3john': '3john',
+                          'jud': 'jude', 'judas brev': 'jude', 'jude': 'jude',
+                          'upp': 'revelation', 'uppenbarelseboken': 'revelation', 'rev': 'revelation', 'revelation': 'revelation'
+                        };
+
+                        const mappedBook = bibleBookMap[bookName] || 'Gen';
+
+                        return {
+                          book: mappedBook,
+                          chapter: chapterNum,
+                          verse: verseNum
+                        };
+                      }
+                      
+                      return { book: 'Gen', chapter: 1, verse: 1 };
+                    };
+
+                    const parsed = parseBibleRef(valdPredikotext);
+                    const interlinearParams = `book=${parsed.book}&chapter=${parsed.chapter}&verse=${parsed.verse}`;
+
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        
+                        {/* Historiska kommentarer */}
+                        <a
+                          href={`/historik?text=${encodeURIComponent(valdPredikotext)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732] transition-all group flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
+                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                              Historiska kommentarer
+                            </div>
+                            <div className="text-[11px] text-[#8c918d] leading-snug">
+                              Kontext & bakgrund
+                            </div>
+                          </div>
+                        </a>
+
+                        {/* Grekisk interlinjär läsare (NT) */}
+                        <a
+                          href={`/grekiska?${interlinearParams}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                            valdTextTyp !== 'gt'
+                              ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                              : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                                <Languages className="w-4 h-4" />
+                              </div>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
+                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                              Grekisk läsare
+                            </div>
+                            <div className="text-[11px] text-[#8c918d] leading-snug">
+                              NT grundtext
+                            </div>
+                          </div>
+                        </a>
+
+                        {/* Hebreisk interlinjär läsare (GT) */}
+                        <a
+                          href={`/hebreiska?${interlinearParams}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                            valdTextTyp === 'gt'
+                              ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                              : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                                <Languages className="w-4 h-4" />
+                              </div>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
+                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
+                              Hebreisk läsare
+                            </div>
+                            <div className="text-[11px] text-[#8c918d] leading-snug">
+                              GT grundtext
+                            </div>
+                          </div>
+                        </a>
+                      </div>
+                    );
+                  })()}
                 </div>
-
-                <p className="text-xs text-[#575c58] mb-4 leading-relaxed">
-                  Öppna <strong className="text-[#1a1d1b]">{valdPredikotext}</strong> i ett fördjupningsverktyg. Textstället fylls i automatiskt i sökrutan på nästa sida.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Historiska kommentarer */}
-                  <a
-                    href={`/historik?text=${encodeURIComponent(valdPredikotext)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732] transition-all group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                          <BookOpen className="w-4 h-4" />
-                        </div>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                      </div>
-                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                        Historiska kommentarer
-                      </div>
-                      <div className="text-[11px] text-[#8c918d] leading-snug">
-                        Kontext & bakgrund
-                      </div>
-                    </div>
-                  </a>
-
-                  {/* Grekisk interlinjär läsare */}
-                  <a
-                    href={`/grekiska?text=${encodeURIComponent(valdPredikotext)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
-                      valdTextTyp !== 'gt'
-                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
-                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                          <Languages className="w-4 h-4" />
-                        </div>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                      </div>
-                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                        Grekisk läsare
-                      </div>
-                      <div className="text-[11px] text-[#8c918d] leading-snug">
-                        NT grundtext
-                      </div>
-                    </div>
-                  </a>
-
-                  {/* Hebreisk interlinjär läsare */}
-                  <a
-                    href={`/hebreiska?text=${encodeURIComponent(valdPredikotext)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
-                      valdTextTyp === 'gt'
-                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
-                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                          <Languages className="w-4 h-4" />
-                        </div>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                      </div>
-                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                        Hebreisk läsare
-                      </div>
-                      <div className="text-[11px] text-[#8c918d] leading-snug">
-                        GT grundtext
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              </div>
 
               {/* RUTA 3: AI-ASSISTENT */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
