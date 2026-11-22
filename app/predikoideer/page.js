@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -614,7 +614,7 @@ export const HELGDAGAR = [
     argang3: { gt: 'Amos 8:9-12', epistel: 'Fil 3:20-4:1', evangelium: 'Luk 17:20-30' }
   },
   {
-    namn: 'Domssöndagen',
+    namn: 'Domssöndagen / Kristus konungens dag',
     tema: 'Kristi återkomst',
     psaltarpsalm: 'Ps 102:26-29',
     argang1: { gt: 'Jes 65:17-19', epistel: '2 Pet 3:8-13', evangelium: 'Matt 25:31-46' },
@@ -686,7 +686,6 @@ export const HELGDAGAR = [
     argang3: { gt: 'Jos 1:10-11', epistel: 'Heb 11:13-16', evangelium: 'Luk 20:37-38' }
   },
 ];
-
 function parseBibleRef(refStr) {
   if (!refStr) return { book: 'Gen', chapter: 1, verse: 1 };
 
@@ -953,6 +952,7 @@ function parseBibleRef(refStr) {
 function PredikoideerInnehall() {
   const searchParams = useSearchParams();
 
+  const [kyrkoar, setKyrkoar] = useState(null);
   const [extraHelgdagar, setExtraHelgdagar] = useState([]);
   const allaHelgdagar = [...HELGDAGAR, ...extraHelgdagar];
 
@@ -989,6 +989,68 @@ function PredikoideerInnehall() {
     { name: 'Predikantpepp', desc: 'Uppmuntran, quiz, poesi mm', href: '/predikantpepp', icon: Sprout, isAi: true },
     { name: 'Populärt', desc: 'Se vad andra utforskar', href: '/populart', icon: TrendingUp, isAi: false },
   ];
+
+const harForvaltFranKyrkoar = useRef(false);
+
+  // --- HÄMTA KYRKOÅRSDATA, FÖRVÄLJ NÄSTKOMMANDE HELGDAG & INNEVARANDE ÅRGÅNG (ENDAST EN GÅNG) ---
+  useEffect(() => {
+    let active = true;
+
+    const normaliseraNamn = (str) =>
+      String(str || '')
+        .toLowerCase()
+        .replace(/\be\.\s*/g, 'efter ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const delaAlternativ = (str) =>
+      normaliseraNamn(str)
+        .split(/\s*(?:\/|\beller\b)\s*/i)
+        .map((del) => del.trim())
+        .filter(Boolean);
+
+    fetch('/api/kyrkoaret')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active || !data?.holiday) return;
+        setKyrkoar(data.holiday);
+
+        if (harForvaltFranKyrkoar.current) return;
+        harForvaltFranKyrkoar.current = true;
+
+        const urlHelgdag = searchParams.get('helgdag');
+        const urlArgang = searchParams.get('argang');
+        const giltigaArgangar = ['argang1', 'argang2', 'argang3'];
+
+        if (!urlHelgdag && data.holiday.name) {
+          const apiAlternativ = delaAlternativ(data.holiday.name);
+
+          const matchandeHelgdag = allaHelgdagar.find((h) => {
+            const listaAlternativ = delaAlternativ(h.namn);
+            return listaAlternativ.some((l) => apiAlternativ.includes(l));
+          });
+
+          if (matchandeHelgdag) {
+            setValdHelgdagNamn(matchandeHelgdag.namn);
+          }
+        }
+
+        if (!urlArgang || !giltigaArgangar.includes(urlArgang)) {
+          const num =
+            data.holiday.seriesNumber ||
+            Number(String(data.holiday.series || '').match(/([1-3])/)?.[1]);
+
+          if (num === 1 || num === 2 || num === 3) {
+            setValdArgang(`argang${num}`);
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams]);
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
   useEffect(() => {
@@ -1048,7 +1110,7 @@ function PredikoideerInnehall() {
     const urlTextTyp = searchParams.get('textTyp');
     const urlArgang = searchParams.get('argang');
 
-    if (urlArgang) {
+    if (urlArgang && ['argang1', 'argang2', 'argang3'].includes(urlArgang)) {
       setValdArgang(urlArgang);
     }
 
@@ -1413,7 +1475,7 @@ function PredikoideerInnehall() {
 
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
-        {/* INTRO-RUTA */}
+          {/* INTRO-RUTA */}
           <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
             <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -1448,6 +1510,47 @@ function PredikoideerInnehall() {
                 </p>
               </div>
             </div>
+
+            {/* TUNN SIDFOT FÖR KYRKOÅRET */}
+            {kyrkoar && (
+              <div className="mt-5 pt-4 border-t border-[#e8e4df]/80 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs text-[#575c58]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[#8c918d] shrink-0">
+                    {kyrkoar.isToday ? 'Idag:' : 'Nästa helgdag:'}
+                  </span>
+                  <span className="font-semibold text-[#1a1d1b] truncate">
+                    {kyrkoar.name}
+                  </span>
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${kyrkoar.color.dot}`}
+                    title={
+                      kyrkoar.isToday
+                        ? `Liturgisk färg: ${kyrkoar.color.label}`
+                        : `Aktuell liturgisk färg i veckan (från ${kyrkoar.colorSourceName}): ${kyrkoar.color.label}`
+                    }
+                  />
+                  <span className="text-[#8c918d] shrink-0">
+                    ({new Date(kyrkoar.date).toLocaleDateString('sv-SE', {
+                      day: 'numeric',
+                      month: 'short',
+                    })})
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-[#575c58] shrink-0">
+                  <span>
+                    {kyrkoar.isToday ? 'Färg:' : 'Veckans färg:'}{' '}
+                    <strong className="font-medium text-[#1a1d1b]">{kyrkoar.color.label}</strong>
+                  </span>
+                  {kyrkoar.series && (
+                    <>
+                      <span className="text-[#d6d1ca]">•</span>
+                      <span>{kyrkoar.series}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">

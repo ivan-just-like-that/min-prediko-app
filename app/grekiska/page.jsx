@@ -608,7 +608,8 @@ function GrekiskAnalysContent() {
     }
   };
 
-  const handleSelectWord = (word) => {
+    const handleSelectWord = (word) => {
+
     setSelectedWord(word);
     setShowConcordance(false);
     setDeepLexiconOpen(false);
@@ -685,9 +686,9 @@ function GrekiskAnalysContent() {
     }
   };
 
-  // Hämtar lexikonpost från strongs_lexicon för valt Strongs-nummer (med normaliserad kod + fallback)
+  // Hämtar lexikonpost från strongs_lexicon för valt Strongs-nummer (med normaliserad kod + fallback till rå kod och lemma)
   useEffect(() => {
-    if (!selectedWord || !selectedWord.strong_code) {
+    if (!selectedWord) {
       setLexiconEntry(null);
       return;
     }
@@ -695,28 +696,50 @@ function GrekiskAnalysContent() {
     let cancelled = false;
     async function loadLexicon() {
       setLexiconLoading(true);
-      const rawCode = String(selectedWord.strong_code).trim();
-      const normalizedCode = normalizeStrongCode(rawCode);
+      const rawCode = selectedWord.strong_code ? String(selectedWord.strong_code).trim() : '';
+      const normalizedCode = rawCode ? normalizeStrongCode(rawCode) : '';
+      const lemmaValue = selectedWord.lemma ? String(selectedWord.lemma).trim() : '';
+
+      const selectColumns =
+        'strong_code, lemma, transliteration, short_definition, root_and_cognates, cognate_codes, deep_entry, parallel_passages, occurrence_count, source_notes';
 
       try {
-        let { data, error } = await supabase
-          .from('strongs_lexicon')
-          .select(
-            'strong_code, lemma, transliteration, short_definition, root_and_cognates, cognate_codes, deep_entry, parallel_passages, occurrence_count, source_notes'
-          )
-          .eq('strong_code', normalizedCode)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        let matchedBy = null;
 
-        if (!data && !error && normalizedCode !== rawCode) {
-          const fallbackRes = await supabase
+        if (normalizedCode) {
+          const resNorm = await supabase
             .from('strongs_lexicon')
-            .select(
-              'strong_code, lemma, transliteration, short_definition, root_and_cognates, cognate_codes, deep_entry, parallel_passages, occurrence_count, source_notes'
-            )
+            .select(selectColumns)
+            .eq('strong_code', normalizedCode)
+            .maybeSingle();
+          data = resNorm.data;
+          error = resNorm.error;
+          if (data) matchedBy = `strong_code (${normalizedCode})`;
+        }
+
+        if (!data && !error && rawCode && normalizedCode !== rawCode) {
+          const resRaw = await supabase
+            .from('strongs_lexicon')
+            .select(selectColumns)
             .eq('strong_code', rawCode)
             .maybeSingle();
-          data = fallbackRes.data;
-          error = fallbackRes.error;
+          data = resRaw.data;
+          error = resRaw.error;
+          if (data) matchedBy = `raw strong_code (${rawCode})`;
+        }
+
+        if (!data && !error && lemmaValue) {
+          const resLemma = await supabase
+            .from('strongs_lexicon')
+            .select(selectColumns)
+            .eq('lemma', lemmaValue)
+            .limit(1)
+            .maybeSingle();
+          data = resLemma.data;
+          error = resLemma.error;
+          if (data) matchedBy = `lemma (${lemmaValue})`;
         }
 
         if (cancelled) return;
@@ -725,7 +748,7 @@ function GrekiskAnalysContent() {
         } else {
           setLexiconEntry(data || null);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) setLexiconEntry(null);
       } finally {
         if (!cancelled) setLexiconLoading(false);
