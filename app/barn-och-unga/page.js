@@ -1,21 +1,23 @@
 'use client';
+
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { sanitizeCredits, hasNoCredits, syncCreditsFromResult } from '@/lib/credits';
 import AuthModal from '@/components/AuthModal';
-import { 
+import {
   Compass,
-  ChevronDown, 
-  Sparkles, 
-  BookOpen, 
-  Languages, 
-  Smile, 
-  Feather, 
-  BookMarked, 
-  Sprout, 
-  TrendingUp, 
+  ChevronDown,
+  Sparkles,
+  BookOpen,
+  Languages,
+  Smile,
+  Feather,
+  BookMarked,
+  Sprout,
+  TrendingUp,
   ArrowUpRight,
   LogOut,
   KeyRound,
@@ -25,7 +27,7 @@ import {
   Check,
   Trash2,
   MessageSquareQuote,
-  HeartHandshake
+  HeartHandshake,
 } from 'lucide-react';
 
 // Hjälp-komponent för kopiera-knapp i Attio-stil
@@ -45,6 +47,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -78,9 +81,10 @@ function BarnOchUngaInnehall() {
   const [alder, setAlder] = useState('14+'); // '6-9', '10-13', '14+'
   const [lekTyp, setLekTyp] = useState('samarbete'); // 'lara-kanna', 'samarbete', 'energi', 'reflektion'
   const [amneEllerText, setAmneEllerText] = useState('');
-  
+
   const [svar, setSvar] = useState('');
   const [laddar, setLaddar] = useState(false);
+  const [felMeddelande, setFelMeddelande] = useState('');
   const [historik, setHistorik] = useState([]);
 
   // States för menyer
@@ -91,13 +95,13 @@ function BarnOchUngaInnehall() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [user, setUser] = useState(null);
-  const [credits, setCredits] = useState(null);
+  const [credits, setCredits] = useState(0);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },
     { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
     { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
     { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
@@ -117,7 +121,7 @@ function BarnOchUngaInnehall() {
         fetchProfile();
       } else {
         setUser(null);
-        setCredits(null);
+        setCredits(0);
         setIsTester(false);
         setAuthLoading(false);
       }
@@ -127,23 +131,34 @@ function BarnOchUngaInnehall() {
   }, []);
 
   const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
+      setUser(null);
+      setCredits(0);
+      setIsTester(false);
       setAuthLoading(false);
       return;
     }
     setUser(user);
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('credits, is_tester')
       .eq('id', user.id)
       .maybeSingle();
 
+    if (error) {
+      console.error('Kunde inte hämta profil från Supabase:', error);
+    }
+
     if (profile) {
-      const startCredits = profile.credits ?? profile.tokens ?? 0;
-      setCredits(startCredits);
-      setIsTester(profile.is_tester);
+      setCredits(sanitizeCredits(profile.credits));
+      setIsTester(Boolean(profile.is_tester));
+    } else {
+      setCredits(0);
+      setIsTester(false);
     }
     setAuthLoading(false);
   };
@@ -160,11 +175,28 @@ function BarnOchUngaInnehall() {
     }
   }, []);
 
+  const arKrediterSlut = hasNoCredits(credits, isTester);
+
   const hanteraGenerering = async (e) => {
     e?.preventDefault();
+    if (laddar) return;
+
+    setFelMeddelande('');
 
     if (huvudLage === 'andakt' && !amneEllerText.trim()) {
-      alert('Vänligen fyll i ett bibelställe eller tema för andakten.');
+      setFelMeddelande('Vänligen fyll i ett bibelställe eller tema för andakten.');
+      return;
+    }
+
+    if (!user) {
+      setModalMessage('Du måste vara inloggad för att använda verktyget.');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (hasNoCredits(credits, isTester)) {
+      setCredits(0);
+      setFelMeddelande('Du har 0 krediter kvar. Fyll på krediter för att skapa andakter eller lekar.');
       return;
     }
 
@@ -173,11 +205,14 @@ function BarnOchUngaInnehall() {
     let promptText = '';
     let aldersBeskrivning = '';
     if (alder === '6-9') {
-      aldersBeskrivning = 'barn i åldern 6–9 år (använd enkelt språk, konkret pedagogik och korta meningar)';
+      aldersBeskrivning =
+        'barn i åldern 6–9 år (använd enkelt språk, konkret pedagogik och korta meningar)';
     } else if (alder === '10-13') {
-      aldersBeskrivning = 'juniorer i åldern 10–13 år (engagerande, relaterbart till skola/kompisar, undvik barnslig ton)';
+      aldersBeskrivning =
+        'juniorer i åldern 10–13 år (engagerande, relaterbart till skola/kompisar, undvik barnslig ton)';
     } else {
-      aldersBeskrivning = 'ungdomar och konfirmander (14+ år / Konfa) (fokus på ärlighet, existentiella frågor, identitet och djup, helt utan klyschor)';
+      aldersBeskrivning =
+        'ungdomar och konfirmander (14+ år / Konfa) (fokus på ärlighet, existentiella frågor, identitet och djup, helt utan klyschor)';
     }
 
     if (huvudLage === 'andakt') {
@@ -202,16 +237,24 @@ Strukturera svaret tydligt enligt följande punkter:
 `;
     } else {
       let lekTypNamn = '';
-      if (lekTyp === 'lara-kanna') lekTypNamn = 'Lära känna / Ice-breakers (namnlekar, avväpnande övningar)';
-      else if (lekTyp === 'samarbete') lekTypNamn = 'Samarbete & Teambuilding (lösa problem i grupp, bygga laganda)';
-      else if (lekTyp === 'energi') lekTypNamn = 'Energi & Rörelse (högt tempo, skratta ihop, spring/rörelse)';
-      else if (lekTyp === 'reflektion') lekTypNamn = 'Reflektion, Tillit & Djup (skapa trygghet, lyssna på varandra)';
+      if (lekTyp === 'lara-kanna')
+        lekTypNamn = 'Lära känna / Ice-breakers (namnlekar, avväpnande övningar)';
+      else if (lekTyp === 'samarbete')
+        lekTypNamn = 'Samarbete & Teambuilding (lösa problem i grupp, bygga laganda)';
+      else if (lekTyp === 'energi')
+        lekTypNamn = 'Energi & Rörelse (högt tempo, skratta ihop, spring/rörelse)';
+      else if (lekTyp === 'reflektion')
+        lekTypNamn = 'Reflektion, Tillit & Djup (skapa trygghet, lyssna på varandra)';
 
       promptText = `
 Du är en erfaren fritids- och ungdomsledare i kyrkan.
 Ge förslag på 2–3 roliga, varierade, genomförbara och trygga lekar/övningar för: ${aldersBeskrivning}.
 Typ av lek: ${lekTypNamn}.
-${amneEllerText.trim() ? `Tema/Koppling: "${amneEllerText}".` : 'Inget särskilt tema angivet, ge allmänna och populära exempel inom denna kategori.'}
+${
+        amneEllerText.trim()
+          ? `Tema/Koppling: "${amneEllerText}".`
+          : 'Inget särskilt tema angivet, ge allmänna och populära exempel inom denna kategori.'
+      }
 
 För varje lek ska du tydligt ange:
 1. **Lekens namn**
@@ -232,7 +275,7 @@ För varje lek ska du tydligt ange:
         verktyg: verktygNamn,
         helgdag: aldersKategoriText,
         tema: valttTemaHeader,
-        argang: urlArgang || 'argang1'
+        argang: urlArgang || 'argang1',
       };
 
       const data = await generateContent(payload, () => {
@@ -240,12 +283,9 @@ För varje lek ska du tydligt ange:
         setShowAuthModal(true);
       });
 
-      const nyttSvar = data.text || 'Kunde inte generera förslag.';
+      syncCreditsFromResult(data, { setCredits, setIsTester });
 
-      if (data.tokensLeft !== undefined) {
-        setCredits(data.tokensLeft);
-      }
-
+      const nyttSvar = data?.text || 'Kunde inte generera förslag.';
       setSvar(nyttSvar);
 
       const nyPost = {
@@ -254,20 +294,21 @@ För varje lek ska du tydligt ange:
         alder: aldersKategoriText,
         rubrik: valttTemaHeader,
         svar: nyttSvar,
-        tid: new Date().toLocaleDateString('sv-SE', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) + ' min'
+        tid:
+          new Date().toLocaleDateString('sv-SE', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          }) + ' min',
       };
 
       const uppdaterad = [nyPost, ...historik];
       setHistorik(uppdaterad);
       localStorage.setItem('barn_och_unga_historik', JSON.stringify(uppdaterad));
-
     } catch (err) {
-      alert(err.message || 'Det uppstod ett fel vid anropet.');
+      syncCreditsFromResult(err, { setCredits, setIsTester });
+      setFelMeddelande(err?.message || 'Det uppstod ett fel vid anropet.');
     } finally {
       setLaddar(false);
     }
@@ -282,12 +323,10 @@ För varje lek ska du tydligt ange:
 
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
-      
       <div>
         {/* HEADER (ATTIO-STYLE NAVIGATION) */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
             {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
@@ -300,25 +339,30 @@ För varje lek ska du tydligt ange:
               {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
-                  <button 
+                  <button
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
                   >
                     Verktyg
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        toolsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
 
                   {toolsOpen && (
-                    <div 
+                    <div
                       onMouseEnter={() => setToolsOpen(true)}
                       className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
                     >
                       {verktygLista.map((v) => {
                         const Icon = v.icon;
                         return (
-                          <Link 
-                            key={v.href} 
+                          <Link
+                            key={v.href}
                             href={v.href}
                             className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#faf8f5] transition-colors group"
                           >
@@ -343,7 +387,10 @@ För varje lek ska du tydligt ange:
                   )}
                 </div>
 
-                <Link href="/om" className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors">
+                <Link
+                  href="/om"
+                  className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
+                >
                   Om
                 </Link>
               </nav>
@@ -354,9 +401,10 @@ För varje lek ska du tydligt ange:
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">
-                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
+                    {isTester ? '✨ Testkonto' : `⚡ ${sanitizeCredits(credits)} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -364,22 +412,26 @@ För varje lek ska du tydligt ange:
                     Logga ut
                   </button>
                 </div>
-              ) : !authLoading && (
-                <button
-                  onClick={() => {
-                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
-                    setShowAuthModal(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Logga in
-                </button>
+              ) : (
+                !authLoading && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                      setShowAuthModal(true);
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Logga in
+                  </button>
+                )
               )}
             </div>
 
             {/* MOBIL MENY-KNAPP */}
-            <button 
+            <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -393,7 +445,11 @@ För varje lek ska du tydligt ange:
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                  <Link
+                    key={v.href}
+                    href={v.href}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
                     <span>{v.name}</span>
                     {v.isAi && (
                       <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
@@ -404,13 +460,23 @@ För varje lek ska du tydligt ange:
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => supabase.auth.signOut()}
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -423,39 +489,45 @@ För varje lek ska du tydligt ange:
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
-              <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+              <span className="truncate">
+                Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong>
+              </span>
             </div>
           </div>
         )}
 
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
-          
           {/* INTRO OCH FORMULÄR */}
-          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
+          <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+            <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
                   <Smile className="w-5 h-5 text-[#2d3732]" />
                 </div>
-                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                  Barn & unga
+                <h1 className="text-xl sm:text-2xl font-bold text-[#1a1d1b] tracking-tight leading-snug">
+                  Barn &amp; unga
                 </h1>
               </div>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+              <span className="shrink-0 mt-1 sm:mt-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
                 AI
               </span>
             </div>
-            
+
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed mb-8">
-            Att leda barn och unga i kyrkan kräver både kreativitet, värme och pedagogisk skicklighet. 
-            Det här verktyget hjälper dig att ta fram anpassade andakter, lättbegripliga bibelbudskap och 
-            roliga lekar som bygger sammanhållning i gruppen. Ange ett ämne, en bibeltext och målgrupp nedan 
-            för att generera förslag på material till din nästa samling.
+              Att leda barn och unga i kyrkan kräver både kreativitet, värme och pedagogisk skicklighet.
+              Det här verktyget hjälper dig att ta fram anpassade andakter, lättbegripliga bibelbudskap och
+              roliga lekar som bygger sammanhållning i gruppen. Ange ett ämne, en bibeltext och målgrupp nedan
+              för att generera förslag på material till din nästa samling.
             </p>
 
+            {!authLoading && user && !isTester && credits !== null && arKrediterSlut && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                Du har 0 krediter kvar. Fyll på krediter för att skapa fler andakter och lekar.
+              </div>
+            )}
+
             <form onSubmit={hanteraGenerering} className="space-y-6">
-              
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2">
                   1. Vad vill du skapa?
@@ -470,7 +542,7 @@ För varje lek ska du tydligt ange:
                         : 'bg-[#faf8f5] border-[#e8e4df] text-[#575c58] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    <MessageSquareQuote className="w-4 h-4" /> Andakt & budskap
+                    <MessageSquareQuote className="w-4 h-4" /> Andakt &amp; budskap
                   </button>
                   <button
                     type="button"
@@ -481,7 +553,7 @@ För varje lek ska du tydligt ange:
                         : 'bg-[#faf8f5] border-[#e8e4df] text-[#575c58] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    <HeartHandshake className="w-4 h-4" /> Lekar & övningar
+                    <HeartHandshake className="w-4 h-4" /> Lekar &amp; övningar
                   </button>
                 </div>
               </div>
@@ -543,7 +615,9 @@ För varje lek ska du tydligt ange:
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2">
-                  {huvudLage === 'andakt' ? '3. Bibelställe eller Tema' : '4. Tema eller Nyckelord (Valfritt)'}
+                  {huvudLage === 'andakt'
+                    ? '3. Bibelställe eller Tema'
+                    : '4. Tema eller Nyckelord (Valfritt)'}
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
@@ -559,8 +633,8 @@ För varje lek ska du tydligt ange:
                   />
                   <button
                     type="submit"
-                    disabled={laddar}
-                    className="px-6 py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl font-semibold text-xs sm:text-sm transition-colors disabled:opacity-50 shadow-sm whitespace-nowrap"
+                    disabled={laddar || (Boolean(user) && arKrediterSlut)}
+                    className="px-6 py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl font-semibold text-xs sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm whitespace-nowrap cursor-pointer"
                   >
                     {laddar
                       ? 'Skapar...'
@@ -570,8 +644,11 @@ För varje lek ska du tydligt ange:
                   </button>
                 </div>
               </div>
-
             </form>
+
+            {felMeddelande && (
+              <p className="mt-3 text-xs text-red-700 leading-relaxed">{felMeddelande}</p>
+            )}
           </div>
 
           {/* RESULTATET */}
@@ -580,7 +657,11 @@ För varje lek ska du tydligt ange:
               <div className="pb-4 border-b border-[#e8e4df] mb-6 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-[#1a1d1b] flex items-center gap-2">
                   <span className="flex items-center gap-1.5">
-                    {huvudLage === 'andakt' ? <MessageSquareQuote className="w-4 h-4 text-[#2d3732]" /> : <HeartHandshake className="w-4 h-4 text-[#2d3732]" />}
+                    {huvudLage === 'andakt' ? (
+                      <MessageSquareQuote className="w-4 h-4 text-[#2d3732]" />
+                    ) : (
+                      <HeartHandshake className="w-4 h-4 text-[#2d3732]" />
+                    )}
                     Förslag på {huvudLage === 'andakt' ? 'andakt' : 'lekar'} för{' '}
                     <span className="text-[#2d3732] underline decoration-[#e8e4df]">
                       {alder === '14+' ? '14+ / Konfa' : `${alder} år`}
@@ -606,6 +687,7 @@ För varje lek ska du tydligt ange:
               </h2>
               {historik.length > 0 && (
                 <button
+                  type="button"
                   onClick={rensaHistorik}
                   className="bg-white hover:bg-[#faf8f5] text-[#575c58] hover:text-[#1a1d1b] border border-[#e8e4df] rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
@@ -629,12 +711,14 @@ För varje lek ska du tydligt ange:
                     <div className="flex justify-between items-center mb-3 border-b border-[#e8e4df] pb-3">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2d3732] text-white px-2.5 py-1 rounded-md flex items-center gap-1">
-                          {item.typ === 'andakt' ? <MessageSquareQuote className="w-3 h-3" /> : <HeartHandshake className="w-3 h-3" />}
+                          {item.typ === 'andakt' ? (
+                            <MessageSquareQuote className="w-3 h-3" />
+                          ) : (
+                            <HeartHandshake className="w-3 h-3" />
+                          )}
                           {item.typ === 'andakt' ? 'Andakt' : 'Lekar'}
                         </span>
-                        <span className="text-xs font-bold text-[#1a1d1b]">
-                          {item.alder}
-                        </span>
+                        <span className="text-xs font-bold text-[#1a1d1b]">{item.alder}</span>
                         <span className="text-xs text-[#575c58] hidden sm:inline">
                           — {item.rubrik}
                         </span>
@@ -661,51 +745,55 @@ För varje lek ska du tydligt ange:
               Utforska fler verktyg
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {verktygLista.filter(v => v.href !== '/barn-och-unga').map((v) => {
-                const Icon = v.icon;
-                return (
-                  <Link 
-                    key={v.href} 
-                    href={`${v.href}${urlHelgdag ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(urlArgang || 'argang1')}` : ''}`} 
-                    className="group block"
-                  >
-                    <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                            <Icon className="w-4 h-4" />
-                          </div>
+              {verktygLista
+                .filter((v) => v.href !== '/barn-och-unga')
+                .map((v) => {
+                  const Icon = v.icon;
+                  return (
+                    <Link
+                      key={v.href}
+                      href={`${v.href}${
+                        urlHelgdag
+                          ? `?helgdag=${encodeURIComponent(urlHelgdag)}&argang=${encodeURIComponent(
+                              urlArgang || 'argang1'
+                            )}`
+                          : ''
+                      }`}
+                      className="group block"
+                    >
+                      <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                              <Icon className="w-4 h-4" />
+                            </div>
 
-                          <div className="flex items-center gap-2">
-                            {v.isAi && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                                AI
-                              </span>
-                            )}
-                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            <div className="flex items-center gap-2">
+                              {v.isAi && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                  AI
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
                           </div>
+                          <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
+                            {v.name}
+                          </h4>
+                          <p className="text-xs text-[#575c58] leading-relaxed">{v.desc}</p>
                         </div>
-                        <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
-                          {v.name}
-                        </h4>
-                        <p className="text-xs text-[#575c58] leading-relaxed">
-                          {v.desc}
-                        </p>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
             </div>
           </section>
-
         </main>
       </div>
 
       {/* ATTIO-STYLE FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          
           <div className="col-span-2 space-y-3">
             <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
@@ -719,7 +807,9 @@ För varje lek ska du tydligt ange:
             <ul className="space-y-2 text-xs text-[#575c58]">
               {verktygLista.map((v) => (
                 <li key={v.href}>
-                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
+                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">
+                    {v.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -728,34 +818,52 @@ För varje lek ska du tydligt ange:
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Information</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              <li><Link href="/om" className="hover:text-[#1a1d1b] transition-colors">Om tjänsten</Link></li>
-              <li><Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">Pris & abonnemang</Link></li>
-              <li><Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">Integritetspolicy</Link></li>
-              <li><Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">Användarvillkor</Link></li>
+              <li>
+                <Link href="/om" className="hover:text-[#1a1d1b] transition-colors">
+                  Om tjänsten
+                </Link>
+              </li>
+              <li>
+                <Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">
+                  Pris &amp; abonnemang
+                </Link>
+              </li>
+              <li>
+                <Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">
+                  Integritetspolicy
+                </Link>
+              </li>
+              <li>
+                <Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">
+                  Användarvillkor
+                </Link>
+              </li>
             </ul>
           </div>
-
         </div>
       </footer>
 
       {/* Inloggningsmodal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         message={modalMessage}
         onAuthSuccess={() => {
           setShowAuthModal(false);
           fetchProfile();
-        }} 
+        }}
       />
-
     </div>
   );
 }
 
 export default function BarnOchUnga() {
   return (
-    <Suspense fallback={<div className="p-6 text-center text-xs text-[#575c58]">Laddar Barn & unga...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-6 text-center text-xs text-[#575c58]">Laddar Barn &amp; unga...</div>
+      }
+    >
       <BarnOchUngaInnehall />
     </Suspense>
   );

@@ -375,13 +375,13 @@ export default function BibelKartaSida() {
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
           
           {/* HEADER & SÖKFÄLT */}
-          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-start sm:items-center gap-3 mb-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
                   <Compass className="w-5 h-5 text-[#2d3732]" />
                 </div>
-                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#1a1d1b] tracking-tight leading-snug">
                   Bibelatlas
                 </h1>
               </div>

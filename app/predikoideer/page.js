@@ -3,20 +3,20 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { sanitizeCredits, hasNoCredits, syncCreditsFromResult } from '@/lib/credits';
 import AuthModal from '@/components/AuthModal';
-import { 
+import {
   Compass,
-  ChevronDown, 
-  Sparkles, 
-  BookOpen, 
-  Languages, 
-  Smile, 
-  Feather, 
-  BookMarked, 
-  Sprout, 
-  TrendingUp, 
+  ChevronDown,
+  Sparkles,
+  BookOpen,
+  Languages,
+  Smile,
+  Feather,
+  BookMarked,
+  Sprout,
+  TrendingUp,
   ArrowUpRight,
   LogOut,
   KeyRound,
@@ -25,7 +25,7 @@ import {
   Copy,
   Check,
   Trash2,
-  Lightbulb
+  Lightbulb,
 } from 'lucide-react';
 
 function KopieraKnapp({ text }) {
@@ -44,6 +44,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -686,8 +687,274 @@ export const HELGDAGAR = [
   },
 ];
 
+function parseBibleRef(refStr) {
+  if (!refStr) return { book: 'Gen', chapter: 1, verse: 1 };
+
+  const clean = refStr.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '').trim();
+  const match = clean.match(
+    /^([1-5]?\s*[A-Za-zåäöÅÄÖ]+(?:\s+[A-Za-zåäöÅÄÖ]+)?)\s+(\d+):(\d+)/
+  );
+
+  if (match) {
+    const bookName = match[1].replace(/\s+/g, ' ').trim().toLowerCase();
+    const chapterNum = Number(match[2]) || 1;
+    const verseNum = Number(match[3]) || 1;
+
+    const bibleBookMap = {
+      // Gamla testamentet
+      '1 mos': 'Gen',
+      'första moseboken': 'Gen',
+      gen: 'Gen',
+      genesis: 'Gen',
+      '2 mos': 'Exo',
+      'andra moseboken': 'Exo',
+      exo: 'Exo',
+      exodus: 'Exo',
+      '3 mos': 'Lev',
+      'tredje moseboken': 'Lev',
+      lev: 'Lev',
+      leviticus: 'Lev',
+      '4 mos': 'Num',
+      'fjärde moseboken': 'Num',
+      num: 'Num',
+      numbers: 'Num',
+      '5 mos': 'Deu',
+      'femte moseboken': 'Deu',
+      deu: 'Deu',
+      deuteronomy: 'Deu',
+      jos: 'Jos',
+      josua: 'Jos',
+      joshua: 'Jos',
+      dom: 'Jdg',
+      domarboken: 'Jdg',
+      jdg: 'Jdg',
+      judges: 'Jdg',
+      rut: 'Rut',
+      ruth: 'Ruth',
+      '1 sam': '1Sa',
+      '1 samuelsboken': '1Sa',
+      '1sa': '1Sa',
+      '2 sam': '2Sa',
+      '2 samuelsboken': '2Sa',
+      '2sa': '2Sa',
+      '1 kung': '1Ki',
+      '1 kungaboken': '1Ki',
+      '1ki': '1Ki',
+      '2 kung': '2Ki',
+      '2 kungaboken': '2Ki',
+      '2ki': '2Ki',
+      '1 krön': '1Ch',
+      '1 krönikeboken': '1Ch',
+      '1ch': '1Ch',
+      '2 krön': '2Ch',
+      '2 krönikeboken': '2Ch',
+      '2ch': '2Ch',
+      esr: 'Ezr',
+      esra: 'Ezr',
+      ezr: 'Ezr',
+      neh: 'Neh',
+      nehemja: 'Neh',
+      nehemiah: 'Neh',
+      est: 'Est',
+      ester: 'Est',
+      esther: 'Est',
+      job: 'Job',
+      ps: 'Psa',
+      psaltaren: 'Psa',
+      psa: 'Psa',
+      psalms: 'Psa',
+      ords: 'Pro',
+      ordsp: 'Pro',
+      ordspråksboken: 'Pro',
+      pro: 'Pro',
+      proverbs: 'Pro',
+      pred: 'Ecc',
+      predikaren: 'Ecc',
+      ecc: 'Ecc',
+      ecclesiastes: 'Ecc',
+      'höga v': 'Sng',
+      hög: 'Sng',
+      'höga visan': 'Sng',
+      sng: 'Sng',
+      jes: 'Isa',
+      jesaja: 'Isa',
+      isa: 'Isa',
+      isaiah: 'Isa',
+      jer: 'Jer',
+      jeremia: 'Jer',
+      jeremiah: 'Jer',
+      klag: 'Lam',
+      klagovisorna: 'Lam',
+      lam: 'Lam',
+      hes: 'Eze',
+      hesekiel: 'Eze',
+      eze: 'Eze',
+      ezk: 'Eze',
+      dan: 'Dan',
+      daniel: 'Dan',
+      hos: 'Hos',
+      hosea: 'Hos',
+      joel: 'Joe',
+      jol: 'Joe',
+      amos: 'Amo',
+      amo: 'Amo',
+      obad: 'Oba',
+      obadja: 'Oba',
+      oba: 'Oba',
+      jona: 'Jon',
+      jon: 'Jon',
+      jonah: 'Jon',
+      mika: 'Mic',
+      mik: 'Mic',
+      micah: 'Mic',
+      nah: 'Nah',
+      nahum: 'Nah',
+      nam: 'Nah',
+      hab: 'Hab',
+      habackuk: 'Hab',
+      sef: 'Zep',
+      sefanja: 'Zep',
+      zep: 'Zep',
+      hag: 'Hag',
+      haggai: 'Hag',
+      sak: 'Zec',
+      sakarja: 'Zec',
+      zec: 'Zec',
+      mal: 'Mal',
+      malaki: 'Mal',
+      // Apokryfer
+      vish: 'Wis',
+      visheten: 'Wis',
+      wis: 'Wis',
+      syr: 'Sir',
+      syrak: 'Sir',
+      sir: 'Sir',
+      tob: 'Tob',
+      tobit: 'Tob',
+      man: 'Man',
+      'manasses bön': 'Man',
+      // Nya testamentet
+      matt: 'matthew',
+      matteus: 'matthew',
+      matthew: 'matthew',
+      mark: 'mark',
+      markusevangeliet: 'mark',
+      markus: 'mark',
+      mrk: 'mark',
+      luk: 'luke',
+      lukasevangeliet: 'luke',
+      lukas: 'luke',
+      luke: 'luke',
+      joh: 'john',
+      johannesevangeliet: 'john',
+      johannes: 'john',
+      john: 'john',
+      jhn: 'john',
+      apg: 'acts',
+      apostlagärningarna: 'acts',
+      acts: 'acts',
+      rom: 'romans',
+      romarbrevet: 'romans',
+      romans: 'romans',
+      '1 kor': '1corinthians',
+      '1kor': '1corinthians',
+      '1co': '1corinthians',
+      '1corinthians': '1corinthians',
+      '2 kor': '2corinthians',
+      '2kor': '2corinthians',
+      '2co': '2corinthians',
+      '2corinthians': '2corinthians',
+      gal: 'galatians',
+      galaterbrevet: 'galatians',
+      galatians: 'galatians',
+      ef: 'ephesians',
+      efesierbrevet: 'ephesians',
+      eph: 'ephesians',
+      ephesians: 'ephesians',
+      fil: 'philippians',
+      filipperbrevet: 'philippians',
+      php: 'philippians',
+      philippians: 'philippians',
+      kol: 'colossians',
+      kolosserbrevet: 'colossians',
+      col: 'colossians',
+      colossians: 'colossians',
+      '1 tess': '1thessalonians',
+      '1tess': '1thessalonians',
+      '1th': '1thessalonians',
+      '1thessalonians': '1thessalonians',
+      '1 thess': '1thessalonians',
+      '2 tess': '2thessalonians',
+      '2tess': '2thessalonians',
+      '2th': '2thessalonians',
+      '2thessalonians': '2thessalonians',
+      '2 thess': '2thessalonians',
+      '1 tim': '1timothy',
+      '1tim': '1timothy',
+      '1ti': '1timothy',
+      '1timothy': '1timothy',
+      '2 tim': '2timothy',
+      '2tim': '2timothy',
+      '2ti': '2timothy',
+      '2timothy': '2timothy',
+      tit: 'titus',
+      titusbrevet: 'titus',
+      titus: 'titus',
+      filem: 'philemon',
+      philemon: 'philemon',
+      phm: 'philemon',
+      heb: 'hebrews',
+      hebreerbrevet: 'hebrews',
+      hebrews: 'hebrews',
+      hebr: 'hebrews',
+      jak: 'james',
+      'jakobs brev': 'james',
+      jakob: 'james',
+      james: 'james',
+      '1 pet': '1peter',
+      '1pet': '1peter',
+      '1pe': '1peter',
+      '1peter': '1peter',
+      '2 pet': '2peter',
+      '2pet': '2peter',
+      '2pe': '2peter',
+      '2peter': '2peter',
+      '1 joh': '1john',
+      '1joh': '1john',
+      '1jn': '1john',
+      '1john': '1john',
+      '2 joh': '2john',
+      '2joh': '2john',
+      '2jn': '2john',
+      '2john': '2john',
+      '3 joh': '3john',
+      '3joh': '3john',
+      '3jn': '3john',
+      '3john': '3john',
+      jud: 'jude',
+      'judas brev': 'jude',
+      jude: 'jude',
+      upp: 'revelation',
+      uppenbarelseboken: 'revelation',
+      rev: 'revelation',
+      revelation: 'revelation',
+    };
+
+    return {
+      book: bibleBookMap[bookName] || 'Gen',
+      chapter: chapterNum,
+      verse: verseNum,
+    };
+  }
+
+  return { book: 'Gen', chapter: 1, verse: 1 };
+}
+
 function PredikoideerInnehall() {
   const searchParams = useSearchParams();
+
+  const [extraHelgdagar, setExtraHelgdagar] = useState([]);
+  const allaHelgdagar = [...HELGDAGAR, ...extraHelgdagar];
 
   const [valdHelgdagNamn, setValdHelgdagNamn] = useState(HELGDAGAR[0]?.namn || '');
   const [valdArgang, setValdArgang] = useState('argang1');
@@ -696,6 +963,7 @@ function PredikoideerInnehall() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
+  const [aiFelMeddelande, setAiFelMeddelande] = useState('');
 
   // States för menyer
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -705,13 +973,13 @@ function PredikoideerInnehall() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [user, setUser] = useState(null);
-  const [credits, setCredits] = useState(null);
+  const [credits, setCredits] = useState(0);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },
     { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
     { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
     { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
@@ -731,7 +999,7 @@ function PredikoideerInnehall() {
         fetchProfile();
       } else {
         setUser(null);
-        setCredits(null);
+        setCredits(0);
         setIsTester(false);
         setAuthLoading(false);
       }
@@ -741,28 +1009,39 @@ function PredikoideerInnehall() {
   }, []);
 
   const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
+      setUser(null);
+      setCredits(0);
+      setIsTester(false);
       setAuthLoading(false);
       return;
     }
     setUser(user);
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('credits, is_tester')
       .eq('id', user.id)
       .maybeSingle();
 
+    if (error) {
+      console.error('Kunde inte hämta profil från Supabase:', error);
+    }
+
     if (profile) {
-      const startCredits = profile.credits ?? profile.tokens ?? 0;
-      setCredits(startCredits);
-      setIsTester(profile.is_tester);
+      setCredits(sanitizeCredits(profile.credits));
+      setIsTester(Boolean(profile.is_tester));
+    } else {
+      setCredits(0);
+      setIsTester(false);
     }
     setAuthLoading(false);
   };
 
-  // Läs av URL-parametrar om man kommer från /populart
+  // Läs av URL-parametrar om man kommer från /populart eller annat verktyg
   useEffect(() => {
     const urlHelgdag = searchParams.get('helgdag');
     const urlText = searchParams.get('text');
@@ -773,47 +1052,43 @@ function PredikoideerInnehall() {
       setValdArgang(urlArgang);
     }
 
-    if (urlTextTyp) {
-      if (['gt', 'epistel', 'evangelium'].includes(urlTextTyp.toLowerCase())) {
-        setValdTextTyp(urlTextTyp.toLowerCase());
-      }
+    if (urlTextTyp && ['gt', 'epistel', 'evangelium'].includes(urlTextTyp.toLowerCase())) {
+      setValdTextTyp(urlTextTyp.toLowerCase());
     }
 
     if (urlHelgdag) {
       const hittad = HELGDAGAR.find((h) => h.namn.toLowerCase() === urlHelgdag.toLowerCase());
-      
+
       if (hittad) {
         setValdHelgdagNamn(hittad.namn);
-
-        if (!urlTextTyp && urlText) {
-          if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
-            setValdTextTyp('gt');
-          } else if (urlText.toLowerCase().includes('epistel')) {
-            setValdTextTyp('epistel');
-          } else if (urlText.toLowerCase().includes('evangelium')) {
-            setValdTextTyp('evangelium');
-          }
-        }
       } else {
-        const renRaktText = urlText ? urlText.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '') : '-';
-        
-        HELGDAGAR.push({
+        const renRaktText = urlText
+          ? urlText.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '')
+          : '-';
+
+        const nyHelgdag = {
           namn: urlHelgdag,
           tema: searchParams.get('tema') || 'Valt tema',
           argang1: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText },
           argang2: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText },
-          argang3: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText }
-        });
-        setValdHelgdagNamn(urlHelgdag);
+          argang3: { gt: renRaktText, epistel: renRaktText, evangelium: renRaktText },
+        };
 
-        if (!urlTextTyp && urlText) {
-          if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
-            setValdTextTyp('gt');
-          } else if (urlText.toLowerCase().includes('epistel')) {
-            setValdTextTyp('epistel');
-          } else if (urlText.toLowerCase().includes('evangelium')) {
-            setValdTextTyp('evangelium');
-          }
+        setExtraHelgdagar((prev) =>
+          prev.some((item) => item.namn.toLowerCase() === urlHelgdag.toLowerCase())
+            ? prev
+            : [...prev, nyHelgdag]
+        );
+        setValdHelgdagNamn(urlHelgdag);
+      }
+
+      if (!urlTextTyp && urlText) {
+        if (urlText.toLowerCase().includes('gammaltestamentlig') || urlText.toLowerCase().includes('gt:')) {
+          setValdTextTyp('gt');
+        } else if (urlText.toLowerCase().includes('epistel')) {
+          setValdTextTyp('epistel');
+        } else if (urlText.toLowerCase().includes('evangelium')) {
+          setValdTextTyp('evangelium');
         }
       }
     }
@@ -830,25 +1105,53 @@ function PredikoideerInnehall() {
     }
   }, []);
 
-  const valdHelgdag = HELGDAGAR.find((h) => h.namn === valdHelgdagNamn);
+  const valdHelgdag = allaHelgdagar.find((h) => h.namn === valdHelgdagNamn);
   const valdaTexter = valdHelgdag ? valdHelgdag[valdArgang] : null;
   const valdPredikotext = valdaTexter ? valdaTexter[valdTextTyp] : '';
 
   const textTypNamn = {
     gt: 'Gammaltestamentlig text',
     epistel: 'Epistel',
-    evangelium: 'Evangelium'
+    evangelium: 'Evangelium',
   }[valdTextTyp];
+
+  const arKrediterSlut = hasNoCredits(credits, isTester);
+  const aiKnapparInaktiverade = laddarAi || (Boolean(user) && arKrediterSlut);
 
   const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = {}) => {
     const textAttSkicka = instruktion || aiPrompt;
     const rubrik = etikett || aiPrompt || 'Egen fråga';
 
-    if (!textAttSkicka.trim()) return;
+    if (!textAttSkicka.trim() || laddarAi) return;
+
+    setAiFelMeddelande('');
+
+    if (!user) {
+      setModalMessage('Du måste vara inloggad för att använda AI-assistenten.');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (hasNoCredits(credits, isTester)) {
+      setCredits(0);
+      setAiFelMeddelande('Du har 0 krediter kvar. Fyll på krediter för att göra fler AI-anrop.');
+      return;
+    }
 
     setLaddarAi(true);
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        setModalMessage('Din session har löpt ut. Logga in på nytt för att använda AI-assistenten.');
+        setShowAuthModal(true);
+        return;
+      }
+
       const payload = {
         prompt: textAttSkicka,
         helgdag: valdHelgdag?.namn,
@@ -856,33 +1159,44 @@ function PredikoideerInnehall() {
         argang: valdArgang,
         texter: valdaTexter,
         valdPredikotext: `${textTypNamn}: ${valdPredikotext}`,
-        inkluderaFraga: inkluderaFraga,
+        inkluderaFraga,
         sida: 'predikoideer',
         verktyg: rubrik,
       };
 
-      const data = await generateContent(payload, () => {
-        setModalMessage('Du måste vara inloggad för att använda AI-assistenten.');
-        setShowAuthModal(true);
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
       });
-      
-      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
 
-      if (data.tokensLeft !== undefined) {
-        setCredits(data.tokensLeft);
+      const data = await res.json().catch(() => ({}));
+      syncCreditsFromResult(data, { setCredits, setIsTester });
+
+      if (!res.ok) {
+        setAiFelMeddelande(
+          data.error || 'Det uppstod ett fel vid anropet till AI-assistenten. Ingen kredit har dragits.'
+        );
+        return;
       }
+
+      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
 
       const nyPost = {
         id: Date.now(),
         titel: rubrik,
         svar: nyttSvar,
         helgdag: valdHelgdag?.namn || 'Allmänt',
-        tid: new Date().toLocaleDateString('sv-SE', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) + ' min'
+        tid:
+          new Date().toLocaleDateString('sv-SE', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          }) + ' min',
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -893,7 +1207,9 @@ function PredikoideerInnehall() {
         setAiPrompt('');
       }
     } catch (err) {
-      alert(err.message || 'Det uppstod ett fel vid anropet till AI-assistenten.');
+      syncCreditsFromResult(err, { setCredits, setIsTester });
+      console.error(err);
+      setAiFelMeddelande('Nätverksfel vid kontakt med AI-assistenten. Försök igen.');
     } finally {
       setLaddarAi(false);
     }
@@ -906,14 +1222,15 @@ function PredikoideerInnehall() {
     }
   };
 
+  const parsed = parseBibleRef(valdPredikotext);
+  const interlinearParams = `book=${parsed.book}&chapter=${parsed.chapter}&verse=${parsed.verse}`;
+
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
-      
       <div>
         {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
             {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
@@ -926,25 +1243,30 @@ function PredikoideerInnehall() {
               {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
-                  <button 
+                  <button
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
                   >
                     Verktyg
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        toolsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
 
                   {toolsOpen && (
-                    <div 
+                    <div
                       onMouseEnter={() => setToolsOpen(true)}
                       className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
                     >
                       {verktygLista.map((v) => {
                         const Icon = v.icon;
                         return (
-                          <Link 
-                            key={v.href} 
+                          <Link
+                            key={v.href}
                             href={v.href}
                             className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#faf8f5] transition-colors group"
                           >
@@ -969,7 +1291,10 @@ function PredikoideerInnehall() {
                   )}
                 </div>
 
-                <Link href="/om" className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors">
+                <Link
+                  href="/om"
+                  className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
+                >
                   Om
                 </Link>
               </nav>
@@ -980,9 +1305,10 @@ function PredikoideerInnehall() {
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">
-                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
+                    {isTester ? '✨ Testkonto' : `⚡ ${sanitizeCredits(credits)} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -990,22 +1316,26 @@ function PredikoideerInnehall() {
                     Logga ut
                   </button>
                 </div>
-              ) : !authLoading && (
-                <button
-                  onClick={() => {
-                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
-                    setShowAuthModal(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Logga in
-                </button>
+              ) : (
+                !authLoading && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                      setShowAuthModal(true);
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Logga in
+                  </button>
+                )
               )}
             </div>
 
             {/* MOBIL MENY-KNAPP */}
-            <button 
+            <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -1019,7 +1349,12 @@ function PredikoideerInnehall() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                  <Link
+                    key={v.href}
+                    href={v.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
                     <span>{v.name}</span>
                     {v.isAi && (
                       <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
@@ -1030,13 +1365,33 @@ function PredikoideerInnehall() {
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link
+                  href="/om"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-[#1a1d1b] mb-4"
+                >
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      supabase.auth.signOut();
+                    }}
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }}
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -1049,45 +1404,46 @@ function PredikoideerInnehall() {
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
-              <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+              <span className="truncate">
+                Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong>
+              </span>
             </div>
           </div>
         )}
 
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
-
-          {/* INTRO-RUTA */}
-          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
+        {/* INTRO-RUTA */}
+          <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+            <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
                   <Lightbulb className="w-5 h-5 text-[#2d3732]" />
                 </div>
-                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                  Predikoidéer
+                <h1 className="text-xl sm:text-2xl font-bold text-[#1a1d1b] tracking-tight leading-snug">
+                  Prediko&shy;idéer
                 </h1>
               </div>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+              <span className="shrink-0 mt-1 sm:mt-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
                 AI
               </span>
             </div>
-            
+
             <div className="text-xs sm:text-sm text-[#575c58] leading-relaxed space-y-3">
               <p>
                 Få nya ingångar, fördjupande perspektiv och konkreta uppslag till söndagens predikan utifrån kyrkoårets texter eller valfria bibelställen.
               </p>
               <div className="space-y-2">
                 <p>
-                  <span className="font-semibold text-[#2d3732]">Generera disposition:</span> Ger förslag på dispositioner och pedagogiska upplägg för 
+                  <span className="font-semibold text-[#2d3732]">Generera disposition:</span> Ger förslag på dispositioner och pedagogiska upplägg för
                   predikans struktur – från inledning till trygg landning.
                 </p>
                 <p>
-                  <span className="font-semibold text-[#2d3732]">Predikobilder & liknelser:</span> Genererar nyskapande metaforer, vardagsnära liknelser 
+                  <span className="font-semibold text-[#2d3732]">Predikobilder &amp; liknelser:</span> Genererar nyskapande metaforer, vardagsnära liknelser
                   och illustrationer från natur, kultur och tradition som hjälper till att göra teologin levande.
                 </p>
                 <p>
-                  <span className="font-semibold text-[#2d3732]">Psalmförslag:</span> Ger tematiskt passande psalmer ur Den svenska psalmboken för mässans 
+                  <span className="font-semibold text-[#2d3732]">Psalmförslag:</span> Ger tematiskt passande psalmer ur Den svenska psalmboken för mässans
                   och gudstjänstens olika delar. (Tänk på att psalmval ska ske i samråd med tjänstgörande kyrkomusiker.)
                 </p>
               </div>
@@ -1095,15 +1451,17 @@ function PredikoideerInnehall() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            
             {/* KOLUMN 1: VÄLJ HELGDAG & TEXT */}
             <section className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-5 border-b border-[#e8e4df] pb-3">
-                1. Välj helgdag, årgång & predikotext
+                1. Välj helgdag, årgång &amp; predikotext
               </h2>
-              
+
               <div className="mb-5">
-                <label htmlFor="helgdag-select" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
+                <label
+                  htmlFor="helgdag-select"
+                  className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider"
+                >
                   Helgdag:
                 </label>
                 <select
@@ -1112,7 +1470,7 @@ function PredikoideerInnehall() {
                   onChange={(e) => setValdHelgdagNamn(e.target.value)}
                   className="w-full p-3 text-xs sm:text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] focus:outline-none focus:border-[#2d3732]"
                 >
-                  {HELGDAGAR.map((h) => (
+                  {allaHelgdagar.map((h) => (
                     <option key={h.namn} value={h.namn}>
                       {h.namn}
                     </option>
@@ -1121,7 +1479,9 @@ function PredikoideerInnehall() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">Årgång:</label>
+                <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
+                  Årgång:
+                </label>
                 <div className="flex gap-2">
                   {[
                     { id: 'argang1', label: 'Årgång 1' },
@@ -1130,6 +1490,7 @@ function PredikoideerInnehall() {
                   ].map((arg) => (
                     <button
                       key={arg.id}
+                      type="button"
                       onClick={() => setValdArgang(arg.id)}
                       className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all ${
                         valdArgang === arg.id
@@ -1150,7 +1511,7 @@ function PredikoideerInnehall() {
                     <strong className="text-[#1a1d1b]">Tema:</strong> {valdHelgdag.tema}
                   </p>
                   <hr className="border-t border-[#e8e4df] my-3" />
-                  
+
                   <p className="text-[11px] font-bold uppercase tracking-wider text-[#8c918d] mb-3">
                     Klicka på den text du vill utgå från i din predikan:
                   </p>
@@ -1180,9 +1541,7 @@ function PredikoideerInnehall() {
                             </span>
                           )}
                         </div>
-                        <div className="text-xs sm:text-sm font-semibold text-[#1a1d1b]">
-                          {t.text}
-                        </div>
+                        <div className="text-xs sm:text-sm font-semibold text-[#1a1d1b]">{t.text}</div>
                       </div>
                     ))}
                   </div>
@@ -1192,224 +1551,118 @@ function PredikoideerInnehall() {
 
             {/* KOLUMN 2: FÖRDJUPNING & AI-ASSISTENT */}
             <section className="space-y-6">
-              
               {/* RUTA 2: FÖRDJUPNING & GRUNDTEXT */}
-                <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                  <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
-                      2. Fördjupning & grundtext
-                    </h2>
-                    <span className="text-[10px] font-semibold text-[#575c58] bg-[#faf8f5] px-2.5 py-0.5 rounded-full border border-[#e8e4df]">
-                      Öppnas i nytt fönster
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#575c58] mb-4 leading-relaxed">
-                    Öppna <strong className="text-[#1a1d1b]">{valdPredikotext}</strong> i ett fördjupningsverktyg.
-                  </p>
-
-                   {/* HJÄLPFUNKTION FÖR ATT PARSA UT BOK, KAPITEL OCH VERS */}
-                   {(() => {
-const parseBibleRef = (refStr) => {
-                      if (!refStr) return { book: 'Gen', chapter: 1, verse: 1 };
-                      
-                      const clean = refStr.replace(/^(Gammaltestamentlig text|Epistel|Evangelium):\s*/i, '').trim();
-                      const match = clean.match(/^([1-5]?\s*[A-Za-zåäöÅÄÖ]+(?:\s+[A-Za-zåäöÅÄÖ]+)?)\s+(\d+):(\d+)/);
-                      
-                      if (match) {
-                        const bookName = match[1].replace(/\s+/g, ' ').trim().toLowerCase();
-                        const chapterNum = Number(match[2]) || 1;
-                        const verseNum = Number(match[3]) || 1;
-                        
-                        const bibleBookMap = {
-                          // Gamla testamentet
-                          '1 mos': 'Gen', 'första moseboken': 'Gen', 'gen': 'Gen', 'genesis': 'Gen',
-                          '2 mos': 'Exo', 'andra moseboken': 'Exo', 'exo': 'Exo', 'exodus': 'Exo',
-                          '3 mos': 'Lev', 'tredje moseboken': 'Lev', 'lev': 'Lev', 'leviticus': 'Lev',
-                          '4 mos': 'Num', 'fjärde moseboken': 'Num', 'num': 'Num', 'numbers': 'Num',
-                          '5 mos': 'Deu', 'femte moseboken': 'Deu', 'deu': 'Deu', 'deuteronomy': 'Deu',
-                          'jos': 'Jos', 'josua': 'Jos', 'joshua': 'Jos',
-                          'dom': 'Jdg', 'domarboken': 'Jdg', 'jdg': 'Jdg', 'judges': 'Jdg',
-                          'rut': 'Rut', 'ruth': 'Ruth',
-                          '1 sam': '1Sa', '1 samuelsboken': '1Sa', '1sa': '1Sa',
-                          '2 sam': '2Sa', '2 samuelsboken': '2Sa', '2sa': '2Sa',
-                          '1 kung': '1Ki', '1 kungaboken': '1Ki', '1ki': '1Ki',
-                          '2 kung': '2Ki', '2 kungaboken': '2Ki', '2ki': '2Ki',
-                          '1 krön': '1Ch', '1 krönikeboken': '1Ch', '1ch': '1Ch',
-                          '2 krön': '2Ch', '2 krönikeboken': '2Ch', '2ch': '2Ch',
-                          'esr': 'Ezr', 'esra': 'Ezr', 'ezr': 'Ezr',
-                          'neh': 'Neh', 'nehemja': 'Neh', 'nehemiah': 'Neh',
-                          'est': 'Est', 'ester': 'Est', 'esther': 'Est',
-                          'job': 'Job',
-                          'ps': 'Psa', 'psaltaren': 'Psa', 'psa': 'Psa', 'psalms': 'Psa',
-                          'ords': 'Pro', 'ordsp': 'Pro', 'ordspråksboken': 'Pro', 'pro': 'Pro', 'proverbs': 'Pro',
-                          'pred': 'Ecc', 'predikaren': 'Ecc', 'ecc': 'Ecc', 'ecclesiastes': 'Ecc',
-                          'höga v': 'Sng', 'hög': 'Sng', 'höga visan': 'Sng', 'sng': 'Sng',
-                          'jes': 'Isa', 'jesaja': 'Isa', 'isa': 'Isa', 'isaiah': 'Isa',
-                          'jer': 'Jer', 'jeremia': 'Jer', 'jeremiah': 'Jer',
-                          'klag': 'Lam', 'klagovisorna': 'Lam', 'lam': 'Lam',
-                          'hes': 'Eze', 'hesekiel': 'Eze', 'eze': 'Eze', 'ezk': 'Eze',
-                          'dan': 'Dan', 'daniel': 'Dan',
-                          'hos': 'Hos', 'hosea': 'Hos',
-                          'joel': 'Joe', 'jol': 'Joe',
-                          'amos': 'Amo', 'amo': 'Amo',
-                          'obad': 'Oba', 'obadja': 'Oba', 'oba': 'Oba',
-                          'jona': 'Jon', 'jon': 'Jon', 'jonah': 'Jon',
-                          'mika': 'Mic', 'mik': 'Mic', 'micah': 'Mic',
-                          'nah': 'Nah', 'nahum': 'Nah', 'nam': 'Nah',
-                          'hab': 'Hab', 'habackuk': 'Hab',
-                          'sef': 'Zep', 'sefanja': 'Zep', 'zep': 'Zep',
-                          'hag': 'Hag', 'haggai': 'Hag',
-                          'sak': 'Zec', 'sakarja': 'Zec', 'zec': 'Zec',
-                          'mal': 'Mal', 'malaki': 'Mal',
-                          // Apokryfer
-                          'vish': 'Wis', 'visheten': 'Wis', 'wis': 'Wis',
-                          'syr': 'Sir', 'syrak': 'Sir', 'sir': 'Sir',
-                          'tob': 'Tob', 'tobit': 'Tob',
-                          'man': 'Man', 'manasses bön': 'Man',
-                          // Nya testamentet (mappade direkt till den grekiska läsarens ID:n)
-                          'matt': 'matthew', 'matteus': 'matthew', 'matthew': 'matthew',
-                          'mark': 'mark', 'markusevangeliet': 'mark', 'markus': 'mark', 'mrk': 'mark',
-                          'luk': 'luke', 'lukasevangeliet': 'luke', 'lukas': 'luke', 'luke': 'luke',
-                          'joh': 'john', 'johannesevangeliet': 'john', 'johannes': 'john', 'john': 'john', 'jhn': 'john',
-                          'apg': 'acts', 'apostlagärningarna': 'acts', 'acts': 'acts',
-                          'rom': 'romans', 'romarbrevet': 'romans', 'romans': 'romans',
-                          '1 kor': '1corinthians', '1kor': '1corinthians', '1co': '1corinthians', '1corinthians': '1corinthians',
-                          '2 kor': '2corinthians', '2kor': '2corinthians', '2co': '2corinthians', '2corinthians': '2corinthians',
-                          'gal': 'galatians', 'galaterbrevet': 'galatians', 'galatians': 'galatians',
-                          'ef': 'ephesians', 'efesierbrevet': 'ephesians', 'eph': 'ephesians', 'ephesians': 'ephesians',
-                          'fil': 'philippians', 'filipperbrevet': 'philippians', 'php': 'philippians', 'philippians': 'philippians',
-                          'kol': 'colossians', 'kolosserbrevet': 'colossians', 'col': 'colossians', 'colossians': 'colossians',
-                          '1 tess': '1thessalonians', '1tess': '1thessalonians', '1th': '1thessalonians', '1thessalonians': '1thessalonians', '1 thess': '1thessalonians',
-                          '2 tess': '2thessalonians', '2tess': '2thessalonians', '2th': '2thessalonians', '2thessalonians': '2thessalonians', '2 thess': '2thessalonians',
-                          '1 tim': '1timothy', '1tim': '1timothy', '1ti': '1timothy', '1timothy': '1timothy',
-                          '2 tim': '2timothy', '2tim': '2timothy', '2ti': '2timothy', '2timothy': '2timothy',
-                          'tit': 'titus', 'titusbrevet': 'titus', 'titus': 'titus',
-                          'filem': 'philemon', 'philemon': 'philemon', 'phm': 'philemon',
-                          'heb': 'hebrews', 'hebreerbrevet': 'hebrews', 'hebrews': 'hebrews', 'hebr': 'hebrews',
-                          'jak': 'james', 'jakobs brev': 'james', 'jakob': 'james', 'james': 'james',
-                          '1 pet': '1peter', '1pet': '1peter', '1pe': '1peter', '1peter': '1peter',
-                          '2 pet': '2peter', '2pet': '2peter', '2pe': '2peter', '2peter': '2peter',
-                          '1 joh': '1john', '1joh': '1john', '1jn': '1john', '1john': '1john',
-                          '2 joh': '2john', '2joh': '2john', '2jn': '2john', '2john': '2john',
-                          '3 joh': '3john', '3joh': '3john', '3jn': '3john', '3john': '3john',
-                          'jud': 'jude', 'judas brev': 'jude', 'jude': 'jude',
-                          'upp': 'revelation', 'uppenbarelseboken': 'revelation', 'rev': 'revelation', 'revelation': 'revelation'
-                        };
-
-                        const mappedBook = bibleBookMap[bookName] || 'Gen';
-
-                        return {
-                          book: mappedBook,
-                          chapter: chapterNum,
-                          verse: verseNum
-                        };
-                      }
-                      
-                      return { book: 'Gen', chapter: 1, verse: 1 };
-                    };
-
-                    const parsed = parseBibleRef(valdPredikotext);
-                    const interlinearParams = `book=${parsed.book}&chapter=${parsed.chapter}&verse=${parsed.verse}`;
-
-                    return (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        
-                        {/* Historiska kommentarer */}
-                        <a
-                          href={`/historik?text=${encodeURIComponent(valdPredikotext)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732] transition-all group flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                                <BookOpen className="w-4 h-4" />
-                              </div>
-                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                            </div>
-                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                              Historiska kommentarer
-                            </div>
-                            <div className="text-[11px] text-[#8c918d] leading-snug">
-                              Kontext & bakgrund
-                            </div>
-                          </div>
-                        </a>
-
-                        {/* Grekisk interlinjär läsare (NT) */}
-                        <a
-                          href={`/grekiska?${interlinearParams}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
-                            valdTextTyp !== 'gt'
-                              ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
-                              : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                                <Languages className="w-4 h-4" />
-                              </div>
-                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                            </div>
-                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                              Grekisk läsare
-                            </div>
-                            <div className="text-[11px] text-[#8c918d] leading-snug">
-                              NT grundtext
-                            </div>
-                          </div>
-                        </a>
-
-                        {/* Hebreisk interlinjär läsare (GT) */}
-                        <a
-                          href={`/hebreiska?${interlinearParams}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
-                            valdTextTyp === 'gt'
-                              ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
-                              : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                                <Languages className="w-4 h-4" />
-                              </div>
-                              <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                            </div>
-                            <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">
-                              Hebreisk läsare
-                            </div>
-                            <div className="text-[11px] text-[#8c918d] leading-snug">
-                              GT grundtext
-                            </div>
-                          </div>
-                        </a>
-                      </div>
-                    );
-                  })()}
+              <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
+                    2. Fördjupning &amp; grundtext
+                  </h2>
+                  <span className="text-[10px] font-semibold text-[#575c58] bg-[#faf8f5] px-2.5 py-0.5 rounded-full border border-[#e8e4df]">
+                    Öppnas i nytt fönster
+                  </span>
                 </div>
+
+                <p className="text-xs text-[#575c58] mb-4 leading-relaxed">
+                  Öppna <strong className="text-[#1a1d1b]">{valdPredikotext}</strong> i ett fördjupningsverktyg.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <a
+                    href={`/historik?text=${encodeURIComponent(valdPredikotext)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 rounded-xl border border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732] transition-all group flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <BookOpen className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">Historiska kommentarer</div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">Kontext &amp; bakgrund</div>
+                    </div>
+                  </a>
+
+                  <a
+                    href={`/grekiska?${interlinearParams}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                      valdTextTyp !== 'gt'
+                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <Languages className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">Grekisk läsare</div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">NT grundtext</div>
+                    </div>
+                  </a>
+
+                  <a
+                    href={`/hebreiska?${interlinearParams}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-3.5 rounded-xl border transition-all group flex flex-col justify-between ${
+                      valdTextTyp === 'gt'
+                        ? 'border-[#e8e4df] bg-[#faf8f5] hover:bg-white hover:border-[#2d3732]'
+                        : 'border-[#e8e4df]/60 bg-[#faf8f5]/50 opacity-65 hover:opacity-100 hover:bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                          <Languages className="w-4 h-4" />
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                      </div>
+                      <div className="text-xs font-bold text-[#1a1d1b] mb-0.5">Hebreisk läsare</div>
+                      <div className="text-[11px] text-[#8c918d] leading-snug">GT grundtext</div>
+                    </div>
+                  </a>
+                </div>
+              </div>
 
               {/* RUTA 3: AI-ASSISTENT */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2">
                   3. AI-assistent
                 </h2>
-                
+
                 <p className="text-xs text-[#575c58] mb-4 bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
-                  Aktiv predikotext: <strong className="text-[#1a1d1b]">{textTypNamn} ({valdPredikotext})</strong>
+                  Aktiv predikotext:{' '}
+                  <strong className="text-[#1a1d1b]">
+                    {textTypNamn} ({valdPredikotext})
+                  </strong>
                 </p>
+
+                {user && arKrediterSlut && (
+                  <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                    Du har <strong className="font-bold">0 krediter</strong> kvar. Du kan inte göra fler AI-anrop förrän du har fått eller köpt fler krediter.
+                  </div>
+                )}
+
+                {aiFelMeddelande && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                    {aiFelMeddelande}
+                  </div>
+                )}
 
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
-                      onClick={() => hanteraAiAnrop(`
+                      type="button"
+                      onClick={() =>
+                        hanteraAiAnrop(
+                          `
                       Du är en mycket god retoriker och teologisk pedagog som vet hur man bygger upp ett tal för att både fånga åhörarna och få fram 
                       kärnan i budskapet.
 
@@ -1419,24 +1672,30 @@ const parseBibleRef = (refStr) => {
                       men utan att ställa frågan rakt ut. Väva gärna in allmänna paralleller till samtiden, nyheter eller omvärlden där det passar.
 
                       FÖRDELNING AV UPPLÄGG:
-                      1. Modell 1 & 2 (Text- och versförankrade): Två förslag som är förankrade i bibeltexten, dess teologiska kärna eller kretsar kring en särskild nyckelmening i texten.
-                      2. Modell 3 (Helgdagens tema): Ett förslag som utgår helt från dagens tema snarare än textens enskilda verser. Detta förslag ska innehålla konkreta exempel ur verkligheten, visa hur man kan leva som kristen idag och vara djupt inkännande för människors liv i vår samtid.
-                      3. Modell 4 (Pedagogisk, narrativ eller induktiv): Ett förslag med en tydlig berättande eller induktiv linje som utgår från människans vardag och tar församlingen med på en upptäcktsresa från anslag till landning.
+1. Modell 1 & 2 (Text- och versförankrade): Två förslag som är förankrade i bibeltexten, dess teologiska kärna eller kretsar kring en särskild nyckelmening i texten.
+2. Modell 3 (Helgdagens tema): Ett förslag som utgår helt från dagens tema snarare än textens enskilda verser. Detta förslag ska innehålla konkreta exempel ur verkligheten, visa hur man kan leva som kristen idag och vara djupt inkännande för människors liv i vår samtid.
+3. Modell 4 (Pedagogisk, narrativ eller induktiv): Ett förslag med en tydlig berättande eller induktiv linje som utgår från människans vardag och tar församlingen med på en upptäcktsresa från anslag till landning.
 
                       STRUKTUR PER DISPOSITION:
-                      - MODELLENS NAMN OCH KARAKTÄR
-                      - INLEDNING / ANSLAG (Hur predikan öppnas)
-                      - HUVUDDEL / RÖRELSE (2–3 tydliga steg med köranvisningar för vad predikanten gör)
-                      - AVSLUTNING / LANDNING (Hur predikan knyts ihop)
-                      `.trim(), 'Disposition')}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+- MODELLENS NAMN OCH KARAKTÄR
+- INLEDNING / ANSLAG (Hur predikan öppnas)
+- HUVUDDEL / RÖRELSE (2–3 tydliga steg med köranvisningar för vad predikanten gör)
+- AVSLUTNING / LANDNING (Hur predikan knyts ihop)
+                      `.trim(),
+                          'Disposition'
+                        )
+                      }
+                      disabled={aiKnapparInaktiverade}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-center cursor-pointer"
                     >
                       Generera predikodisposition
                     </button>
-                    
+
                     <button
-                      onClick={() => hanteraAiAnrop(`
+                      type="button"
+                      onClick={() =>
+                        hanteraAiAnrop(
+                          `
                       Ge 4 varierade och tankeväckande predikobilder, metaforer eller liknelser baserade på dagens text och tema. 
                       Håll genomgående en varm och själavårdande ton i alla förslag, med insikten om att det i kyrkbänken sitter människor 
                       som kämpar med ångest, ensamhet, sorg eller svårigheter i relationer och vardag, medan andra bär på tacksamhet och är nöjda med livet. 
@@ -1444,49 +1703,58 @@ const parseBibleRef = (refStr) => {
                       till samtiden, kulturen, nyheter eller vår tids omvärld där det passar.
 
                       FÖRDELNING AV BILDER OCH MÖJLIGA MÖNSTERSKAPANDE INGÅNGAR:
-                      1. Bild 1 & 2 (Text- och teologinära): Två förslag som fördjupar bibeltextens verser, teologiska nyckelord eller historia med hjälp av överraskande paralleller (t.ex. från natur, vetenskap, konst eller kyrklig tradition).
-                      2. Bild 3 (Tematisk, nutidsnära & vardaglig): Ett förslag som utgår helt från dagens tema och hämtas direkt ur 2020-talets vardagsrealism, arbetsliv, digitala samtid eller moderna relationer. Bilden ska innehålla konkreta exempel på hur det är att vara kristen idag och vara djupt inkännande för människors livssmärta.
-                      3. Bild 4 (Själavårdande & trösterik): En bild som särskilt möter den som bär på spruckna drömmar, oro, sorg eller en känsla av otillräcklighet.
+1. Bild 1 & 2 (Text- och teologinära): Två förslag som fördjupar bibeltextens verser, teologiska nyckelord eller historia med hjälp av överraskande paralleller (t.ex. från natur, vetenskap, konst eller kyrklig tradition).
+2. Bild 3 (Tematisk, nutidsnära & vardaglig): Ett förslag som utgår helt från dagens tema och hämtas direkt ur 2020-talets vardagsrealism, arbetsliv, digitala samtid eller moderna relationer. Bilden ska innehålla konkreta exempel på hur det är att vara kristen idag och vara djupt inkännande för människors livssmärta.
+3. Bild 4 (Själavårdande & trösterik): En bild som särskilt möter den som bär på spruckna drömmar, oro, sorg eller en känsla av otillräcklighet.
 
                       STRUKTUR PER FÖRSLAG:
-                      - TITEL OCH KATEGORI (T.ex. "Vardagsbild: Skärmtid och tystnad")
-                      - BESKRIVNING AV BILDEN (Det konkreta motivet, miljöbilden eller händelsen)
-                      - TEOLOGISK OCH SJÄLAVÅRDANDE BÄRIGHET (Vad bilden förklarar i temat/texten och hur den möter människors liv)
-                      - PREDIKOTIPS (Hur bilden kan introduceras och vävas in i predikan)
-                      `.trim(), 'Predikobilder & liknelser')}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+- TITEL OCH KATEGORI (T.ex. "Vardagsbild: Skärmtid och tystnad")
+- BESKRIVNING AV BILDEN (Det konkreta motivet, miljöbilden eller händelsen)
+- TEOLOGISK OCH SJÄLAVÅRDANDE BÄRIGHET (Vad bilden förklarar i temat/texten och hur den möter människors liv)
+- PREDIKOTIPS (Hur bilden kan introduceras och vävas in i predikan)
+                      `.trim(),
+                          'Predikobilder & liknelser'
+                        )
+                      }
+                      disabled={aiKnapparInaktiverade}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-center cursor-pointer"
                     >
-                      Predikobilder & liknelser
+                      Predikobilder &amp; liknelser
                     </button>
                   </div>
 
                   <button
-                    onClick={() => hanteraAiAnrop(`
+                    type="button"
+                    onClick={() =>
+                      hanteraAiAnrop(
+                        `
                     Du är en teologiskt och kyrkomusikaliskt kunnig assistent med god kännedom om Den svenska psalmboken (med tillägg).
                     Ge mig 5 välvalda psalmförslag som passar för gudstjänsten.
 
                     **Kontext:**
-                    - **Helgdag:** ${valdHelgdag?.namn || 'Ej angiven'}
-                    - **Tema:** "${valdHelgdag?.tema || 'Ej angivet'}"
-                    - **Predikotext (${textTypNamn}):** ${valdPredikotext}
+- **Helgdag:** ${valdHelgdag?.namn || 'Ej angiven'}
+- **Tema:** "${valdHelgdag?.tema || 'Ej angivet'}"
+- **Predikotext (${textTypNamn}):** ${valdPredikotext}
 
                     **Krav på psalmförslagen:**
-                    1. **Precision:** Ange exakt psalm nummer och korrekt titel ur Den svenska psalmboken (eller PSALMER i 2000-talet / tillägg).
-                    2. **Funktion i gudstjänsten:** Ge en varierad blandning som täcker olika delar av mässan/gudstjänsten (t.ex. ingång, psalm före evangeliet, nattvard, utgång/avslutning).
-                    3. **Konkret motivering:** Ge en kort teologisk/tematisk motivering till varför psalmen passar just denna helgdag och predikotext. Lyft gärna fram om någon specifik vers är extra bärande.
+1. **Precision:** Ange exakt psalm nummer och korrekt titel ur Den svenska psalmboken (eller PSALMER i 2000-talet / tillägg).
+2. **Funktion i gudstjänsten:** Ge en varierad blandning som täcker olika delar av mässan/gudstjänsten (t.ex. ingång, psalm före evangeliet, nattvard, utgång/avslutning).
+3. **Konkret motivering:** Ge en kort teologisk/tematisk motivering till varför psalmen passar just denna helgdag och predikotext. Lyft gärna fram om någon specifik vers är extra bärande.
 
                     **Struktur per psalm:**
-                    - **Psalmnummer & Titel** (T.ex. "Psalmer 201: En vänlig grönskas rika dräkt")
-                    - **Gudstjänstled / Plats** (T.ex. "Ingångspsalm" eller "Gradualpsalm")
-                    - **Motivering & Versförslag** (Kort teologisk koppling till dagens tema och text)
+- **Psalmnummer & Titel** (T.ex. "Psalmer 201: En vänlig grönskas rika dräkt")
+- **Gudstjänstled / Plats** (T.ex. "Ingångspsalm" eller "Gradualpsalm")
+- **Motivering & Versförslag** (Kort teologisk koppling till dagens tema och text)
 
                     FORMATERING:
-                    - Skriv i helt ren klartext utan stjärnor (* eller **), brädgårdar (#) eller understreck (_).
-                    - Använd dubbla radbrytningar mellan stycken.
-                    `.trim(), 'Psalmförslag')}                    
-                    disabled={laddarAi}
-                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+- Skriv i helt ren klartext utan stjärnor (* eller **), brädgårdar (#) eller understreck (_).
+- Använd dubbla radbrytningar mellan stycken.
+                    `.trim(),
+                        'Psalmförslag'
+                      )
+                    }
+                    disabled={aiKnapparInaktiverade}
+                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                   >
                     Ge psalmförslag för dagen
                   </button>
@@ -1501,9 +1769,10 @@ const parseBibleRef = (refStr) => {
                     className="w-full px-4 py-3 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732] mb-3"
                   />
                   <button
+                    type="button"
                     onClick={() => hanteraAiAnrop(null, null, { inkluderaFraga: false })}
-                    disabled={laddarAi}
-                    className="w-full py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                    disabled={aiKnapparInaktiverade}
+                    className="w-full py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                   >
                     {laddarAi ? 'Genererar förslag...' : 'Fråga AI-assistenten'}
                   </button>
@@ -1520,6 +1789,7 @@ const parseBibleRef = (refStr) => {
               </h2>
               {aiHistorik.length > 0 && (
                 <button
+                  type="button"
                   onClick={rensaHistorik}
                   className="bg-white hover:bg-[#faf8f5] text-[#575c58] hover:text-[#1a1d1b] border border-[#e8e4df] rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
@@ -1536,18 +1806,13 @@ const parseBibleRef = (refStr) => {
             ) : (
               <div className="space-y-4">
                 {aiHistorik.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-[#faf8f5] p-6 rounded-2xl border border-[#e8e4df]"
-                  >
+                  <div key={item.id} className="bg-[#faf8f5] p-6 rounded-2xl border border-[#e8e4df]">
                     <div className="flex justify-between items-center mb-3 border-b border-[#e8e4df] pb-3">
                       <span className="text-xs sm:text-sm font-bold text-[#1a1d1b]">
                         {item.titel} ({item.helgdag})
                       </span>
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] text-[#8c918d] font-semibold">
-                          Kl. {item.tid}
-                        </span>
+                        <span className="text-[11px] text-[#8c918d] font-semibold">Kl. {item.tid}</span>
                         <KopieraKnapp text={item.svar} />
                       </div>
                     </div>
@@ -1566,51 +1831,55 @@ const parseBibleRef = (refStr) => {
               Utforska fler verktyg
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {verktygLista.filter(v => v.href !== '/predikoideer').map((v) => {
-                const Icon = v.icon;
-                return (
-                  <Link 
-                    key={v.href} 
-                    href={`${v.href}${valdHelgdag?.namn ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(valdArgang || 'argang1')}` : ''}`} 
-                    className="group block"
-                  >
-                    <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                            <Icon className="w-4 h-4" />
+              {verktygLista
+                .filter((v) => v.href !== '/predikoideer')
+                .map((v) => {
+                  const Icon = v.icon;
+                  return (
+                    <Link
+                      key={v.href}
+                      href={`${v.href}${
+                        valdHelgdag?.namn
+                          ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(
+                              valdArgang || 'argang1'
+                            )}`
+                          : ''
+                      }`}
+                      className="group block"
+                    >
+                      <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                              <Icon className="w-4 h-4" />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {v.isAi && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                  AI
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {v.isAi && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                                AI
-                              </span>
-                            )}
-                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                          </div>
+                          <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
+                            {v.name}
+                          </h4>
+                          <p className="text-xs text-[#575c58] leading-relaxed">{v.desc}</p>
                         </div>
-                        <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
-                          {v.name}
-                        </h4>
-                        <p className="text-xs text-[#575c58] leading-relaxed">
-                          {v.desc}
-                        </p>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
             </div>
           </section>
-
         </main>
       </div>
 
       {/* FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          
           <div className="col-span-2 space-y-3">
             <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
@@ -1627,7 +1896,9 @@ const parseBibleRef = (refStr) => {
             <ul className="space-y-2 text-xs text-[#575c58]">
               {verktygLista.map((v) => (
                 <li key={v.href}>
-                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
+                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">
+                    {v.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -1636,34 +1907,54 @@ const parseBibleRef = (refStr) => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Information</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              <li><Link href="/om" className="hover:text-[#1a1d1b] transition-colors">Om tjänsten</Link></li>
-              <li><Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">Pris & abonnemang</Link></li>
-              <li><Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">Integritetspolicy</Link></li>
-              <li><Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">Användarvillkor</Link></li>
+              <li>
+                <Link href="/om" className="hover:text-[#1a1d1b] transition-colors">
+                  Om tjänsten
+                </Link>
+              </li>
+              <li>
+                <Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">
+                  Pris &amp; abonnemang
+                </Link>
+              </li>
+              <li>
+                <Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">
+                  Integritetspolicy
+                </Link>
+              </li>
+              <li>
+                <Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">
+                  Användarvillkor
+                </Link>
+              </li>
             </ul>
           </div>
-
         </div>
       </footer>
 
       {/* Inloggningsmodal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         message={modalMessage}
         onAuthSuccess={() => {
           setShowAuthModal(false);
           fetchProfile();
-        }} 
+        }}
       />
-
     </div>
   );
 }
 
 export default function PredikoideerPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-xs text-[#575c58]">Laddar predikoidéer...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-xs text-[#575c58]">
+          Laddar predikoidéer...
+        </div>
+      }
+    >
       <PredikoideerInnehall />
     </Suspense>
   );

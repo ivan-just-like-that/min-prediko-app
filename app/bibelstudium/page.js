@@ -1,20 +1,22 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { sanitizeCredits, hasNoCredits, syncCreditsFromResult } from '@/lib/credits';
 import AuthModal from '@/components/AuthModal';
-import { 
+import {
   Compass,
-  ChevronDown, 
-  Sparkles, 
-  BookOpen, 
-  Languages, 
-  Smile, 
-  Feather, 
-  BookMarked, 
-  Sprout, 
-  TrendingUp, 
+  ChevronDown,
+  Sparkles,
+  BookOpen,
+  Languages,
+  Smile,
+  Feather,
+  BookMarked,
+  Sprout,
+  TrendingUp,
   ArrowUpRight,
   LogOut,
   KeyRound,
@@ -22,7 +24,7 @@ import {
   X,
   Copy,
   Check,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 
 // Hjälp-komponent för kopiera-knapp i Attio-stil
@@ -42,6 +44,7 @@ function KopieraKnapp({ text }) {
 
   return (
     <button
+      type="button"
       onClick={hanteraKopiera}
       className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border ${
         kopierad
@@ -69,6 +72,7 @@ export default function BibelstudieGuide() {
   const [bibelstalle, setBibelstalle] = useState('');
   const [studieSvar, setStudieSvar] = useState('');
   const [laddar, setLaddar] = useState(false);
+  const [felMeddelande, setFelMeddelande] = useState('');
   const [historik, setHistorik] = useState([]);
 
   // States för menyer
@@ -79,13 +83,13 @@ export default function BibelstudieGuide() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [user, setUser] = useState(null);
-  const [credits, setCredits] = useState(null);
+  const [credits, setCredits] = useState(0);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },
     { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
     { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
     { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
@@ -97,7 +101,7 @@ export default function BibelstudieGuide() {
   ];
 
   // --- HÄMTA PROFIL OCH LYSSNA PÅ INLOGGNINGSÄNDRINGAR ---
-  useEffect(() => {
+useEffect(() => {
     fetchProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -105,7 +109,7 @@ export default function BibelstudieGuide() {
         fetchProfile();
       } else {
         setUser(null);
-        setCredits(null);
+        setCredits(0);
         setIsTester(false);
         setAuthLoading(false);
       }
@@ -115,23 +119,34 @@ export default function BibelstudieGuide() {
   }, []);
 
   const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
+      setUser(null);
+      setCredits(0);
+      setIsTester(false);
       setAuthLoading(false);
       return;
     }
     setUser(user);
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('credits, is_tester')
       .eq('id', user.id)
       .maybeSingle();
 
+    if (error) {
+      console.error('Kunde inte hämta profil från Supabase:', error);
+    }
+
     if (profile) {
-      const startCredits = profile.credits ?? profile.tokens ?? 0;
-      setCredits(startCredits);
-      setIsTester(profile.is_tester);
+      setCredits(sanitizeCredits(profile.credits));
+      setIsTester(Boolean(profile.is_tester));
+    } else {
+      setCredits(0);
+      setIsTester(false);
     }
     setAuthLoading(false);
   };
@@ -148,9 +163,25 @@ export default function BibelstudieGuide() {
     }
   }, []);
 
+  const arKrediterSlut = hasNoCredits(credits, isTester);
+
   const hanteraGenerering = async (e) => {
     e?.preventDefault();
-    if (!bibelstalle.trim()) return;
+    if (!bibelstalle.trim() || laddar) return;
+
+    setFelMeddelande('');
+
+    if (!user) {
+      setModalMessage('Du måste vara inloggad för att använda verktyget.');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (hasNoCredits(credits, isTester)) {
+      setCredits(0);
+      setFelMeddelande('Du har 0 krediter kvar. Fyll på krediter för att skapa samtalsfrågor.');
+      return;
+    }
 
     setLaddar(true);
 
@@ -173,16 +204,16 @@ export default function BibelstudieGuide() {
 
       ### 💬 10 Samtalsfrågor för gruppen
 
-      1. **Vad handlar texten om?** (Observation & händelseförlopp)
-      2. **Mottagare & Ursprungskontext** (Vem skrevs texten till ursprungligen och varför?)
-      3. **Kulturell bakgrund** (Vilka samtida förhållanden eller traditioner är viktiga för oss att känna till?)
-      4. **Guds bild & Budskap** (Vad uppenbarar texten om Gud, Jesus eller människans relation till det heliga?)
-      5. **Identifikation** (Vilka personer eller roller i texten kan vi lättast känna igen oss i, och varför?)
-      6. **Utmaning i texten** (Vad i denna text kan kännas svårt, provokativt eller utmanande för oss idag?)
-      7. **Koppling till vår vardag** (Hur talar detta direkt in i våra relationer, gemenskaper eller vår vardagliga tro?)
-      8. **Gemensam reflektion** (Finns det en specifik vers eller tanke som stannar kvar hos oss extra mycket?)
-      9. **Livsåskådning & Samhälle** (Hur utmanar eller stöttar detta budskap den värld och det samhälle vi lever i nu?)
-      10. **Bön & Handling** (Vad skickar denna text med oss gemensamt för handling eller böneämne i veckan?)
+1. **Vad handlar texten om?** (Observation & händelseförlopp)
+2. **Mottagare & Ursprungskontext** (Vem skrevs texten till ursprungligen och varför?)
+3. **Kulturell bakgrund** (Vilka samtida förhållanden eller traditioner är viktiga för oss att känna till?)
+4. **Guds bild & Budskap** (Vad uppenbarar texten om Gud, Jesus eller människans relation till det heliga?)
+5. **Identifikation** (Vilka personer eller roller i texten kan vi lättast känna igen oss i, och varför?)
+6. **Utmaning i texten** (Vad i denna text kan kännas svårt, provokativt eller utmanande för oss idag?)
+7. **Koppling till vår vardag** (Hur talar detta direkt in i våra relationer, gemenskaper eller vår vardagliga tro?)
+8. **Gemensam reflektion** (Finns det en specifik vers eller tanke som stannar kvar hos oss extra mycket?)
+9. **Livsåskådning & Samhälle** (Hur utmanar eller stöttar detta budskap den värld och det samhälle vi lever i nu?)
+10. **Bön & Handling** (Vad skickar denna text med oss gemensamt för handling eller böneämne i veckan?)
 
       ---
 
@@ -196,7 +227,7 @@ export default function BibelstudieGuide() {
         sida: 'bibelstudium',
         verktyg: 'Bibelstudiefrågor',
         helgdag: 'Bibelstudium',
-        tema: bibelstalle
+        tema: bibelstalle,
       };
 
       const data = await generateContent(payload, () => {
@@ -204,32 +235,30 @@ export default function BibelstudieGuide() {
         setShowAuthModal(true);
       });
 
-      const nyttSvar = data.text || 'Kunde inte generera samtalsfrågor.';
+      syncCreditsFromResult(data, { setCredits, setIsTester });
 
-      if (data.tokensLeft !== undefined) {
-        setCredits(data.tokensLeft);
-      }
-
+      const nyttSvar = data?.text || 'Kunde inte generera samtalsfrågor.';
       setStudieSvar(nyttSvar);
 
       const nyPost = {
         id: Date.now(),
         bibelstalle: bibelstalle,
         svar: nyttSvar,
-        tid: new Date().toLocaleDateString('sv-SE', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) + ' min'
+        tid:
+          new Date().toLocaleDateString('sv-SE', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          }) + ' min',
       };
 
       const uppdaterad = [nyPost, ...historik];
       setHistorik(uppdaterad);
       localStorage.setItem('bibelstudie_historik', JSON.stringify(uppdaterad));
-
     } catch (err) {
-      alert(err.message || 'Det uppstod ett fel vid anropet.');
+      syncCreditsFromResult(err, { setCredits, setIsTester });
+      setFelMeddelande(err?.message || 'Det uppstod ett fel vid anropet.');
     } finally {
       setLaddar(false);
     }
@@ -244,12 +273,10 @@ export default function BibelstudieGuide() {
 
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
-      
       <div>
         {/* HEADER (ATTIO-STYLE NAVIGATION) */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
             {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
@@ -262,25 +289,30 @@ export default function BibelstudieGuide() {
               {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
-                  <button 
+                  <button
+                    type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
                   >
                     Verktyg
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        toolsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
 
                   {toolsOpen && (
-                    <div 
+                    <div
                       onMouseEnter={() => setToolsOpen(true)}
                       className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
                     >
                       {verktygLista.map((v) => {
                         const Icon = v.icon;
                         return (
-                          <Link 
-                            key={v.href} 
+                          <Link
+                            key={v.href}
                             href={v.href}
                             className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#faf8f5] transition-colors group"
                           >
@@ -305,7 +337,10 @@ export default function BibelstudieGuide() {
                   )}
                 </div>
 
-                <Link href="/om" className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors">
+                <Link
+                  href="/om"
+                  className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
+                >
                   Om
                 </Link>
               </nav>
@@ -316,9 +351,10 @@ export default function BibelstudieGuide() {
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">
-                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
+                    {isTester ? '✨ Testkonto' : `⚡ ${sanitizeCredits(credits)} krediter`}
                   </span>
                   <button
+                    type="button"
                     onClick={() => supabase.auth.signOut()}
                     className="px-3.5 py-2 text-xs font-semibold text-[#1a1d1b] bg-white border border-[#e8e4df] hover:bg-[#f0ece6] rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
@@ -326,22 +362,26 @@ export default function BibelstudieGuide() {
                     Logga ut
                   </button>
                 </div>
-              ) : !authLoading && (
-                <button
-                  onClick={() => {
-                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
-                    setShowAuthModal(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Logga in
-                </button>
+              ) : (
+                !authLoading && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                      setShowAuthModal(true);
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Logga in
+                  </button>
+                )
               )}
             </div>
 
             {/* MOBIL MENY-KNAPP */}
-            <button 
+            <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
             >
@@ -355,7 +395,11 @@ export default function BibelstudieGuide() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link key={v.href} href={v.href} className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between">
+                  <Link
+                    key={v.href}
+                    href={v.href}
+                    className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
+                  >
                     <span>{v.name}</span>
                     {v.isAi && (
                       <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
@@ -366,13 +410,23 @@ export default function BibelstudieGuide() {
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">Om PREDIKA</Link>
+                <Link href="/om" className="block text-sm font-medium text-[#1a1d1b] mb-4">
+                  Om PREDIKA
+                </Link>
                 {user ? (
-                  <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => supabase.auth.signOut()}
+                    className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold"
+                  >
                     Logga ut
                   </button>
                 ) : (
-                  <button onClick={() => setShowAuthModal(true)} className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
+                  >
                     Logga in
                   </button>
                 )}
@@ -385,36 +439,44 @@ export default function BibelstudieGuide() {
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
-              <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+              <span className="truncate">
+                Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong>
+              </span>
             </div>
           </div>
         )}
 
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
-          
-          {/* INTRO OCH SÖKFORMULÄR */}
-          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
+
+        {/* INTRO OCH SÖKFORMULÄR */}
+          <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+            <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
                   <BookMarked className="w-5 h-5 text-[#2d3732]" />
                 </div>
-                <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                  Bibelstudieguiden
+                <h1 className="text-xl sm:text-2xl font-bold text-[#1a1d1b] tracking-tight leading-snug">
+                  Bibelstudie&shy;guiden
                 </h1>
               </div>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+              <span className="shrink-0 mt-1 sm:mt-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
                 AI
               </span>
             </div>
-            
+
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed mb-6">
-                Skapa samtalsfrågor och vägledning för smågrupper och bibelstudier.
-                Skriv in en bibeltext för att generera en kort introduktion för samtalets ledare, tio genomarbetade samtalsfrågor som täcker in 
-                textens innehåll, kontext och vardagstillämpning, samt ett utkast till en avslutande bön.
+              Skapa samtalsfrågor och vägledning för smågrupper och bibelstudier.
+              Skriv in en bibeltext för att generera en kort introduktion för samtalets ledare, tio genomarbetade samtalsfrågor som täcker in
+              textens innehåll, kontext och vardagstillämpning, samt ett utkast till en avslutande bön.
             </p>
 
+            {!authLoading && user && !isTester && credits !== null && arKrediterSlut && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                Du har 0 krediter kvar. Fyll på krediter för att skapa fler samtalsfrågor.
+              </div>
+            )}
+            
             <form onSubmit={hanteraGenerering} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -425,12 +487,16 @@ export default function BibelstudieGuide() {
               />
               <button
                 type="submit"
-                disabled={laddar}
-                className="px-6 py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl font-semibold text-xs sm:text-sm transition-colors disabled:opacity-50 shadow-sm whitespace-nowrap"
+                disabled={laddar || (Boolean(user) && arKrediterSlut)}
+                className="px-6 py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl font-semibold text-xs sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm whitespace-nowrap cursor-pointer"
               >
                 {laddar ? 'Skapar frågor...' : 'Skapa samtalsfrågor'}
               </button>
             </form>
+
+            {felMeddelande && (
+              <p className="mt-3 text-xs text-red-700 leading-relaxed">{felMeddelande}</p>
+            )}
           </div>
 
           {/* SENASTE RESULTATET */}
@@ -438,7 +504,8 @@ export default function BibelstudieGuide() {
             <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
               <div className="flex justify-between items-center pb-4 border-b border-[#e8e4df] mb-6">
                 <h2 className="text-sm font-bold text-[#1a1d1b]">
-                  Samtalsfrågor för <span className="text-[#2d3732] underline decoration-[#e8e4df]">{bibelstalle}</span>:
+                  Samtalsfrågor för{' '}
+                  <span className="text-[#2d3732] underline decoration-[#e8e4df]">{bibelstalle}</span>:
                 </h2>
                 <KopieraKnapp text={studieSvar} />
               </div>
@@ -456,6 +523,7 @@ export default function BibelstudieGuide() {
               </h2>
               {historik.length > 0 && (
                 <button
+                  type="button"
                   onClick={rensaHistorik}
                   className="bg-white hover:bg-[#faf8f5] text-[#575c58] hover:text-[#1a1d1b] border border-[#e8e4df] rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
@@ -502,47 +570,45 @@ export default function BibelstudieGuide() {
               Utforska fler verktyg
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {verktygLista.filter(v => v.href !== '/bibelstudium').map((v) => {
-                const Icon = v.icon;
-                return (
-                  <Link key={v.href} href={v.href} className="group block">
-                    <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                            <Icon className="w-4 h-4" />
+              {verktygLista
+                .filter((v) => v.href !== '/bibelstudium')
+                .map((v) => {
+                  const Icon = v.icon;
+                  return (
+                    <Link key={v.href} href={v.href} className="group block">
+                      <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                              <Icon className="w-4 h-4" />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {v.isAi && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                  AI
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {v.isAi && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                                AI
-                              </span>
-                            )}
-                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                          </div>
+                          <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
+                            {v.name}
+                          </h4>
+                          <p className="text-xs text-[#575c58] leading-relaxed">{v.desc}</p>
                         </div>
-                        <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
-                          {v.name}
-                        </h4>
-                        <p className="text-xs text-[#575c58] leading-relaxed">
-                          {v.desc}
-                        </p>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
             </div>
           </section>
-
         </main>
       </div>
 
       {/* ATTIO-STYLE FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          
           <div className="col-span-2 space-y-3">
             <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
@@ -556,7 +622,9 @@ export default function BibelstudieGuide() {
             <ul className="space-y-2 text-xs text-[#575c58]">
               {verktygLista.map((v) => (
                 <li key={v.href}>
-                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
+                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">
+                    {v.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -565,27 +633,41 @@ export default function BibelstudieGuide() {
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Information</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              <li><Link href="/om" className="hover:text-[#1a1d1b] transition-colors">Om tjänsten</Link></li>
-              <li><Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">Pris & abonnemang</Link></li>
-              <li><Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">Integritetspolicy</Link></li>
-              <li><Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">Användarvillkor</Link></li>
+              <li>
+                <Link href="/om" className="hover:text-[#1a1d1b] transition-colors">
+                  Om tjänsten
+                </Link>
+              </li>
+              <li>
+                <Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">
+                  Pris &amp; abonnemang
+                </Link>
+              </li>
+              <li>
+                <Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">
+                  Integritetspolicy
+                </Link>
+              </li>
+              <li>
+                <Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">
+                  Användarvillkor
+                </Link>
+              </li>
             </ul>
           </div>
-
         </div>
       </footer>
 
       {/* INLOGGNINGSMODAL */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         message={modalMessage}
         onAuthSuccess={() => {
           setShowAuthModal(false);
           fetchProfile();
-        }} 
+        }}
       />
-
     </div>
   );
 }

@@ -1,23 +1,24 @@
 'use client';
+
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { generateContent } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { sanitizeCredits, hasNoCredits, syncCreditsFromResult } from '@/lib/credits';
 import AuthModal from '@/components/AuthModal';
-import { 
+import {
   Compass,
   ChevronDown,
   Droplets,
-  Blend, 
-  Sparkles, 
-  BookOpen, 
-  Languages, 
-  Smile, 
-  Feather, 
-  BookMarked, 
-  Sprout, 
-  TrendingUp, 
+  Blend,
+  Sparkles,
+  BookOpen,
+  Languages,
+  Smile,
+  Feather,
+  BookMarked,
+  Sprout,
+  TrendingUp,
   ArrowUpRight,
   LogOut,
   KeyRound,
@@ -25,7 +26,7 @@ import {
   X,
   Copy,
   Check,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 
 // Hjälp-komponent för kopiera-knapp i Attio-stil
@@ -691,10 +692,10 @@ export const HELGDAGAR = [
 function KasualtalInnehall() {
   const searchParams = useSearchParams();
 
-  // Tillstånd för kasualtyp, textkälla och val
+  // Tillstånd för kasualtyp, textkälla och val ('evangelieboken', 'egen', 'ingen')
   const [kasualTyp, setKasualTyp] = useState('dop'); // 'dop', 'vigsel', 'begravning'
-  const [textKalla, setTextKalla] = useState('evangelieboken'); // 'evangelieboken' eller 'egen'
-  
+  const [textKalla, setTextKalla] = useState('evangelieboken');
+
   // Evangeliebok-val
   const [valdHelgdagNamn, setValdHelgdagNamn] = useState(HELGDAGAR[0]?.namn || '');
   const [valdArgang, setValdArgang] = useState('argang1');
@@ -704,11 +705,11 @@ function KasualtalInnehall() {
   const [egenText, setEgenText] = useState('');
   const [personligBakgrund, setPersonligBakgrund] = useState('');
 
-  // Anteckningar & AI
-  const [anteckningar, setAnteckningar] = useState('');
+  // AI-states
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiHistorik, setAiHistorik] = useState([]);
   const [laddarAi, setLaddarAi] = useState(false);
+  const [aiFelMeddelande, setAiFelMeddelande] = useState('');
 
   // States för menyer
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -718,13 +719,13 @@ function KasualtalInnehall() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [user, setUser] = useState(null);
-  const [credits, setCredits] = useState(null);
+  const [credits, setCredits] = useState(0);
   const [isTester, setIsTester] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   const verktygLista = [
     { name: 'Predikoidéer', desc: 'Dispositioner & uppslag till söndagen', href: '/predikoideer', icon: Sparkles, isAi: true },
-    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },   
+    { name: 'Kasualtal', desc: 'Dop, vigsel & begravning', href: '/kasualtal', icon: Feather, isAi: true },
     { name: 'Grekisk interlinjär läsare', desc: 'Grundtextanalys av Nya testamentet', href: '/grekiska', icon: Languages, isAi: false },
     { name: 'Hebreisk interlinjär läsare', desc: 'Grundtextanalys av Gamla testamentet', href: '/hebreiska', icon: Languages, isAi: false },
     { name: 'Historiska kommentarer', desc: 'Historisk & kulturell kontext', href: '/historik', icon: BookOpen, isAi: true },
@@ -744,7 +745,7 @@ function KasualtalInnehall() {
         fetchProfile();
       } else {
         setUser(null);
-        setCredits(null);
+        setCredits(0);
         setIsTester(false);
         setAuthLoading(false);
       }
@@ -754,23 +755,34 @@ function KasualtalInnehall() {
   }, []);
 
   const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
+      setUser(null);
+      setCredits(0);
+      setIsTester(false);
       setAuthLoading(false);
       return;
     }
     setUser(user);
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('credits, is_tester')
       .eq('id', user.id)
       .maybeSingle();
 
+    if (error) {
+      console.error('Kunde inte hämta profil från Supabase:', error);
+    }
+
     if (profile) {
-      const startCredits = profile.credits ?? profile.tokens ?? 0;
-      setCredits(startCredits);
-      setIsTester(profile.is_tester);
+      setCredits(sanitizeCredits(profile.credits));
+      setIsTester(Boolean(profile.is_tester));
+    } else {
+      setCredits(0);
+      setIsTester(false);
     }
     setAuthLoading(false);
   };
@@ -804,7 +816,7 @@ function KasualtalInnehall() {
     if (urlHelgdag) {
       const rentHelgdagNamn = urlHelgdag.replace(/\s*\(.*\)/, '').trim();
       const hittad = HELGDAGAR.find((h) => h.namn.toLowerCase() === rentHelgdagNamn.toLowerCase());
-      
+
       if (hittad) {
         setValdHelgdagNamn(hittad.namn);
 
@@ -834,13 +846,6 @@ function KasualtalInnehall() {
     }
   }, []);
 
-  // Läs in sparade anteckningar baserat på tillfälle
-  useEffect(() => {
-    const nyckel = `kasual_anteckningar_${kasualTyp}`;
-    const sparadText = localStorage.getItem(nyckel);
-    setAnteckningar(sparadText || '');
-  }, [kasualTyp]);
-
   const valdHelgdag = HELGDAGAR.find((h) => h.namn === valdHelgdagNamn);
   const valdaTexter = valdHelgdag ? valdHelgdag[valdArgang] : null;
   const valdPredikotext = valdaTexter ? valdaTexter[valdTextTyp] : '';
@@ -848,37 +853,58 @@ function KasualtalInnehall() {
   const textTypNamn = {
     gt: 'Gammaltestamentlig text',
     epistel: 'Epistel',
-    evangelium: 'Evangelium'
+    evangelium: 'Evangelium',
   }[valdTextTyp];
 
   const kasualTypNamn = {
     dop: 'Doptal',
     vigsel: 'Vigseltal',
-    begravning: 'Griftetal'
+    begravning: 'Griftetal',
   }[kasualTyp];
 
-  const aktivTextBeskrivning = textKalla === 'evangelieboken'
-    ? `${textTypNamn}: ${valdPredikotext} (${valdHelgdag?.namn})`
-    : (egenText.trim() ? egenText : 'Ingen särskild bibeltext angiven');
+  const aktivTextBeskrivning =
+    textKalla === 'evangelieboken'
+      ? `${textTypNamn}: ${valdPredikotext} (${valdHelgdag?.namn})`
+      : textKalla === 'egen'
+      ? egenText.trim()
+        ? `Egen text/tema: ${egenText}`
+        : 'Eget tema (ej specificerat)'
+      : 'Ingen bibeltext vald (fokus helt på personlig kontext)';
+
+  const arKrediterSlut = hasNoCredits(credits, isTester);
+  const aiKnapparInaktiverade = laddarAi || (Boolean(user) && arKrediterSlut);
 
   const hanteraAiAnrop = async (instruktion, etikett, { inkluderaFraga = true } = {}) => {
     const textAttSkicka = instruktion || aiPrompt;
     const rubrik = etikett || aiPrompt || 'Egen fråga';
 
-    if (!textAttSkicka.trim()) return;
+    if (!textAttSkicka.trim() || laddarAi) return;
+
+    setAiFelMeddelande('');
+
+    if (!user) {
+      setModalMessage('Du måste vara inloggad för att använda verktyget.');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (hasNoCredits(credits, isTester)) {
+      setCredits(0);
+      setAiFelMeddelande('Du har 0 krediter kvar. Fyll på krediter för att göra fler AI-anrop.');
+      return;
+    }
 
     setLaddarAi(true);
 
-    const typNamn = kasualTypNamn || (
-      kasualTyp === 'dop' ? 'Doptal' :
-      kasualTyp === 'vigsel' ? 'Vigseltal' : 'Griftetal'
-    );
+    const typNamn =
+      kasualTypNamn ||
+      (kasualTyp === 'dop' ? 'Doptal' : kasualTyp === 'vigsel' ? 'Vigseltal' : 'Griftetal');
 
     const fullPrompt = `
     Du är en erfaren och teologiskt skarp präst i Svenska kyrkan som fungerar som ett kollegialt sparringpartner inför ett ${typNamn.toLowerCase()}.
 
     TILLFÄLLE: ${typNamn}
-    VALD TEXT / TEMA: ${aktivTextBeskrivning || 'Ingen specifik text angiven'}
+    VALD TEXT / TEMA: ${aktivTextBeskrivning}
 
     PERSONLIG BAKGRUND OCH KONTEXT:
     "${personligBakgrund && personligBakgrund.trim() ? personligBakgrund : 'Ingen personlig bakgrund angiven.'}"
@@ -894,10 +920,9 @@ function KasualtalInnehall() {
 - Vigseltal: Bärs av kärlek, gemenskap, trofasthet och livets möjligheter.
 
     RÅD FÖR UTFORMNINGEN:
-1. **Talbarhet:** Skriv i en muntlig rytm med naturliga pauser, anpassat för att tala direkt till de anhöriga/församlingen.
-    2. **Hantering av personliga detaljer:** Väv samman den personliga bakgrunden med den teologiska kärnan på ett varsamt och smakfullt sätt. 
-    Undvik att göra det för privat eller mekaniskt.
-    3. **Konkreta byggstenar:** Ge strukturerade uppslag och ingångar som prästen enkelt kan bearbeta vidare i sitt eget personliga hantverk.
+1. Talbarhet: Skriv i en muntlig rytm med naturliga pauser, anpassat för att tala direkt till de anhöriga/församlingen.
+2. Hantering av personliga detaljer: Väv samman den personliga bakgrunden med den teologiska kärnan på ett varsamt och smakfullt sätt. Undvik att göra det för privat eller mekaniskt.
+3. Konkreta byggstenar: Ge strukturerade uppslag och ingångar som prästen enkelt kan bearbeta vidare i sitt eget personliga hantverk.
 
     FORMATERING:
 - Använd inte Markdown-stjärnor (* eller **).
@@ -906,39 +931,66 @@ function KasualtalInnehall() {
     `.trim();
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        setModalMessage('Din session har löpt ut. Logga in på nytt för att använda verktyget.');
+        setShowAuthModal(true);
+        return;
+      }
+
       const payload = {
         prompt: fullPrompt,
         sida: 'kasualtal',
         verktyg: typNamn,
-        helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
+        helgdag:
+          textKalla === 'evangelieboken'
+            ? valdHelgdag?.namn || 'Ej angiven helgdag'
+            : textKalla === 'egen'
+            ? 'Egen text'
+            : 'Ingen bibeltext',
         tema: egenText || valdHelgdag?.tema || 'Ej angivet tema',
         argang: valdArgang,
         valdPredikotext: textKalla === 'evangelieboken' ? `${textTypNamn}: ${valdPredikotext}` : egenText,
-        inkluderaFraga: inkluderaFraga,
+        inkluderaFraga,
       };
 
-      const data = await generateContent(payload, () => {
-        setModalMessage('Du måste vara inloggad för att använda verktyget.');
-        setShowAuthModal(true);
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
       });
 
-      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
+      const data = await res.json().catch(() => ({}));
+      syncCreditsFromResult(data, { setCredits, setIsTester });
 
-      if (data.tokensLeft !== undefined) {
-        setCredits(data.tokensLeft);
+      if (!res.ok) {
+        setAiFelMeddelande(
+          data.text || data.error || 'Det uppstod ett fel vid anropet. Ingen kredit har dragits.'
+        );
+        return;
       }
+
+      const nyttSvar = data.text || 'Inga förslag kunde genereras.';
 
       const nyPost = {
         id: Date.now(),
         titel: `${rubrik} – ${typNamn}`,
         svar: nyttSvar,
-        helgdag: textKalla === 'evangelieboken' ? (valdHelgdag?.namn || 'Ej angiven helgdag') : 'Egen text',
+        helgdag:
+          textKalla === 'evangelieboken' ? valdHelgdag?.namn || 'Ej angiven helgdag' : 'Egen text',
         tid: new Date().toLocaleDateString('sv-SE', {
           day: 'numeric',
           month: 'short',
           hour: '2-digit',
-          minute: '2-digit'
-        })
+          minute: '2-digit',
+        }),
       };
 
       const uppdateradHistorik = [nyPost, ...aiHistorik];
@@ -949,8 +1001,9 @@ function KasualtalInnehall() {
         setAiPrompt('');
       }
     } catch (err) {
+      syncCreditsFromResult(err, { setCredits, setIsTester });
       console.error('Fel vid anrop till AI-assistenten:', err);
-      alert(err.message || 'Det uppstod ett fel vid anropet.');
+      setAiFelMeddelande('Nätverksfel vid anropet. Försök igen.');
     } finally {
       setLaddarAi(false);
     }
@@ -963,20 +1016,12 @@ function KasualtalInnehall() {
     }
   };
 
-  const hanteraAnteckningsÄndring = (e) => {
-    const nyText = e.target.value;
-    setAnteckningar(nyText);
-    localStorage.setItem(`kasual_anteckningar_${kasualTyp}`, nyText);
-  };
-
   return (
     <div className="min-h-screen bg-[#faf8f5] text-[#2d312e] font-sans antialiased selection:bg-[#2d3732] selection:text-white flex flex-col justify-between">
-      
       <div>
         {/* HEADER (ATTIO-STYLE NAVIGATION) */}
         <header className="sticky top-0 z-50 bg-[#faf8f5]/85 backdrop-blur-md border-b border-[#e8e4df]/80">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            
             {/* LOGOTYP & MENY */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
@@ -989,26 +1034,30 @@ function KasualtalInnehall() {
               {/* DESKTOP MENY */}
               <nav className="hidden md:flex items-center gap-1">
                 <div className="relative" onMouseLeave={() => setToolsOpen(false)}>
-                  <button 
+                  <button
                     type="button"
                     onMouseEnter={() => setToolsOpen(true)}
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
                   >
                     Verktyg
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        toolsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
 
                   {toolsOpen && (
-                    <div 
+                    <div
                       onMouseEnter={() => setToolsOpen(true)}
                       className="absolute top-full left-0 w-80 bg-white rounded-2xl border border-[#e8e4df] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
                     >
                       {verktygLista.map((v) => {
                         const Icon = v.icon;
                         return (
-                          <Link 
-                            key={v.href} 
+                          <Link
+                            key={v.href}
                             href={v.href}
                             className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#faf8f5] transition-colors group"
                           >
@@ -1033,7 +1082,10 @@ function KasualtalInnehall() {
                   )}
                 </div>
 
-                <Link href="/om" className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors">
+                <Link
+                  href="/om"
+                  className="px-3 py-2 text-xs font-semibold text-[#575c58] hover:text-[#1a1d1b] rounded-lg transition-colors"
+                >
                   Om
                 </Link>
               </nav>
@@ -1044,7 +1096,7 @@ function KasualtalInnehall() {
               {!authLoading && user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#575c58]">
-                    {isTester ? '✨ Testkonto' : `⚡ ${credits ?? 0} krediter`}
+                    {isTester ? '✨ Testkonto' : `⚡ ${sanitizeCredits(credits)} krediter`}
                   </span>
                   <button
                     type="button"
@@ -1055,23 +1107,25 @@ function KasualtalInnehall() {
                     Logga ut
                   </button>
                 </div>
-              ) : !authLoading && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
-                    setShowAuthModal(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Logga in
-                </button>
+              ) : (
+                !authLoading && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalMessage('Skapa ett konto för att få 10 gratisanrop!');
+                      setShowAuthModal(true);
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#2d3732] hover:bg-[#1f2723] rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Logga in
+                  </button>
+                )
               )}
             </div>
 
             {/* MOBIL MENY-KNAPP */}
-            <button 
+            <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-[#575c58] hover:text-[#1a1d1b]"
@@ -1086,9 +1140,9 @@ function KasualtalInnehall() {
               <div className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">Verktyg</div>
               <div className="grid grid-cols-1 gap-2">
                 {verktygLista.map((v) => (
-                  <Link 
-                    key={v.href} 
-                    href={v.href} 
+                  <Link
+                    key={v.href}
+                    href={v.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-sm font-medium text-[#1a1d1b] py-1 flex items-center justify-between"
                   >
@@ -1102,31 +1156,31 @@ function KasualtalInnehall() {
                 ))}
               </div>
               <div className="pt-4 border-t border-[#e8e4df]">
-                <Link 
-                  href="/om" 
+                <Link
+                  href="/om"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block text-sm font-medium text-[#1a1d1b] mb-4"
                 >
                   Om PREDIKA
                 </Link>
                 {user ? (
-                  <button 
+                  <button
                     type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       supabase.auth.signOut();
-                    }} 
+                    }}
                     className="w-full py-2.5 bg-[#f0ece6] rounded-xl text-xs font-semibold text-[#1a1d1b]"
                   >
                     Logga ut
                   </button>
                 ) : (
-                  <button 
+                  <button
                     type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       setShowAuthModal(true);
-                    }} 
+                    }}
                     className="w-full py-2.5 bg-[#2d3732] text-white rounded-xl text-xs font-semibold"
                   >
                     Logga in
@@ -1141,36 +1195,40 @@ function KasualtalInnehall() {
         {user && (
           <div className="bg-white border-b border-[#e8e4df] py-2 px-6">
             <div className="max-w-[1100px] mx-auto flex justify-between items-center text-xs text-[#575c58]">
-              <span className="truncate">Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong></span>
+              <span className="truncate">
+                Inloggad som: <strong className="text-[#1a1d1b]">{user.email}</strong>
+              </span>
             </div>
           </div>
         )}
 
         {/* HUVUDINNEHÅLL */}
         <main className="max-w-[1100px] mx-auto px-6 pt-12 pb-16">
-
           {/* INTRO-RUTA FÖR KASUALTAL */}
-          <div className="bg-white p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
-                <Feather className="w-5 h-5" />
+          <div className="bg-white p-5 sm:p-8 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mb-8">
+            <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] shrink-0">
+                  <Feather className="w-5 h-5" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold text-[#1a1d1b] tracking-tight leading-snug">
+                  Kasualtal
+                </h1>
               </div>
-              <h1 className="text-2xl font-bold text-[#1a1d1b] tracking-tight">
-                Kasualtal
-              </h1>
+              <span className="shrink-0 mt-1 sm:mt-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                AI
+              </span>
             </div>
-            
+
             <p className="text-xs sm:text-sm text-[#575c58] leading-relaxed">
-              Skapa teologiskt genomtänkta och personligt anpassade kasualtal för dop, vigsel och begravning. Kombinera kyrkoårets texter eller valfria bibelställen med anonymiserad bakgrundsinformation för att få förslag på dispositioner, inledningar och psalmer.
+              Skapa teologiskt genomtänkta och personligt anpassade kasualtal för dop, vigsel och begravning. Kombinera kyrkoårets texter, egna bibelställen eller teman med personlig bakgrund för att få förslag på dispositioner, inledningar och psalmer.
             </p>
           </div>
 
           {/* 2-SPALTSLAYOUT */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            
-            {/* VÄNSTER SPALT: Val av tillfälle, text & bakgrund */}
+            {/* VÄNSTER SPALT: Val av tillfälle & bibelgrund */}
             <section className="space-y-6">
-              
               {/* 1. VÄLJ KASUALTILLFÄLLE */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-4 border-b border-[#e8e4df] pb-3">
@@ -1203,20 +1261,20 @@ function KasualtalInnehall() {
                 </div>
               </div>
 
-              {/* 2. VÄLJ ELLER SKRIV IN TEXT */}
+              {/* 2. BIBELTEXT ELLER TEMA (Med tre val och synlig inaktivering) */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-4 border-b border-[#e8e4df] pb-3">
-                  2. Bibeltext eller tema
+                  2. Val av bibeltext eller grund
                 </h2>
 
-                <div className="flex gap-2 mb-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
                   <button
                     type="button"
                     onClick={() => setTextKalla('evangelieboken')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all text-center ${
                       textKalla === 'evangelieboken'
                         ? 'bg-[#2d3732] text-white shadow-sm'
-                        : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                        : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
                     }`}
                   >
                     Kyrkoårets texter
@@ -1224,122 +1282,158 @@ function KasualtalInnehall() {
                   <button
                     type="button"
                     onClick={() => setTextKalla('egen')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all text-center ${
                       textKalla === 'egen'
                         ? 'bg-[#2d3732] text-white shadow-sm'
-                        : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                        : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
                     }`}
                   >
-                    Egen text eller tema
+                    Egen text / tema
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTextKalla('ingen')}
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all text-center ${
+                      textKalla === 'ingen'
+                        ? 'bg-[#2d3732] text-white shadow-sm'
+                        : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df] hover:border-[#d6d0c7]'
+                    }`}
+                  >
+                    Endast personlig bakgrund
                   </button>
                 </div>
 
-                {textKalla === 'evangelieboken' ? (
-                  <div>
-                    <div className="mb-4">
-                      <label htmlFor="helgdag-select" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
-                        Helgdag:
-                      </label>
-                      <select
-                        id="helgdag-select"
-                        value={valdHelgdagNamn}
-                        onChange={(e) => setValdHelgdagNamn(e.target.value)}
-                        className="w-full p-3 text-xs sm:text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] focus:outline-none focus:border-[#2d3732]"
-                      >
-                        {HELGDAGAR.map((h) => (
-                          <option key={h.namn} value={h.namn}>
-                            {h.namn}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">Årgång:</label>
-                      <div className="flex gap-2">
-                        {[
-                          { id: 'argang1', label: 'Årgång 1' },
-                          { id: 'argang2', label: 'Årgång 2' },
-                          { id: 'argang3', label: 'Årgång 3' },
-                        ].map((arg) => (
-                          <button
-                            type="button"
-                            key={arg.id}
-                            onClick={() => setValdArgang(arg.id)}
-                            className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all ${
-                              valdArgang === arg.id
-                                ? 'bg-[#2d3732] text-white shadow-sm'
-                                : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
-                            }`}
-                          >
-                            {arg.label}
-                          </button>
-                        ))}
+                <div
+                  className={`transition-opacity duration-200 ${
+                    textKalla === 'ingen' ? 'opacity-40 pointer-events-none' : ''
+                  }`}
+                >
+                  {textKalla === 'evangelieboken' ? (
+                    <div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="helgdag-select"
+                          className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider"
+                        >
+                          Helgdag:
+                        </label>
+                        <select
+                          id="helgdag-select"
+                          value={valdHelgdagNamn}
+                          onChange={(e) => setValdHelgdagNamn(e.target.value)}
+                          className="w-full p-3 text-xs sm:text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] focus:outline-none focus:border-[#2d3732]"
+                        >
+                          {HELGDAGAR.map((h) => (
+                            <option key={h.namn} value={h.namn}>
+                              {h.namn}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    </div>
 
-                    {valdHelgdag && valdaTexter && (
-                      <div className="space-y-2 mt-4 pt-3 border-t border-[#e8e4df]">
-                        {[
-                          { key: 'gt', label: 'Gammaltestamentlig text', text: valdaTexter.gt },
-                          { key: 'epistel', label: 'Epistel', text: valdaTexter.epistel },
-                          { key: 'evangelium', label: 'Evangelium', text: valdaTexter.evangelium },
-                        ].map((t) => (
-                          <div
-                            key={t.key}
-                            onClick={() => setValdTextTyp(t.key)}
-                            className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center ${
-                              valdTextTyp === t.key
-                                ? 'border-[#2d3732] bg-[#faf8f5] ring-1 ring-[#2d3732]'
-                                : 'border-[#e8e4df] bg-white hover:border-[#d6d0c7]'
-                            }`}
-                          >
-                            <div>
-                              <span className="text-[11px] font-bold uppercase text-[#8c918d] block">
-                                {t.label}
-                              </span>
-                              <span className="text-xs sm:text-sm font-semibold text-[#1a1d1b]">
-                                {t.text}
-                              </span>
+                      <div className="mb-4">
+                        <label className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
+                          Årgång:
+                        </label>
+                        <div className="flex gap-2">
+                          {[
+                            { id: 'argang1', label: 'Årgång 1' },
+                            { id: 'argang2', label: 'Årgång 2' },
+                            { id: 'argang3', label: 'Årgång 3' },
+                          ].map((arg) => (
+                            <button
+                              type="button"
+                              key={arg.id}
+                              onClick={() => setValdArgang(arg.id)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all ${
+                                valdArgang === arg.id
+                                  ? 'bg-[#2d3732] text-white shadow-sm'
+                                  : 'bg-[#faf8f5] text-[#575c58] border border-[#e8e4df]'
+                              }`}
+                            >
+                              {arg.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {valdHelgdag && valdaTexter && (
+                        <div className="space-y-2 mt-4 pt-3 border-t border-[#e8e4df]">
+                          {[
+                            { key: 'gt', label: 'Gammaltestamentlig text', text: valdaTexter.gt },
+                            { key: 'epistel', label: 'Epistel', text: valdaTexter.epistel },
+                            { key: 'evangelium', label: 'Evangelium', text: valdaTexter.evangelium },
+                          ].map((t) => (
+                            <div
+                              key={t.key}
+                              onClick={() => setValdTextTyp(t.key)}
+                              className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center ${
+                                valdTextTyp === t.key
+                                  ? 'border-[#2d3732] bg-[#faf8f5] ring-1 ring-[#2d3732]'
+                                  : 'border-[#e8e4df] bg-white hover:border-[#d6d0c7]'
+                              }`}
+                            >
+                              <div>
+                                <span className="text-[11px] font-bold uppercase text-[#8c918d] block">
+                                  {t.label}
+                                </span>
+                                <span className="text-xs sm:text-sm font-semibold text-[#1a1d1b]">
+                                  {t.text}
+                                </span>
+                              </div>
+                              {valdTextTyp === t.key && (
+                                <span className="text-[10px] font-bold bg-[#2d3732] text-white px-2 py-0.5 rounded-md">
+                                  Vald
+                                </span>
+                              )}
                             </div>
-                            {valdTextTyp === t.key && (
-                              <span className="text-[10px] font-bold bg-[#2d3732] text-white px-2 py-0.5 rounded-md">
-                                Vald
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <label htmlFor="egen-text-input" className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider">
-                      Bibelställe eller valt tema:
-                    </label>
-                    <input
-                      id="egen-text-input"
-                      type="text"
-                      value={egenText}
-                      onChange={(e) => setEgenText(e.target.value)}
-                      placeholder="T.ex. 1 Kor 13, Ps 23, 'Guds kärlek' eller 'Ett dukat bord'..."
-                      className="w-full px-4 py-3 text-xs sm:text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732]"
-                    />
-                    <p className="text-xs text-[#8c918d] mt-2">
-                      Skriv in det bibelställe eller det övergripande tema som du planerar att utgå ifrån i talet.
-                    </p>
-                  </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label
+                        htmlFor="egen-text-input"
+                        className="block text-xs font-bold text-[#1a1d1b] mb-1.5 uppercase tracking-wider"
+                      >
+                        Eget bibelställe, citat eller tema:
+                      </label>
+                      <input
+                        id="egen-text-input"
+                        type="text"
+                        value={egenText}
+                        onChange={(e) => setEgenText(e.target.value)}
+                        placeholder="T.ex. 1 Kor 13, Ps 23, 'Ljus i mörkret'..."
+                        className="w-full px-4 py-3 text-xs sm:text-sm rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732]"
+                      />
+                      <p className="text-xs text-[#8c918d] mt-2">
+                        Skriv in det bibelställe eller temat du vill utgå ifrån.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {textKalla === 'ingen' && (
+                  <p className="text-xs text-[#8c918d] italic mt-3 bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
+                    Ingen bibeltext är vald. AI-assistenten kommer enbart att utgå från tillfället och den personliga kontexten.
+                  </p>
                 )}
               </div>
+            </section>
 
+            {/* HÖGER SPALT: 3. Personlig bakgrund & 4. AI-assistent */}
+            <section className="space-y-6">
               {/* 3. PERSONLIG BAKGRUND */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2 border-b border-[#e8e4df] pb-3">
-                  3. Personlig bakgrund & kontext
+                  3. Personlig bakgrund &amp; kontext
                 </h2>
                 <p className="text-xs text-[#575c58] mb-3 leading-relaxed">
-                  Beskriv kontexten anonymt för att hjälpa AI:n att ge anpassade förslag. 
-                  <strong className="block text-[#1a1d1b] mt-0.5">Av sekretess- och integritetsskäl: undvik riktiga namn, efternamn och känsliga personuppgifter.</strong>
+                  Beskriv kontexten anonymt för att hjälpa AI:n att ge anpassade förslag.
+                  <strong className="block text-[#1a1d1b] mt-0.5">
+                    Av sekretess- och integritetsskäl: undvik riktiga namn, efternamn och känsliga personuppgifter.
+                  </strong>
                 </p>
                 <textarea
                   value={personligBakgrund}
@@ -1356,59 +1450,55 @@ function KasualtalInnehall() {
                 />
               </div>
 
-            </section>
-
-            {/* HÖGER SPALT: Anteckningar & AI-assistent */}
-            <section className="space-y-6">
-              
+              {/* 4. AI-ASSISTENT */}
               <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <div className="flex justify-between items-center mb-4 border-b border-[#e8e4df] pb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d]">
-                    4. Mina anteckningar ({kasualTypNamn.toLowerCase()})
-                  </h2>
-                  <KopieraKnapp text={anteckningar} />
-                </div>
-
-                <textarea
-                  value={anteckningar}
-                  onChange={hanteraAnteckningsÄndring}
-                  placeholder="Skriv dina egna tankar, dispositioner och utkast till talet här..."
-                  rows={7}
-                  className="w-full p-4 rounded-xl border border-[#e8e4df] bg-[#faf8f5] text-xs sm:text-sm text-[#1a1d1b] placeholder:text-[#a09a90] focus:outline-none focus:border-[#2d3732] leading-relaxed resize-none"
-                />
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2">
-                  5. AI-assistent för {kasualTypNamn.toLowerCase()}
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[#8c918d] mb-2 border-b border-[#e8e4df] pb-3">
+                  4. AI-assistent för {kasualTypNamn.toLowerCase()}
                 </h2>
-                
+
                 <div className="text-xs text-[#575c58] mb-4 bg-[#faf8f5] p-3 rounded-xl border border-[#e8e4df]">
-                  Aktiv kontext: <strong className="text-[#1a1d1b]">{kasualTypNamn}</strong> | <strong className="text-[#1a1d1b]">{aktivTextBeskrivning}</strong>
+                  Aktiv kontext: <strong className="text-[#1a1d1b]">{kasualTypNamn}</strong> |{' '}
+                  <strong className="text-[#1a1d1b]">{aktivTextBeskrivning}</strong>
                 </div>
+
+                {user && arKrediterSlut && (
+                  <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                    Du har <strong className="font-bold">0 krediter</strong> kvar. Du kan inte göra fler AI-anrop förrän du har fått eller köpt fler krediter.
+                  </div>
+                )}
+
+                {aiFelMeddelande && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                    {aiFelMeddelande}
+                  </div>
+                )}
 
                 <div className="space-y-3 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       type="button"
-                      onClick={() => hanteraAiAnrop(
-                        `Ge 2–3 olika förslag på disposition och strukturellt upplägg för talet. För varje del, ge korta köranvisningar för hur den personliga bakgrunden och teologin vävs samman.`,
-                        'Disposition'
-                      )}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                      onClick={() =>
+                        hanteraAiAnrop(
+                          `Ge 2–3 olika förslag på disposition och strukturellt upplägg för talet. För varje del, ge korta köranvisningar för hur den personliga bakgrunden och eventuell text vävs samman.`,
+                          'Disposition'
+                        )
+                      }
+                      disabled={aiKnapparInaktiverade}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-center cursor-pointer"
                     >
                       Disposition för talet
                     </button>
-                    
+
                     <button
                       type="button"
-                      onClick={() => hanteraAiAnrop(
-                        `Ge 3 förslag på faktiska inledningsord (hälsningsord enligt kyrkohandbokens stil) att säga direkt när handlingen inleds. Formulera dem varmt, värdigt och anpassat efter tillfället och den personliga kontexten.`,
-                        'Inledningsord'
-                      )}
-                      disabled={laddarAi}
-                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm text-center"
+                      onClick={() =>
+                        hanteraAiAnrop(
+                          `Ge 3 förslag på faktiska inledningsord (hälsningsord enligt kyrkohandbokens stil) att säga direkt när handlingen inleds. Formulera dem varmt, värdigt och anpassat efter tillfället och den personliga kontexten.`,
+                          'Inledningsord'
+                        )
+                      }
+                      disabled={aiKnapparInaktiverade}
+                      className="p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-center cursor-pointer"
                     >
                       Gudstjänstens inledning
                     </button>
@@ -1416,12 +1506,14 @@ function KasualtalInnehall() {
 
                   <button
                     type="button"
-                    onClick={() => hanteraAiAnrop(
-                      `Ge 4–5 tematiskt passande psalmförslag ur Den svenska psalmboken eller tillägg som lämpar sig för detta tillfälle. Motivera kort varför varje psalm passar.`,
-                      'Psalmförslag'
-                    )}
-                    disabled={laddarAi}
-                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                    onClick={() =>
+                      hanteraAiAnrop(
+                        `Ge 4–5 tematiskt passande psalmförslag ur Den svenska psalmboken eller tillägg som lämpar sig för detta tillfälle. Motivera kort varför varje psalm passar.`,
+                        'Psalmförslag'
+                      )
+                    }
+                    disabled={aiKnapparInaktiverade}
+                    className="w-full p-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                   >
                     Psalmförslag för tillfället
                   </button>
@@ -1438,14 +1530,13 @@ function KasualtalInnehall() {
                   <button
                     type="button"
                     onClick={() => hanteraAiAnrop(null, null, { inkluderaFraga: false })}
-                    disabled={laddarAi}
-                    className="w-full py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                    disabled={aiKnapparInaktiverade}
+                    className="w-full py-3 bg-[#2d3732] hover:bg-[#1f2723] text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                   >
                     {laddarAi ? 'Genererar förslag...' : 'Fråga AI-assistenten'}
                   </button>
                 </div>
               </div>
-
             </section>
           </div>
 
@@ -1474,18 +1565,13 @@ function KasualtalInnehall() {
             ) : (
               <div className="space-y-4">
                 {aiHistorik.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-[#faf8f5] p-6 rounded-2xl border border-[#e8e4df]"
-                  >
+                  <div key={item.id} className="bg-[#faf8f5] p-6 rounded-2xl border border-[#e8e4df]">
                     <div className="flex justify-between items-center mb-3 border-b border-[#e8e4df] pb-3">
                       <span className="text-xs sm:text-sm font-bold text-[#1a1d1b]">
                         {item.titel} ({item.helgdag})
                       </span>
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] text-[#8c918d] font-semibold">
-                          Kl. {item.tid}
-                        </span>
+                        <span className="text-[11px] text-[#8c918d] font-semibold">Kl. {item.tid}</span>
                         <KopieraKnapp text={item.svar} />
                       </div>
                     </div>
@@ -1504,50 +1590,54 @@ function KasualtalInnehall() {
               Utforska fler verktyg
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {verktygLista.filter(v => v.href !== '/kasualtal').map((v) => {
-                const Icon = v.icon;
-                return (
-                  <Link 
-                    key={v.href} 
-                    href={`${v.href}${valdHelgdag?.namn ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(valdArgang || 'argang1')}` : ''}`} 
-                    className="group block"
-                  >
-                    <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
-                            <Icon className="w-4 h-4" />
+              {verktygLista
+                .filter((v) => v.href !== '/kasualtal')
+                .map((v) => {
+                  const Icon = v.icon;
+                  return (
+                    <Link
+                      key={v.href}
+                      href={`${v.href}${
+                        valdHelgdag?.namn
+                          ? `?helgdag=${encodeURIComponent(valdHelgdag.namn)}&argang=${encodeURIComponent(
+                              valdArgang || 'argang1'
+                            )}`
+                          : ''
+                      }`}
+                      className="group block"
+                    >
+                      <div className="p-5 bg-white rounded-2xl border border-[#e8e4df] hover:border-[#d6d0c7] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200 h-full flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8e4df] flex items-center justify-center text-[#2d3732] group-hover:bg-[#2d3732] group-hover:text-white transition-colors">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {v.isAi && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                                  AI
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {v.isAi && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                                AI
-                              </span>
-                            )}
-                            <ArrowUpRight className="w-4 h-4 text-[#c2beb6] group-hover:text-[#1a1d1b] transition-colors" />
-                          </div>
+                          <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
+                            {v.name}
+                          </h4>
+                          <p className="text-xs text-[#575c58] leading-relaxed">{v.desc}</p>
                         </div>
-                        <h4 className="text-sm font-bold text-[#1a1d1b] mb-1 group-hover:text-[#2d3732] transition-colors">
-                          {v.name}
-                        </h4>
-                        <p className="text-xs text-[#575c58] leading-relaxed">
-                          {v.desc}
-                        </p>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
             </div>
           </section>
-
         </main>
       </div>
 
       {/* ATTIO-STYLE FOOTER */}
       <footer className="border-t border-[#e8e4df] bg-white py-16 mt-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          
           <div className="col-span-2 space-y-3">
             <span className="font-bold text-lg tracking-tight text-[#1a1d1b]">PREDIKA</span>
             <p className="text-xs text-[#8c918d] max-w-xs leading-relaxed">
@@ -1564,7 +1654,9 @@ function KasualtalInnehall() {
             <ul className="space-y-2 text-xs text-[#575c58]">
               {verktygLista.map((v) => (
                 <li key={v.href}>
-                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">{v.name}</Link>
+                  <Link href={v.href} className="hover:text-[#1a1d1b] transition-colors">
+                    {v.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -1573,34 +1665,54 @@ function KasualtalInnehall() {
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1a1d1b]">Information</h4>
             <ul className="space-y-2 text-xs text-[#575c58]">
-              <li><Link href="/om" className="hover:text-[#1a1d1b] transition-colors">Om tjänsten</Link></li>
-              <li><Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">Pris & abonnemang</Link></li>
-              <li><Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">Integritetspolicy</Link></li>
-              <li><Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">Användarvillkor</Link></li>
+              <li>
+                <Link href="/om" className="hover:text-[#1a1d1b] transition-colors">
+                  Om tjänsten
+                </Link>
+              </li>
+              <li>
+                <Link href="/pris" className="hover:text-[#1a1d1b] transition-colors">
+                  Pris &amp; abonnemang
+                </Link>
+              </li>
+              <li>
+                <Link href="/integritet" className="hover:text-[#1a1d1b] transition-colors">
+                  Integritetspolicy
+                </Link>
+              </li>
+              <li>
+                <Link href="/villkor" className="hover:text-[#1a1d1b] transition-colors">
+                  Användarvillkor
+                </Link>
+              </li>
             </ul>
           </div>
-
         </div>
       </footer>
 
       {/* INLOGGNINGSMODAL */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         message={modalMessage}
         onAuthSuccess={() => {
           setShowAuthModal(false);
           fetchProfile();
-        }} 
+        }}
       />
-
     </div>
   );
 }
 
 export default function Kasualtal() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-xs text-[#575c58]">Laddar kasualtal...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center text-xs text-[#575c58]">
+          Laddar kasualtal...
+        </div>
+      }
+    >
       <KasualtalInnehall />
     </Suspense>
   );

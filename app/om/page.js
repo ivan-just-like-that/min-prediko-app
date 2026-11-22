@@ -320,75 +320,136 @@ export default function OmPage() {
           <section className="bg-white rounded-3xl p-8 sm:p-10 border border-[#e8e4df] shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 text-[#575c58] text-sm sm:text-base leading-relaxed">
             
             <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1d1b] tracking-tight">
-              Välkommen till beta-versionen av PREDIKA - din predikoassistent!
+              Välkommen till betaversionen av PREDIKA – din predikoassistent!
             </h1>
 
             <p>
               Så roligt att du vill vara med och testa PREDIKA! Det är en delvis AI-driven tjänst som är skapad för att ge dig byggstenar, 
-              inspiration och teologiskt stöd – medan du behåller den fulla kontrollen över din predikan eller ditt tal. 
+              inspiration och teologiskt stöd – medan du behåller den fulla kontrollen över din predikan eller ditt tal.{' '}
               <span className="font-semibold text-[#1a1d1b]">Det är ditt budskap och dina teologiska reflektioner som ska stå i centrum. Med din erfarenhet, 
               ditt personliga tonläge och dina språkliga nyanser är du helt oersättlig.</span> Denna AI-tjänst kommer alltså aldrig ersätta dig eller ta ditt jobb.
             </p>
 
+            <h2 className="text-lg sm:text-xl font-semibold italic text-[#1a1d1b] pt-2">
+              Bakgrund &amp; innehåll
+            </h2>
+
             <p>
-              Jag som skapat appen heter Patric och är själv prästvigd i Svenska kyrkan för Växjö stift 2004. De senaste åren har jag dock jobbat 
-              heltid med min hobby inom fotografi, men tankarna på såväl prästeriet som kyrkan finns alltid med. <br />
-              Just detta med förkunnelsen har alltid engagerat mig, allt från arbetet med texternas historia till retorik och framförande. Det är är bakgrunden till 
-              att jag utvecklar denna tjänst, ett arbete som känns både roligt och angeläget.
+              Jag som skapat appen heter Patric och är prästvigd i Svenska kyrkan för Växjö stift 2004. De senaste åren har jag dock jobbat 
+              heltid med min hobby inom fotografi, men tankarna på såväl prästämbetet som kyrkan finns alltid med. <br />
+              Som präst är jag extra intresserad av förkunnelsen – allt från arbetet med texternas historia till retorik och framförande. Att nå fram till 
+              människor. Men jag tycker samtidigt att det är svårt och har våndats många sena lördagar, haha. Det här är bakgrunden till 
+              att jag utvecklar den här tjänsten, dels för att det är mitt stora intresse, dels för att jag gärna skulle vilja ha dessa verktyg själv i tjänsten.
             </p>
 
             <p>
-              Utöver idéer till predikan utifrån helgdagens texter hittar du här verktyg som hjälper till med fördjupning i historia, grundtextanalys 
-              (endast för NT än), idéer till arbetet med barn & unga mm. Appen har alltså blivit mycket mer än just en predikoassistent.
+              Utöver idéer till predikan utifrån helgdagens texter hittar du här verktyg som hjälper till med fördjupning i historia, grundtextanalys, 
+              idéer till arbetet med barn och unga med mera. Appen har alltså blivit mycket mer än bara en predikoassistent.
             </p>
 
             <p>
               I sin helhet kan man se det som att appen hjälper dig att slå i bibelkommentarer, predikosamlingar och uppslagsverk precis som i ditt eget 
-              fysiska bibliotek där hemma, men att du via denna tjänst har tillgång till långt många fler källor som kan ge uppslag och idéer.
+              fysiska bibliotek där hemma – men att du via den här tjänsten har tillgång till betydligt fler källor som kan ge uppslag och idéer.
             </p>
 
             <p>
-              Bland fördelarna med appen är att du får tillgång till en av de bästa AI-modeller som finns för dessa uppgifter, vilket är anledningen till 
-              att den kostar en del att använda.
+              Bland fördelarna med appen är att du får tillgång till en av de bästa AI-modellerna som finns för dessa uppgifter, vilket också är anledningen till 
+              att den kostar en del att driva.
+            </p>
+
+            <h2 className="text-lg sm:text-xl font-semibold italic text-[#1a1d1b] pt-2">
+              AI – hur ska en förhålla sig till det egentligen?
+            </h2>
+
+            <p>
+              Ja, detta har ju blivit lite av tiotusenkronorsfrågan idag. Hur mycket AI ska jag använda? Är det överhuvudtaget vettigt att använda det 
+              alls med tanke på alla datacenter som byggs och som drar enorma mängder energi? Och vad händer med våra hjärnor om vi hela tiden frågar 
+              en AI om hjälp med allt? Vi skulle kunna prata om detta länge, men jag vill kort redogöra för hur jag ser på saken.
             </p>
 
             <p>
-              AI-modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. Instruktionerna har provats fram och tillbaka 
-              för att ge bästa möjliga svar i en god ton. Du slipper alltså skriva långa promptar på egen hand varje gång. Arbetet med att förfina 
+              Jag är helt inne på linjen att utvecklingen av AI måste begränsas, av flera anledningar. Miljöaspekten är en. Det jag först tänker på här 
+              är techjättarnas byggen av enorma datacenter, där bara en av de anläggningar som planeras i Sverige förväntas förbruka 1 000 MW – vilket 
+              i runda tal motsvarar en hel kärnkraftsreaktor. Det är helt bisarra tal. Men är det mina frågor till AI:n om bästa receptet på banankaka, eller 
+              som här frågor om den historiska kontexten till Matt 4:1–10, som driver detta? Nej, så är det inte. Dessa sökningar utgör en försvinnande liten del i det hela. 
+              När jag räknat på det motsvarar en sökning på till exempel den historiska sidan bara något mer än en sökning på en vanlig sökmotor. De bakar ju 
+              dessutom in allt mer AI-svar i de vanliga sökresultaten, så där är det mer eller mindre jämnt skägg.
+            </p>
+
+            <p>
+              Men dessa datacenter då, vad är de till för? Jo, när företag och techjättar tränar och kör gigantiska AI-modeller 
+              krävs en helt annan typ av datorkraft än för traditionell webbtrafik, streaming eller molnlagring. De nya datacenter som byggs är så 
+              kallade &quot;hyperscale&quot;-anläggningar fullproppade med tiotusentals avancerade AI-acceleratorer (som NVIDIA-grafikkort). 
+              Eftersom dessa chip drar enorma mängder el och utvecklar extrem hetta krävs massiva elanslutningar och tunga kylsystem.
+            </p>
+
+            <p>
+              Det är alltså enorma beräkningar som kräver dessa mängder energi. När en AI-modell skapas från grunden matas den med hundratals 
+              miljarder dataparametrar. Det tar månader av oavbruten beräkning för tusentals sammankopplade superdatorer, vilket såklart drar enorma mängder 
+              elektricitet. När modellerna väl används – särskilt när de utför avancerade resonemang i flera steg, så kallade <em>agentic workflows</em> – 
+              krävs betydligt mer beräkningskraft per fråga än vid en vanlig, enkel Google-sökning.
+            </p>
+
+            <p>
+              Den här appen är ett skräddarsytt verktyg för sitt specifika syfte, med mycket avgränsade frågor. Den körs på standardinfrastruktur och 
+              drar minimalt med resurser i det stora hela. De datacenter som slukar lika mycket el som hela städer byggs för att driva de globala 
+              techjättarnas massiva språkmodeller, bild- och videogeneratorer som betjänar industrin och hundratals miljoner användare samtidigt, 
+              dygnet runt.
+            </p>
+            
+            <p>
+              Vid sidan av miljöaspekten finns frågan om vad som händer med oss som människor och med våra hjärnor om vi allt mer lägger över 
+              vårt tänkande på språkmodeller. Tänk om vi måste fråga AI om råd vid varje vägval? Eller, som man kan tänka kring verktygen här, att låta 
+              en språkmodell skriva hela sina predikningar. Just detta har jag verkligen velat motverka, och jag tycker att det är en styrka 
+              med den här appen: du får inte färdiga predikningar, utan idéer och uppslag. Inspiration. Kanske en tanke som får fart på din egen kreativa process.
+            </p>
+
+            <p>
+              Så rätt använt tycker jag att AI är ett jättebra verktyg som verkligen kan tjäna oss, men det måste absolut finnas gränser också.
+              Hur tänker du kring det hela? Hör gärna av dig med dina tankar om du vill!
+            </p>
+
+            <h2 className="text-lg sm:text-xl font-semibold italic text-[#1a1d1b] pt-2">
+              Val av AI-modell
+            </h2>
+
+            <p>
+              Den AI-modell som för närvarande används i den här appen är Gemini-3.8-flash. Jag provade helt enkelt några olika modeller och kände att denna 
+              var mycket väl lämpad för ändamålet. Jag använder ett par andra modeller för andra ändamål, men just för appen kör vi på Gemini ett tag till.
+            </p>
+            
+            <p>
+              Modellen är instruerad att ge förslag och idéer som är teologiskt genomtänkta och relevanta. Instruktionerna har provats fram och tillbaka 
+              för att ge bästa möjliga svar i en god ton. Du slipper alltså skriva långa promptar på egen hand varje gång, och arbetet med att förfina 
               instruktionerna sker fortlöpande.
             </p>
 
             <p>
-              AI-modellen är i första hand styrd att passa en svenskkyrklig kontext, med variationer i svaren som tar hänsyn till den bredd som finns. 
-              Med detta sagt är min förhoppning att även pastorer inom andra kristna samfund kan ha nytta av tjänsten.
+              Modellen är i första hand styrd att passa en svenskkyrklig kontext, med variationer i svaren som tar hänsyn till den bredd som finns. 
+              Med detta sagt är min förhoppning att även pastorer och förkunnare inom andra kristna samfund kan ha god nytta av tjänsten.
             </p>
 
+            <h2 className="text-lg sm:text-xl font-semibold italic text-[#1a1d1b] pt-2">
+              Testare
+            </h2>
+
             <p>
-              Då du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att 
-              uppdateras med nya funktioner och förbättringar under denna tid. (Bl.a. kommer sidan för &quot;pris&quot; fungera den dagen det är dags att 
+              Eftersom du är med i testgruppen får du såklart tillgång till alla funktioner utan kostnad under utvecklingsfasen. Sidan kommer kontinuerligt att 
+              uppdateras med nya funktioner och förbättringar under den här tiden. (Bland annat kommer sidan för &quot;pris&quot; att aktiveras den dagen det är dags att 
               lansera tjänsten på allvar.)
             </p>
 
             <p>
-              Notera att du som testare först bara får 10 krediter/sökningar när du registrerar dig, men så fort jag får notis om att du är med i testgruppen 
+              Notera att du som testare först bara får 10 krediter/sökningar när du registrerar dig, men så fort jag får en notis om att du har gått med 
               så justerar jag upp det.
             </p>
 
             <p>
-              <span className="font-semibold text-[#1a1d1b]">Jag är tacksam om du inte sprider denna sida till andra ännu, jag vill att vi testar den ordentligt först.</span>
-            </p>
-
-            <p>
-              Och, till sist: Som många andra har jag haft mina dubier kring detta med AI, inte minst miljöasspekten. Är det verkligen vettigt att vi som förvaltare av 
-              skapelsen överhuvudtaget ska hålla på med AI, som drar mycket energi? Och vad händer med oss som människor? Det är stora frågor som verkligen
-              är värda att diskutera och undersöka. Jag har själv försökt att räkna på hur mycket ett av de anrop som kräver mest datakraft här motsvarar i energi. 
-              De mest krävande anropen här, predikoidéer och historiska kommentarer, visar sig motsvara en handfull sökningar på en helt vanlig sökmotor. Jag 
-              tycker det verkar överkomligt, om man tänker på hur många sökningar man kan göra inför predikningar i vanliga fall. Hur tänker du? Skriv gärna
-              en kommentar om det om du vill.
+              <span className="font-semibold text-[#1a1d1b]">Jag är tacksam om du inte sprider den här sidan till andra ännu – jag vill att vi testar den ordentligt först.</span>
             </p>
 
             <p className="pt-2 font-medium text-[#1a1d1b]">
-              Bästa hälsningar, Patric.
+              Bästa hälsningar, Patric
             </p>
           </section>
 
